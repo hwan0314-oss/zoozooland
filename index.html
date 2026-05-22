@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>🦁 쥬쥬랜드 안내지도</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; }
+
+    .topbar {
+      background: #fff;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e5e5e5;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .topbar-title { font-size: 17px; font-weight: 600; }
+    .topbar-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .btn-group { display: flex; gap: 6px; }
+    .btn { display: flex; align-items: center; gap: 4px; padding: 6px 11px; border: none; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; }
+    .btn-gps { background: #1D9E75; color: #fff; }
+    .btn-gps:active { background: #0F6E56; }
+    .btn-reset { background: #f0f0ea; color: #444; }
+    .btn-reset:active { background: #e0e0d8; }
+
+    #gps-status { font-size: 11px; color: #888; padding: 4px 16px; background: #fff; min-height: 20px; }
+
+    #map { width: 100%; height: 52vw; min-height: 260px; max-height: 420px; }
+
+    /* 시설 상세 카드 */
+    #detail-card {
+      display: none;
+      margin: 10px 12px;
+      background: #fff;
+      border: 1.5px solid #1D9E75;
+      border-radius: 12px;
+      padding: 13px 15px;
+    }
+    #detail-card.vis { display: block; }
+    .d-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .d-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .badge-green { background: #E1F5EE; color: #0F6E56; }
+    .badge-blue  { background: #E6F1FB; color: #185FA5; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .d-row { display: flex; align-items: flex-start; gap: 7px; font-size: 13px; color: #555; margin-top: 5px; line-height: 1.5; }
+    .d-row svg { flex-shrink: 0; margin-top: 2px; }
+
+    /* 하단 패널 */
+    .panel { background: #fff; margin: 10px 12px 16px; border-radius: 12px; padding: 14px 14px; border: 1px solid #e8e8e0; }
+    .panel-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+    .tab { font-size: 12px; padding: 5px 13px; border-radius: 20px; border: 1px solid #ddd; background: #f5f5f0; color: #666; cursor: pointer; }
+    .tab.on { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+
+    .fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .fitem { display: flex; align-items: flex-start; gap: 9px; padding: 9px 10px; background: #f7f7f2; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
+    .fitem:active { background: #eef8f4; }
+    .fitem.sel { border-color: #1D9E75; background: #E1F5EE; }
+    .ficon { width: 30px; height: 30px; border-radius: 8px; background: #e8f7f0; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .fname { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+    .ftime { font-size: 11px; color: #888; margin-top: 2px; }
+
+    .nlist { display: flex; flex-direction: column; gap: 8px; }
+    .nitem { display: flex; gap: 10px; padding: 10px 12px; background: #f7f7f2; border-radius: 10px; }
+    .nitem-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .nitem-title { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .nitem-body { font-size: 12px; color: #666; margin-top: 3px; line-height: 1.6; }
+
+    /* 외곽 경계선 범례 */
+    .legend { font-size: 11px; color: #888; text-align: center; padding: 4px 0 8px; }
+  </style>
+</head>
+<body>
+
+<!-- =============================================
+     ★ 상단 타이틀 수정
+     ============================================= -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">🦁 쥬쥬랜드 안내지도</div>
+    <!-- ★ 주소 수정 -->
+    <div class="topbar-sub">경기도 고양시 덕양구 관산동 1019</div>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-reset" onclick="resetView()">전체보기</button>
+    <button class="btn btn-gps" onclick="locate()">📍 내 위치</button>
+  </div>
+</div>
+
+<div id="gps-status"></div>
+<div id="map"></div>
+<div class="legend">점선: 쥬쥬랜드 부지 경계</div>
+
+<!-- 시설 상세 카드 -->
+<div id="detail-card">
+  <div class="d-title">
+    <span id="d-icon"></span>
+    <span id="d-name"></span>
+    <span id="d-badge" class="d-badge"></span>
+  </div>
+  <div class="d-row">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span id="d-hours"></span>
+  </div>
+  <div class="d-row">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="d-info"></span>
+  </div>
+</div>
+
+<!-- 하단 패널 -->
+<div class="panel">
+  <div class="panel-title">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    시설 안내
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-cat="all"      onclick="switchTab(this)">전체</button>
+    <button class="tab"    data-cat="animal"   onclick="switchTab(this)">동물구역</button>
+    <button class="tab"    data-cat="food"     onclick="switchTab(this)">매점·카페</button>
+    <button class="tab"    data-cat="facility" onclick="switchTab(this)">편의시설</button>
+    <button class="tab"    data-cat="notice"   onclick="switchTab(this)">안내</button>
+  </div>
+  <div id="tab-content"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// =============================================
+// ★★★ 여기서부터 수정하는 곳 ★★★
+// =============================================
+
+// -----------------------------------------------
+// [1] 지도 경계 설정 (부지 크기에 맞게 조정)
+//     남서쪽(좌하단) 좌표, 북동쪽(우상단) 좌표
+//     → 구글지도에서 부지 모서리를 우클릭 > "이 위치" 로 좌표 확인 가능
+// -----------------------------------------------
+const BOUNDS = L.latLngBounds(
+  [37.6478, 126.8738],   // ★ 남서쪽 끝 [위도, 경도]
+  [37.6512, 126.8792]    // ★ 북동쪽 끝 [위도, 경도]
+);
+
+// -----------------------------------------------
+// [2] 시설 목록
+//     pos: [위도, 경도]  ← 구글지도에서 각 시설 위치 우클릭으로 확인
+//     cat: 'animal' | 'food' | 'facility'
+//     badge: 뱃지 텍스트
+//     bc: 'badge-green' | 'badge-blue' | 'badge-amber'
+// -----------------------------------------------
+const FACILITIES = [
+
+  // ── 입구 / 출구 / 주차 ──────────────────────────
+  {
+    id: 1, name: '정문 입구', cat: 'facility', icon: '🚪',
+    pos: [37.6487, 126.8750],           // ★ 좌표 수정
+    hours: '09:00 – 18:00',            // ★ 운영시간 수정
+    info: '입장권 구매 · 유모차 대여',   // ★ 설명 수정
+    badge: '입구', bc: 'badge-blue'
+  },
+  {
+    id: 2, name: '후문 출구', cat: 'facility', icon: '🚪',
+    pos: [37.6503, 126.8770],
+    hours: '09:00 – 18:00',
+    info: '퇴장 전용 출구',
+    badge: '출구', bc: 'badge-blue'
+  },
+  {
+    id: 3, name: '주차장', cat: 'facility', icon: '🅿️',
+    pos: [37.6483, 126.8745],
+    hours: '08:30 – 18:30',
+    info: '무료 운영 (약 60대) · 만차 시 인근 공영주차장 이용', // ★ 수정
+    badge: '주차', bc: 'badge-blue'
+  },
+
+  // ── 동물 구역 ────────────────────────────────────
+  {
+    id: 4, name: '토끼 & 기니피그 존', cat: 'animal', icon: '🐰',
+    pos: [37.6493, 126.8752],
+    hours: '09:00 – 17:30',
+    info: '직접 만지기 · 먹이주기 가능 (먹이 500원)',
+    badge: '체험', bc: 'badge-green'
+  },
+  {
+    id: 5, name: '공작 & 조류 구역', cat: 'animal', icon: '🦚',
+    pos: [37.6500, 126.8755],
+    hours: '09:00 – 17:30',
+    info: '방사형 구역 · 자유롭게 걸어다니는 공작새',
+    badge: '관람', bc: 'badge-green'
+  },
+  {
+    id: 6, name: '염소 농장', cat: 'animal', icon: '🐐',
+    pos: [37.6505, 126.8765],
+    hours: '10:00 – 16:00',
+    info: '먹이주기 11:00 / 14:00 (1회 1,000원)',
+    badge: '체험', bc: 'badge-green'
+  },
+  {
+    id: 7, name: '파충류 하우스', cat: 'animal', icon: '🦎',
+    pos: [37.6498, 126.8775],
+    hours: '09:30 – 17:00',
+    info: '뱀, 도마뱀, 거북이 등 실내 전시관',
+    badge: '실내', bc: 'badge-amber'
+  },
+
+  // ── 매점 / 카페 ──────────────────────────────────
+  {
+    id: 8, name: '스낵카 & 매점', cat: 'food', icon: '🍦',
+    pos: [37.6490, 126.8768],
+    hours: '10:00 – 17:00',
+    info: '아이스크림 · 음료 · 동물 먹이 판매',
+    badge: '매점', bc: 'badge-blue'
+  },
+  {
+    id: 9, name: '카페 쥬쥬', cat: 'food', icon: '☕',
+    pos: [37.6496, 126.8780],
+    hours: '10:00 – 17:00',
+    info: '커피 · 베이커리 · 테라스 좌석',
+    badge: '카페', bc: 'badge-blue'
+  },
+
+  // ── 화장실 ───────────────────────────────────────
+  {
+    id: 10, name: '화장실 A', cat: 'facility', icon: '🚻',
+    pos: [37.6489, 126.8760],
+    hours: '09:00 – 18:00',
+    info: '기저귀 교환대 · 장애인 화장실',
+    badge: '화장실', bc: 'badge-blue'
+  },
+  {
+    id: 11, name: '화장실 B', cat: 'facility', icon: '🚻',
+    pos: [37.6504, 126.8758],
+    hours: '09:00 – 18:00',
+    info: '기저귀 교환대 있음',
+    badge: '화장실', bc: 'badge-blue'
+  },
+
+  // ── 시설 추가하려면 아래 블록을 복사해서 붙여넣기 ──
+  // {
+  //   id: 12, name: '새 시설 이름', cat: 'facility', icon: '🏠',
+  //   pos: [37.0000, 126.0000],
+  //   hours: '09:00 – 18:00',
+  //   info: '설명 텍스트',
+  //   badge: '뱃지', bc: 'badge-blue'
+  // },
+];
+
+// -----------------------------------------------
+// [3] 안내 탭 내용 (금지사항 / 이벤트 / 먹이주기)
+//     \n 은 줄바꿈
+// -----------------------------------------------
+const NOTICES = [
+  {
+    icon: '🦜',
+    title: '먹이주기 시간표',            // ★ 수정
+    body: '🐰 토끼: 10:30 / 13:30 / 15:30\n🐐 염소: 11:00 / 14:00\n🦚 조류: 11:30 / 14:30\n(현장 매표 후 입장)'
+  },
+  {
+    icon: '🎉',
+    title: '이번 달 이벤트',             // ★ 수정
+    body: '▸ 5월 가정의 달 먹이주기 체험 확대 운영\n▸ 주말 동물 해설사 투어 (11:00 / 14:00)\n▸ SNS 인증샷 이벤트 — 정문 포토존에서 찍고 제출 시 먹이 1팩 증정'
+  },
+  {
+    icon: '🚫',
+    title: '금지 사항',
+    body: '✗ 외부 음식은 지정 취식 구역(잔디광장)에서만 가능\n✗ 외부 반려동물 입장 불가\n✗ 동물 구역 내 뛰기·큰소리 금지\n✗ 플래시 촬영 금지 (파충류 하우스)'
+  },
+];
+
+// =============================================
+// ★★★ 여기서부터는 건드리지 않아도 됩니다 ★★★
+// =============================================
+
+let map, userMarker, selectedId = null, minZoom;
+
+function makeIcon(emoji, size = 36) {
+  return L.divIcon({
+    html: `<div style="font-size:${Math.round(size * 0.52)}px;width:${size}px;height:${size}px;
+      display:flex;align-items:center;justify-content:center;
+      background:#fff;border-radius:50%;border:2.5px solid #1D9E75;
+      box-shadow:0 2px 6px rgba(0,0,0,.18)">${emoji}</div>`,
+    className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2]
+  });
+}
+
+function showDetail(f) {
+  selectedId = f.id;
+  document.getElementById('d-icon').textContent = f.icon;
+  document.getElementById('d-name').textContent = f.name;
+  const b = document.getElementById('d-badge');
+  b.textContent = f.badge;
+  b.className = 'd-badge ' + f.bc;
+  document.getElementById('d-hours').textContent = f.hours;
+  document.getElementById('d-info').textContent = f.info;
+  document.getElementById('detail-card').classList.add('vis');
+  document.getElementById('detail-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.querySelectorAll('.fitem').forEach(el =>
+    el.classList.toggle('sel', +el.dataset.id === f.id));
+}
+
+function focusFacility(id) {
+  const f = FACILITIES.find(x => x.id === id);
+  if (!f) return;
+  map.setView(f.pos, 19);
+  showDetail(f);
+  renderFacilities(document.querySelector('.tab.on').dataset.cat);
+}
+
+function renderFacilities(cat) {
+  const items = cat === 'all' ? FACILITIES : FACILITIES.filter(f => f.cat === cat);
+  document.getElementById('tab-content').innerHTML =
+    `<div class="fgrid">${items.map(f => `
+      <div class="fitem${selectedId === f.id ? ' sel' : ''}" data-id="${f.id}" onclick="focusFacility(${f.id})">
+        <div class="ficon">${f.icon}</div>
+        <div>
+          <div class="fname">${f.name}</div>
+          <div class="ftime">${f.hours}</div>
+        </div>
+      </div>`).join('')}</div>`;
+}
+
+function renderNotices() {
+  document.getElementById('tab-content').innerHTML =
+    `<div class="nlist">${NOTICES.map(n => `
+      <div class="nitem">
+        <span class="nitem-icon">${n.icon}</span>
+        <div>
+          <div class="nitem-title">${n.title}</div>
+          <div class="nitem-body">${n.body.replace(/\n/g, '<br>')}</div>
+        </div>
+      </div>`).join('')}</div>`;
+}
+
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  el.dataset.cat === 'notice' ? renderNotices() : renderFacilities(el.dataset.cat);
+}
+
+function resetView() {
+  map.fitBounds(BOUNDS, { padding: [10, 10] });
+}
+
+function locate() {
+  const s = document.getElementById('gps-status');
+  if (!navigator.geolocation) { s.textContent = 'GPS가 지원되지 않는 브라우저입니다.'; return; }
+  s.textContent = '위치 찾는 중...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    const ll = [pos.coords.latitude, pos.coords.longitude];
+    if (userMarker) userMarker.remove();
+    userMarker = L.marker(ll, {
+      icon: L.divIcon({
+        html: `<div style="width:14px;height:14px;background:#185FA5;border-radius:50%;
+          border:3px solid #fff;box-shadow:0 0 0 3px rgba(24,95,165,.3)"></div>`,
+        className: '', iconSize: [14, 14], iconAnchor: [7, 7]
+      })
+    }).addTo(map).bindPopup('📍 현재 내 위치').openPopup();
+    s.textContent = '✅ 현재 위치를 지도에 표시했어요';
+  }, () => {
+    s.textContent = '⚠️ 위치 권한을 허용해 주세요 (브라우저 설정 확인)';
+  });
+}
+
+// 지도 초기화
+const map_el = document.getElementById('map');
+map = L.map(map_el, {
+  zoomControl: true,
+  maxBounds: BOUNDS.pad(0.3),
+  maxBoundsViscosity: 1.0,
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+  maxZoom: 19
+}).addTo(map);
+
+map.fitBounds(BOUNDS, { padding: [10, 10] });
+minZoom = map.getZoom();
+map.setMinZoom(minZoom);
+
+// 부지 경계 점선
+L.rectangle(BOUNDS, {
+  color: '#1D9E75', weight: 2, fill: false, dashArray: '6,5', opacity: 0.6
+}).addTo(map);
+
+// 마커 추가
+FACILITIES.forEach(f => {
+  L.marker(f.pos, { icon: makeIcon(f.icon) })
+    .addTo(map)
+    .on('click', () => showDetail(f));
+});
+
+renderFacilities('all');
+</script>
+</body>
+</html>
