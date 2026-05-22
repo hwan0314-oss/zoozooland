@@ -495,12 +495,94 @@ function locate() {
   });
 }
 
+// ── 건물 일러스트 레이어 ──
+function pointInPoly(pt, poly) {
+  const [lat, lng] = pt;
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [yi, xi] = poly[i], [yj, xj] = poly[j];
+    if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)
+      inside = !inside;
+  }
+  return inside;
+}
+
+async function loadBuildings() {
+  const b = BOUNDS;
+  const bbox = `${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()},EPSG:4326`;
+  const url = 'https://api.vworld.kr/req/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature' +
+    `&TYPENAME=lt_c_spbd&COUNT=50&BBOX=${bbox}&SRSNAME=EPSG:4326&OUTPUT=application/json` +
+    '&KEY=1E943005-9861-3AB7-808E-22B5C0424B96';
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    data.features.forEach(f => {
+      const props = f.properties;
+      const floors = parseInt(props.gro_flo_co) || 1;
+      const name = props.buld_nm;
+
+      // 건물 대표 좌표로 필지 내부 여부 확인
+      const allRings = f.geometry.type === 'MultiPolygon'
+        ? f.geometry.coordinates.flat(1) : f.geometry.coordinates;
+      const ring0 = allRings[0];
+      const midPt = ring0[Math.floor(ring0.length / 2)];
+      if (!pointInPoly([midPt[1], midPt[0]], ZOO_POLY)) return;
+
+      // 층수별 따뜻한 일러스트 팔레트
+      const palette = floors >= 3
+        ? { fill: '#F0A870', stroke: '#A8632A' }
+        : floors === 2
+          ? { fill: '#F5CC78', stroke: '#C09030' }
+          : { fill: '#FDF0C0', stroke: '#CCA84A' };
+
+      // GeoJSON [lng, lat] → Leaflet [lat, lng]
+      const toLL = r => r.map(c => [c[1], c[0]]);
+      const coords = f.geometry.type === 'MultiPolygon'
+        ? f.geometry.coordinates.map(p => p.map(toLL))
+        : f.geometry.coordinates.map(toLL);
+
+      const opts = {
+        fillColor: palette.fill, fillOpacity: 0.88,
+        color: palette.stroke, weight: 1.5,
+        interactive: false, pane: 'buildingPane'
+      };
+      const poly = f.geometry.type === 'MultiPolygon'
+        ? L.multiPolygon(coords, opts).addTo(map)
+        : L.polygon(coords, opts).addTo(map);
+
+      if (name) {
+        L.marker(poly.getBounds().getCenter(), {
+          icon: L.divIcon({
+            html: `<div style="font-size:9px;font-weight:700;color:#5a3a1a;
+              background:rgba(253,240,192,0.95);padding:2px 6px;
+              border-radius:4px;border:1px solid rgba(200,160,60,0.7);
+              white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.2);
+              pointer-events:none;">${name}</div>`,
+            className: '', iconAnchor: [0, 6]
+          }),
+          interactive: false, pane: 'buildingLabelPane'
+        }).addTo(map);
+      }
+    });
+  } catch(e) {
+    console.warn('건물 데이터 로드 실패:', e);
+  }
+}
+
 // 지도 초기화
 map = L.map(document.getElementById('map'), {
   zoomControl: true,
   maxBounds: BOUNDS.pad(0.3),
   maxBoundsViscosity: 1.0,
 });
+
+// 건물 전용 pane (위성 타일 위, ZOO 경계 오버레이 아래)
+map.createPane('buildingPane');
+map.getPane('buildingPane').style.zIndex = 300;
+map.createPane('buildingLabelPane');
+map.getPane('buildingLabelPane').style.zIndex = 390;
 
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   attribution: '© <a href="https://www.esri.com">Esri</a> World Imagery',
@@ -511,13 +593,85 @@ map.fitBounds(BOUNDS, { padding: [10, 10] });
 minZoom = map.getZoom();
 map.setMinZoom(minZoom);
 
-// ── 동물원 경계 폴리곤 (BOUNDS 기준 사각형) ──
-// ★ 실제 필지 모양이 직사각형이 아니라면 꼭짓점 좌표를 추가해 다각형으로 변경하세요
+// ── 동물원 경계 폴리곤 (관산동 1019번지 실제 필지 경계, Vworld 지적도 데이터) ──
 const ZOO_POLY = [
-  [37.688164, 126.852758],
-  [37.688164, 126.855996],
-  [37.692364, 126.855996],
-  [37.692364, 126.852758],
+  [37.68982368507329,  126.85343149116648],
+  [37.690193250602334, 126.8537021349636 ],
+  [37.69151749850953,  126.85467192240083],
+  [37.69160370688164,  126.85480519940346],
+  [37.69165317021263,  126.85480532871377],
+  [37.69167922408052,  126.85489053842375],
+  [37.69158734111814,  126.85497575351276],
+  [37.69127617606491,  126.85506475564247],
+  [37.69128267898764,  126.85507034374872],
+  [37.69130293209309,  126.85508431749936],
+  [37.69104484019803,  126.8551710603535 ],
+  [37.690839805043616, 126.85523502284931],
+  [37.690719329561155, 126.85527299155372],
+  [37.69067400152193,  126.85528727543108],
+  [37.69066771564399,  126.8552896006748 ],
+  [37.69060654548428,  126.85527232868931],
+  [37.69058395970752,  126.85528807580853],
+  [37.6905057809331,   126.8552794199027 ],
+  [37.69047527127091,  126.85534978501998],
+  [37.69044277655494,  126.85535965592172],
+  [37.690433283993364, 126.85536259968185],
+  [37.69031725743709,  126.85539910801647],
+  [37.69031716738256,  126.85539914220621],
+  [37.690306196757085, 126.85540170337464],
+  [37.69025469167668,  126.85538255303416],
+  [37.6901727288262,   126.85535207946795],
+  [37.69015948748704,  126.85534715089307],
+  [37.690148525346906, 126.85536382744752],
+  [37.690131052485285, 126.85539042589507],
+  [37.69011819215258,  126.8553875940368 ],
+  [37.68988308326453,  126.85533582289315],
+  [37.68988671891276,  126.85531057818976],
+  [37.68990504020043,  126.85518352670745],
+  [37.68972697512901,  126.85512738128982],
+  [37.689690065220496, 126.85511510719344],
+  [37.68949064200869,  126.85509835681012],
+  [37.68933826108251,  126.85511281698845],
+  [37.68931587465103,  126.85511494710391],
+  [37.689317379823514, 126.85523156212858],
+  [37.68927305944761,  126.85525923341247],
+  [37.68925581024125,  126.85527000393289],
+  [37.68919242822472,  126.85524913129784],
+  [37.689104260804115, 126.85520667540943],
+  [37.68902871027761,  126.85516691582802],
+  [37.688934342057365, 126.8551372836775 ],
+  [37.6888560583221,   126.85514571389605],
+  [37.688768985770515, 126.85518692663096],
+  [37.68858890801676,  126.85528047414543],
+  [37.688484264171905, 126.85531979370431],
+  [37.68838796150265,  126.85532859916891],
+  [37.68834531702775,  126.85533456698191],
+  [37.688342942392055, 126.8552650620663 ],
+  [37.68829407443263,  126.85527281076511],
+  [37.688314215418146, 126.85514557701721],
+  [37.68825035018662,  126.85514917176974],
+  [37.68821397402273,  126.85469653047345],
+  [37.68828242824985,  126.8546736980798 ],
+  [37.68843061228471,  126.85464609409587],
+  [37.68862225618488,  126.85465959319617],
+  [37.688660188028734, 126.85471109243552],
+  [37.68907107092254,  126.85467171231673],
+  [37.68912199204446,  126.85482242353656],
+  [37.68923445722827,  126.85476227182103],
+  [37.689234484243144, 126.85476226043025],
+  [37.689265745565706, 126.85473869611617],
+  [37.6892976729777,   126.85471463161748],
+  [37.689350288545285, 126.85470658028204],
+  [37.6894244691594,   126.85469519852978],
+  [37.6894245141936,   126.85469518710345],
+  [37.68943266571132,  126.85469337969859],
+  [37.68943763767786,  126.85469227015302],
+  [37.68947737750406,  126.85469797396765],
+  [37.68947738648549,  126.85469795127484],
+  [37.689595030012185, 126.85426038328235],
+  [37.689691032258345, 126.85390326309529],
+  [37.68969446746684,  126.85390527437957],
+  [37.68982368507329,  126.85343149116648],
 ];
 
 // 동물원 외부 어둡게 (evenodd: 내부 구멍 뚫기)
@@ -551,6 +705,9 @@ L.polygon(ZOO_POLY, {
   fillColor: '#1D9E75', fillOpacity: 0.05,
   stroke: false, interactive: false
 }).addTo(map);
+
+// 건물 일러스트 로드 (비동기, 마커보다 아래 pane에 렌더링)
+loadBuildings();
 
 // 마커 추가
 FACILITIES.forEach(f => {
