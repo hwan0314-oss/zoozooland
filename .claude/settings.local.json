@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.vworld.kr)",
+      "WebSearch",
+      "WebFetch(domain:gisdeveloper.co.kr)"
+    ]
+  }
+}
