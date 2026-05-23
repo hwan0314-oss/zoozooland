@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>쥬쥬랜드 관리자 페이지</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+
+    .admin-header {
+      background: #1D9E75;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .admin-title { font-size: 18px; font-weight: 700; }
+    .btn-group { display: flex; gap: 8px; }
+    .btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: white; color: #1D9E75; }
+    .btn-primary:hover { background: #f0f0f0; }
+    .btn-secondary { background: rgba(255,255,255,0.2); color: white; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.3); }
+
+    .admin-container {
+      display: flex;
+      height: calc(100vh - 56px);
+    }
+
+    #map { flex: 1; }
+
+    .sidebar {
+      width: 380px;
+      background: #f5f5f5;
+      overflow-y: auto;
+      border-left: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-section {
+      background: white;
+      margin: 12px;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #1D9E75;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .form-checkbox input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .facilities-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 8px;
+      background: #fafafa;
+    }
+
+    .facility-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      margin-bottom: 6px;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .facility-item:hover {
+      background: #f0faf5;
+    }
+
+    .facility-item.active {
+      border-color: #1D9E75;
+      background: #e1f5ee;
+    }
+
+    .facility-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .facility-icon {
+      font-size: 18px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    .facility-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .btn-delete {
+      background: #ff4444;
+      color: white;
+      padding: 4px 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .btn-delete:hover {
+      background: #cc0000;
+    }
+
+    .json-container {
+      position: relative;
+    }
+
+    .json-output {
+      width: 100%;
+      height: 200px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #f9f9f9;
+      resize: vertical;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 10px;
+      background: #1D9E75;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .copy-btn:hover {
+      background: #0F6E56;
+    }
+
+    .toast {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      background: #333;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 10000;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .help-text {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <div class="admin-title">🦁 쥬쥬랜드 관리자 페이지</div>
+  <div class="btn-group">
+    <button class="btn btn-secondary" onclick="window.open('index.html', '_blank')">사용자 페이지 열기</button>
+    <button class="btn btn-primary" onclick="addNewFacility()">➕ 새 시설 추가</button>
+  </div>
+</div>
+
+<div class="admin-container">
+  <div id="map"></div>
+
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">시설 목록 (클릭하여 편집)</div>
+      <div class="facilities-list" id="facilities-list"></div>
+    </div>
+
+    <div class="sidebar-section" id="edit-section" style="display: none;">
+      <div class="section-title">시설 편집</div>
+      <div class="form-group">
+        <label class="form-label">ID</label>
+        <input type="number" class="form-input" id="edit-id" readonly style="background: #f0f0f0;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">이름</label>
+        <input type="text" class="form-input" id="edit-name" placeholder="시설 이름">
+      </div>
+      <div class="form-group">
+        <label class="form-label">아이콘 (이모지)</label>
+        <input type="text" class="form-input" id="edit-icon" placeholder="🐰">
+      </div>
+      <div class="form-group">
+        <label class="form-label">카테고리</label>
+        <select class="form-select" id="edit-cat">
+          <option value="animal">시설안내 (동물)</option>
+          <option value="food">매점·카페</option>
+          <option value="facility">편의시설</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">위도 (Latitude)</label>
+        <input type="number" class="form-input" id="edit-lat" step="0.000001" placeholder="37.6896">
+        <div class="help-text">지도에서 마커를 드래그하여 위치 변경 가능</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">경도 (Longitude)</label>
+        <input type="number" class="form-input" id="edit-lng" step="0.000001" placeholder="126.8535">
+      </div>
+      <div class="form-group">
+        <label class="form-label">설명</label>
+        <textarea class="form-textarea" id="edit-info" placeholder="시설 설명"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">뱃지</label>
+        <input type="text" class="form-input" id="edit-badge" placeholder="체험">
+      </div>
+      <div class="form-group">
+        <label class="form-label">뱃지 색상</label>
+        <select class="form-select" id="edit-bc">
+          <option value="badge-green">초록 (동물/체험)</option>
+          <option value="badge-blue">파랑 (시설)</option>
+          <option value="badge-amber">주황 (실내)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">편의시설</label>
+        <div class="form-checkbox">
+          <input type="checkbox" id="fac-restroom">
+          <label>🚻 화장실</label>
+        </div>
+        <div class="form-checkbox">
+          <input type="checkbox" id="fac-cafe">
+          <label>☕ 카페</label>
+        </div>
+        <div class="form-checkbox">
+          <input type="checkbox" id="fac-nursing">
+          <label>🍼 수유실</label>
+        </div>
+      </div>
+      <div class="btn-group" style="margin-top: 16px;">
+        <button class="btn btn-primary" onclick="saveFacility()" style="flex: 1;">💾 저장</button>
+        <button class="btn btn-secondary" onclick="cancelEdit()">취소</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">JSON 내보내기/가져오기</div>
+      <div class="form-group">
+        <label class="form-label">FACILITIES 배열 (복사 후 index.html에 붙여넣기)</label>
+        <div class="json-container">
+          <textarea class="json-output" id="json-output" readonly></textarea>
+          <button class="copy-btn" onclick="copyJSON()">복사</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">JSON 가져오기 (붙여넣기)</label>
+        <textarea class="form-textarea" id="json-input" placeholder="FACILITIES 배열을 붙여넣으세요..."></textarea>
+        <button class="btn btn-primary" onclick="importJSON()" style="margin-top: 8px; width: 100%;">📥 가져오기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let map, facilities = [], selectedMarker = null, selectedId = null, markerMap = {};
+
+const BOUNDS = L.latLngBounds(
+  [37.687894, 126.852658],
+  [37.692634, 126.856396]  // 동쪽으로 295번지 포함
+);
+
+// 초기 시설 데이터 (index.html과 동기화)
+facilities = [
+  {id: 1, name: '정문 입구', cat: 'facility', icon: '🚪', pos: [37.6885, 126.8535], info: '입장권 구매 · 유모차 대여', badge: '입구', bc: 'badge-blue', facilities: { restroom: true }},
+  {id: 2, name: '후문 출구', cat: 'facility', icon: '🚪', pos: [37.6920, 126.8553], info: '퇴장 전용 출구', badge: '출구', bc: 'badge-blue'},
+  {id: 3, name: '주차장', cat: 'facility', icon: '🅿️', pos: [37.6882, 126.8530], info: '무료 운영 (약 60대) · 만차 시 인근 공영주차장 이용', badge: '주차', bc: 'badge-blue'},
+  {id: 4, name: '토끼 & 기니피그 존', cat: 'animal', icon: '🐰', pos: [37.6896, 126.8535], info: '직접 만지기 · 먹이주기 가능 (먹이 500원)', badge: '체험', bc: 'badge-green', facilities: { restroom: false, cafe: false }},
+  {id: 5, name: '공작 & 조류 구역', cat: 'animal', icon: '🦚', pos: [37.6903, 126.8545], info: '방사형 구역 · 자유롭게 걸어다니는 공작새', badge: '관람', bc: 'badge-green', facilities: { restroom: false, cafe: false }},
+  {id: 6, name: '염소 농장', cat: 'animal', icon: '🐐', pos: [37.6910, 126.8550], info: '먹이주기 11:00 / 14:00 (1회 1,000원)', badge: '체험', bc: 'badge-green', facilities: { restroom: true, cafe: false }},
+  {id: 7, name: '파충류 하우스', cat: 'animal', icon: '🦎', pos: [37.6900, 126.8558], info: '뱀, 도마뱀, 거북이 등 실내 전시관', badge: '실내', bc: 'badge-amber', facilities: { restroom: true, cafe: true, nursing: true }},
+  {id: 8, name: '스낵카 & 매점', cat: 'food', icon: '🍦', pos: [37.6890, 126.8548], info: '아이스크림 · 음료 · 동물 먹이 판매', badge: '매점', bc: 'badge-blue', facilities: { restroom: true }},
+  {id: 9, name: '카페 쥬쥬', cat: 'food', icon: '☕', pos: [37.6898, 126.8562], info: '커피 · 베이커리 · 테라스 좌석', badge: '카페', bc: 'badge-blue', facilities: { restroom: true, nursing: true }},
+  {id: 10, name: '화장실 A', cat: 'facility', icon: '🚻', pos: [37.6887, 126.8543], info: '기저귀 교환대 · 장애인 화장실', badge: '화장실', bc: 'badge-blue'},
+  {id: 11, name: '화장실 B', cat: 'facility', icon: '🚻', pos: [37.6908, 126.8540], info: '기저귀 교환대 있음', badge: '화장실', bc: 'badge-blue'},
+];
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function makeIcon(emoji, size = 36) {
+  return L.divIcon({
+    html: `<div style="font-size:${Math.round(size * 0.52)}px;width:${size}px;height:${size}px;
+      display:flex;align-items:center;justify-content:center;
+      background:#fff;border-radius:50%;border:2.5px solid #1D9E75;
+      box-shadow:0 2px 6px rgba(0,0,0,.18)">${emoji}</div>`,
+    className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2]
+  });
+}
+
+function renderMarkers() {
+  // 기존 마커 제거
+  Object.values(markerMap).forEach(m => m.remove());
+  markerMap = {};
+
+  // 새 마커 추가
+  facilities.forEach(f => {
+    const marker = L.marker(f.pos, {
+      icon: makeIcon(f.icon),
+      draggable: true
+    }).addTo(map);
+
+    marker.on('click', () => selectFacility(f.id));
+    marker.on('dragend', (e) => {
+      const latlng = e.target.getLatLng();
+      f.pos = [latlng.lat, latlng.lng];
+      if (selectedId === f.id) {
+        document.getElementById('edit-lat').value = latlng.lat.toFixed(6);
+        document.getElementById('edit-lng').value = latlng.lng.toFixed(6);
+      }
+      updateJSON();
+      showToast('위치 업데이트됨');
+    });
+
+    markerMap[f.id] = marker;
+  });
+}
+
+function renderList() {
+  const list = document.getElementById('facilities-list');
+  list.innerHTML = facilities.map(f => `
+    <div class="facility-item ${selectedId === f.id ? 'active' : ''}" onclick="selectFacility(${f.id})">
+      <div class="facility-info">
+        <div class="facility-icon">${f.icon}</div>
+        <div class="facility-name">${f.name}</div>
+      </div>
+      <button class="btn-delete" onclick="event.stopPropagation(); deleteFacility(${f.id})">삭제</button>
+    </div>
+  `).join('');
+}
+
+function selectFacility(id) {
+  selectedId = id;
+  const f = facilities.find(x => x.id === id);
+  if (!f) return;
+
+  document.getElementById('edit-id').value = f.id;
+  document.getElementById('edit-name').value = f.name;
+  document.getElementById('edit-icon').value = f.icon;
+  document.getElementById('edit-cat').value = f.cat;
+  document.getElementById('edit-lat').value = f.pos[0].toFixed(6);
+  document.getElementById('edit-lng').value = f.pos[1].toFixed(6);
+  document.getElementById('edit-info').value = f.info || '';
+  document.getElementById('edit-badge').value = f.badge || '';
+  document.getElementById('edit-bc').value = f.bc || 'badge-blue';
+
+  document.getElementById('fac-restroom').checked = f.facilities?.restroom || false;
+  document.getElementById('fac-cafe').checked = f.facilities?.cafe || false;
+  document.getElementById('fac-nursing').checked = f.facilities?.nursing || false;
+
+  document.getElementById('edit-section').style.display = 'block';
+  renderList();
+
+  // 마커 하이라이트
+  if (markerMap[id]) {
+    map.setView(f.pos, 18);
+  }
+}
+
+function saveFacility() {
+  if (selectedId === null) return;
+
+  const f = facilities.find(x => x.id === selectedId);
+  if (!f) return;
+
+  f.name = document.getElementById('edit-name').value;
+  f.icon = document.getElementById('edit-icon').value;
+  f.cat = document.getElementById('edit-cat').value;
+  f.pos[0] = parseFloat(document.getElementById('edit-lat').value);
+  f.pos[1] = parseFloat(document.getElementById('edit-lng').value);
+  f.info = document.getElementById('edit-info').value;
+  f.badge = document.getElementById('edit-badge').value;
+  f.bc = document.getElementById('edit-bc').value;
+
+  const hasRestroom = document.getElementById('fac-restroom').checked;
+  const hasCafe = document.getElementById('fac-cafe').checked;
+  const hasNursing = document.getElementById('fac-nursing').checked;
+
+  if (hasRestroom || hasCafe || hasNursing) {
+    f.facilities = {};
+    if (hasRestroom) f.facilities.restroom = true;
+    if (hasCafe) f.facilities.cafe = true;
+    if (hasNursing) f.facilities.nursing = true;
+  } else {
+    delete f.facilities;
+  }
+
+  renderMarkers();
+  renderList();
+  updateJSON();
+  showToast('저장되었습니다');
+}
+
+function cancelEdit() {
+  selectedId = null;
+  document.getElementById('edit-section').style.display = 'none';
+  renderList();
+}
+
+function addNewFacility() {
+  const newId = Math.max(...facilities.map(f => f.id), 0) + 1;
+  const center = map.getCenter();
+  const newFacility = {
+    id: newId,
+    name: '새 시설',
+    cat: 'facility',
+    icon: '📍',
+    pos: [center.lat, center.lng],
+    info: '',
+    badge: '신규',
+    bc: 'badge-blue'
+  };
+
+  facilities.push(newFacility);
+  renderMarkers();
+  renderList();
+  updateJSON();
+  selectFacility(newId);
+  showToast('새 시설이 추가되었습니다');
+}
+
+function deleteFacility(id) {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  facilities = facilities.filter(f => f.id !== id);
+  if (selectedId === id) cancelEdit();
+  renderMarkers();
+  renderList();
+  updateJSON();
+  showToast('삭제되었습니다');
+}
+
+function updateJSON() {
+  const json = JSON.stringify(facilities, null, 2);
+  document.getElementById('json-output').value = `const FACILITIES = ${json};`;
+}
+
+function copyJSON() {
+  const output = document.getElementById('json-output');
+  output.select();
+  document.execCommand('copy');
+  showToast('JSON이 클립보드에 복사되었습니다');
+}
+
+function importJSON() {
+  try {
+    const input = document.getElementById('json-input').value.trim();
+    let parsed;
+
+    // "const FACILITIES = " 부분 제거
+    const cleaned = input.replace(/^const\s+FACILITIES\s*=\s*/, '').replace(/;$/, '');
+    parsed = JSON.parse(cleaned);
+
+    if (!Array.isArray(parsed)) throw new Error('배열 형식이 아닙니다');
+
+    facilities = parsed;
+    renderMarkers();
+    renderList();
+    updateJSON();
+    cancelEdit();
+    showToast('JSON 가져오기 완료');
+  } catch (e) {
+    alert('JSON 형식이 올바르지 않습니다: ' + e.message);
+  }
+}
+
+// 지도 초기화
+map = L.map('map', {
+  zoomControl: true,
+  maxBounds: BOUNDS.pad(0.3),
+  maxBoundsViscosity: 1.0,
+});
+
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: '© Esri',
+  maxZoom: 19
+}).addTo(map);
+
+map.setView([37.6898, 126.854377], 17.2);
+map.setMinZoom(16.5);
+
+// 지도 클릭으로 새 시설 추가
+map.on('dblclick', (e) => {
+  if (confirm('이 위치에 새 시설을 추가하시겠습니까?')) {
+    const newId = Math.max(...facilities.map(f => f.id), 0) + 1;
+    const newFacility = {
+      id: newId,
+      name: '새 시설',
+      cat: 'facility',
+      icon: '📍',
+      pos: [e.latlng.lat, e.latlng.lng],
+      info: '',
+      badge: '신규',
+      bc: 'badge-blue'
+    };
+    facilities.push(newFacility);
+    renderMarkers();
+    renderList();
+    updateJSON();
+    selectFacility(newId);
+  }
+});
+
+renderMarkers();
+renderList();
+updateJSON();
+</script>
+</body>
+</html>
