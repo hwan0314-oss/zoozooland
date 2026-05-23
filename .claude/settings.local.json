@@ -6,7 +6,8 @@
       "WebFetch(domain:gisdeveloper.co.kr)",
       "Bash(curl -s \"https://api.vworld.kr/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=1E943005-9861-3AB7-808E-22B5C0424B96&domain=localhost&attrFilter=pnu:like:4128110200102950000\")",
       "Bash(curl *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
