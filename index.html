@@ -251,12 +251,11 @@ const ZOO_POLY_MERGED = [
   [37.690148525346906, 126.85536382744752],
   [37.690131052485285, 126.85539042589507],
   [37.69011819215258,  126.8553875940368 ],
-  [37.68988308326453,  126.85533582289315],
-  [37.68988671891276,  126.85531057818976],
-  [37.68990504020043,  126.85518352670745],  // ← C: 295번지 북서 접점
-  [37.68991,           126.85537          ],  // 295번지 북동쪽 (중심lng 126.85523 + 약14m)
+  // A(126.85534) B(126.85531) C(126.85518) 제거: 이 세 점이 서쪽으로 꺾였다가
+  // NE(126.85537)로 동쪽 복귀하면서 X자 교차(교집합) 발생 → 직결로 교체
+  [37.68991,           126.85537          ],  // 295번지 북동쪽 (1019→295 경계 접점)
   [37.68949,           126.85537          ],  // 295번지 남동쪽
-  [37.68949064200869,  126.85509835681012],  // ← F: 1019번지로 복귀
+  [37.68949064200869,  126.85509835681012],  // 1019번지 복귀
   [37.68933826108251,  126.85511281698845],
   [37.68931587465103,  126.85511494710391],
   [37.689317379823514, 126.85523156212858],
@@ -300,7 +299,7 @@ const ZOO_POLY_MERGED = [
   [37.68982368507329,  126.85343149116648],  // 닫기
 ];
 
-const ZOO_POLY = expandPolygon(ZOO_POLY_MERGED, 3);
+const ZOO_POLY = expandPolygon(ZOO_POLY_MERGED, 6); // 6m 확장 (3m 추가)
 
 // ── 시설 목록 ──
 function getDefaultFacilities() {
@@ -436,69 +435,120 @@ L.polygon(ZOO_POLY, { color:'#2DD4BF', weight:9,  opacity:0.25, fill:false, inte
 L.polygon(ZOO_POLY, { color:'#1aec82', weight:2.5, opacity:1,   fill:false, interactive:false, lineJoin:'round' }).addTo(map);
 L.polygon(ZOO_POLY, { fillColor:'#1D9E75', fillOpacity:0.05, stroke:false, interactive:false }).addTo(map);
 
-// ── 건물 데이터 (OpenStreetMap Overpass API - CORS 지원) ──
-function pointInPoly(pt, poly) {
-  const [lat, lng] = pt;
-  let inside = false;
-  for (let i=0, j=poly.length-1; i<poly.length; j=i++) {
-    const [yi,xi]=poly[i], [yj,xj]=poly[j];
-    if ((yi>lat)!==(yj>lat) && lng<(xj-xi)*(lat-yi)/(yj-yi)+xi) inside=!inside;
-  }
-  return inside;
+// ── 건물 일러스트 (Vworld WFS API로 조회한 실제 건물 좌표 — 하드코딩) ──
+// Vworld lt_c_spbd 레이어 응답값을 [lng,lat] → [lat,lng] 변환하여 저장
+// 좌표 출처: api.vworld.kr/req/wfs (BBOX 조회, 2025년 확인)
+const STATIC_BUILDINGS = [
+  {
+    name: '테마동물원',
+    coords: [
+      [37.68907139, 126.85507892], [37.68906950, 126.85494242],
+      [37.68923969, 126.85493959], [37.68924116, 126.85488517],
+      [37.68932827, 126.85487899], [37.68932817, 126.85479815],
+      [37.68963963, 126.85479017], [37.68963991, 126.85487361],
+      [37.68975415, 126.85487305], [37.68974664, 126.85506399],
+    ]
+  },
+  {
+    coords: [
+      [37.68979473, 126.85489870], [37.68989658, 126.85493512],
+      [37.68984792, 126.85514508], [37.68974345, 126.85510492],
+    ]
+  },
+  {
+    coords: [
+      [37.68989213, 126.85511744], [37.68991781, 126.85512589],
+      [37.68990912, 126.85516661], [37.68984873, 126.85514542],
+      [37.68989722, 126.85493943], [37.68993183, 126.85494900],
+    ]
+  },
+  {
+    coords: [
+      [37.68995904, 126.85517905], [37.69006969, 126.85518114],
+      [37.69006816, 126.85531596], [37.68995751, 126.85531387],
+    ]
+  },
+  {
+    coords: [
+      [37.69010232, 126.85526294], [37.69014945, 126.85526659],
+      [37.69016163, 126.85528153], [37.69017360, 126.85534511],
+      [37.69009385, 126.85533507], [37.69010143, 126.85526657],
+    ]
+  },
+  {
+    coords: [
+      [37.69013998, 126.85489893], [37.69007309, 126.85486516],
+      [37.69018061, 126.85446178], [37.69024848, 126.85448591],
+    ]
+  },
+  {
+    coords: [
+      [37.69037673, 126.85524981], [37.69035474, 126.85529923],
+      [37.69028730, 126.85526007], [37.69031371, 126.85519515],
+      [37.69038545, 126.85523702], [37.69038022, 126.85525173],
+    ]
+  },
+  {
+    coords: [
+      [37.68930283, 126.85540150], [37.68946666, 126.85553386],
+      [37.68943408, 126.85559772], [37.68938041, 126.85555436],
+      [37.68927025, 126.85546536],
+    ]
+  },
+];
+
+// 일러스트 스타일 (따뜻한 지도 삽화 느낌)
+const BLDG_FILL    = '#F5E8C8';
+const BLDG_STROKE  = '#9B7550';
+const BLDG_OPACITY = 0.88;
+
+function renderBuildings() {
+  STATIC_BUILDINGS.forEach(b => {
+    const poly = L.polygon(b.coords, {
+      fillColor: BLDG_FILL, fillOpacity: BLDG_OPACITY,
+      color: BLDG_STROKE, weight: 2,
+      interactive: false, pane: 'buildingPane'
+    }).addTo(map);
+
+    if (b.name) {
+      L.marker(poly.getBounds().getCenter(), {
+        icon: L.divIcon({
+          html: `<div style="font-size:10px;font-weight:700;color:#5a3a1a;
+            background:rgba(255,248,220,0.95);padding:2px 7px;border-radius:4px;
+            border:1.5px solid ${BLDG_STROKE};white-space:nowrap;
+            box-shadow:0 2px 5px rgba(0,0,0,0.22);pointer-events:none">${b.name}</div>`,
+          className:'', iconAnchor:[0,6]
+        }),
+        interactive: false, pane: 'buildingLabelPane'
+      }).addTo(map);
+    }
+  });
 }
 
-async function loadBuildings() {
-  const query = `[out:json][timeout:15];way["building"](37.6878,126.8525,37.6922,126.8572);out geom;`;
-  const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+// Overpass API로 추가 OSM 건물 보완 (데이터 있을 경우)
+async function loadOsmBuildings() {
   try {
-    const res = await fetch(url);
+    const q = `[out:json][timeout:20];way["building"](37.6878,126.8525,37.6922,126.8572);out geom;`;
+    const res = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q));
     if (!res.ok) return;
     const data = await res.json();
-    if (!data.elements || data.elements.length === 0) return;
+    if (!data.elements?.length) return;
 
-    let cnt = 0;
+    // 이미 하드코딩된 건물과 겹치는 부분 제외하고 추가
     data.elements.forEach(el => {
-      if (!el.geometry || el.geometry.length < 3) return;
-      const mid = el.geometry[Math.floor(el.geometry.length / 2)];
-      if (!pointInPoly([mid.lat, mid.lon], ZOO_POLY)) return;
-
-      const floors = parseInt(el.tags?.['building:levels']) || 1;
-      const name = el.tags?.name || el.tags?.['name:ko'];
-
-      const palette = floors >= 3
-        ? { fill:'#E89050', stroke:'#8B4513' }
-        : floors === 2
-          ? { fill:'#F0C040', stroke:'#B8860B' }
-          : { fill:'#F5DC80', stroke:'#DAA520' };
-
-      const coords = el.geometry.map(pt => [pt.lat, pt.lon]);
-      const poly = L.polygon(coords, {
-        fillColor: palette.fill, fillOpacity: 0.78,
-        color: palette.stroke, weight: 2.5,
+      if (!el.geometry?.length) return;
+      const coords = el.geometry.map(p => [p.lat, p.lon]);
+      L.polygon(coords, {
+        fillColor: BLDG_FILL, fillOpacity: BLDG_OPACITY,
+        color: BLDG_STROKE, weight: 2,
         interactive: false, pane: 'buildingPane'
       }).addTo(map);
-      cnt++;
-
-      if (name) {
-        L.marker(poly.getBounds().getCenter(), {
-          icon: L.divIcon({
-            html: `<div style="font-size:10px;font-weight:700;color:#5a3a1a;
-              background:rgba(255,250,205,0.95);padding:3px 8px;border-radius:4px;
-              border:1.5px solid rgba(139,69,19,0.8);white-space:nowrap;
-              box-shadow:0 2px 5px rgba(0,0,0,0.25);pointer-events:none">${name}</div>`,
-            className:'', iconAnchor:[0,6]
-          }),
-          interactive: false, pane: 'buildingLabelPane'
-        }).addTo(map);
-      }
     });
-    console.log(`건물 ${cnt}개 렌더링 완료`);
-  } catch(e) {
-    console.warn('건물 데이터 로드 실패:', e.message);
-  }
+  } catch(_) {}
 }
 
-loadBuildings();
+renderBuildings();      // 항상 즉시 렌더링 (하드코딩 데이터)
+loadOsmBuildings();     // OSM 추가 건물 비동기 보완
 
 // ── 마커 ──
 function makeIcon(emoji, size=36) {
