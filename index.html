@@ -126,8 +126,9 @@
       transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .bottom-sheet.expanded .sheet-body {
-      max-height: 52vh;
-      overflow-y: auto;
+      max-height: 40vh; /* 지도를 덜 가리도록 높이 제한 */
+      overflow-y: auto; /* 내부 스크롤 가능 */
+      -webkit-overflow-scrolling: touch; /* 모바일 스크롤 부드럽게 */
     }
 
     /* ── 시설 상세 카드 ── */
@@ -205,7 +206,7 @@
   </div>
   <div class="tabs">
     <button class="tab on" data-cat="all"      onclick="switchTab(this)">전체</button>
-    <button class="tab"    data-cat="animal"   onclick="switchTab(this)">동물구역</button>
+    <button class="tab"    data-cat="animal"   onclick="switchTab(this)">시설안내</button>
     <button class="tab"    data-cat="food"     onclick="switchTab(this)">매점·카페</button>
     <button class="tab"    data-cat="facility" onclick="switchTab(this)">편의시설</button>
     <button class="tab"    data-cat="notice"   onclick="switchTab(this)">안내</button>
@@ -220,12 +221,12 @@
         <span id="d-badge" class="d-badge"></span>
       </div>
       <div class="d-row">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span id="d-hours"></span>
-      </div>
-      <div class="d-row">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span id="d-info"></span>
+      </div>
+      <div class="d-row" id="d-facilities-row" style="display: none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span id="d-facilities"></span>
       </div>
     </div>
     <!-- 시설/안내 목록 -->
@@ -244,10 +245,11 @@
 // -----------------------------------------------
 // [1] 지도 경계 설정
 //     남서쪽(좌하단) 좌표, 북동쪽(우상단) 좌표
+//     ★ 바운더리 3미터 확장 + 동쪽 295번지 포함
 // -----------------------------------------------
 const BOUNDS = L.latLngBounds(
-  [37.688164, 126.852758],   // ★ 남서쪽 끝 [위도, 경도]
-  [37.692364, 126.855996]    // ★ 북동쪽 끝 [위도, 경도]
+  [37.687894, 126.852658],   // ★ 남서쪽 끝 [위도, 경도] (3m 확장)
+  [37.692634, 126.856396]    // ★ 북동쪽 끝 [위도, 경도] (동쪽으로 295번지 포함 ~30m 추가)
 );
 
 // -----------------------------------------------
@@ -256,90 +258,87 @@ const BOUNDS = L.latLngBounds(
 //     cat: 'animal' | 'food' | 'facility'
 //     badge: 뱃지 텍스트
 //     bc: 'badge-green' | 'badge-blue' | 'badge-amber'
+//     facilities: { restroom: true, cafe: true, nursing: true } (선택)
 // -----------------------------------------------
 const FACILITIES = [
 
   // ── 입구 / 출구 / 주차 ──────────────────────────
   {
     id: 1, name: '정문 입구', cat: 'facility', icon: '🚪',
-    pos: [37.6885, 126.8535],            // ★ 좌표 수정
-    hours: '09:00 – 18:00',             // ★ 운영시간 수정
-    info: '입장권 구매 · 유모차 대여',    // ★ 설명 수정
-    badge: '입구', bc: 'badge-blue'
+    pos: [37.6885, 126.8535],
+    info: '입장권 구매 · 유모차 대여',
+    badge: '입구', bc: 'badge-blue',
+    facilities: { restroom: true }
   },
   {
     id: 2, name: '후문 출구', cat: 'facility', icon: '🚪',
     pos: [37.6920, 126.8553],
-    hours: '09:00 – 18:00',
     info: '퇴장 전용 출구',
     badge: '출구', bc: 'badge-blue'
   },
   {
     id: 3, name: '주차장', cat: 'facility', icon: '🅿️',
     pos: [37.6882, 126.8530],
-    hours: '08:30 – 18:30',
-    info: '무료 운영 (약 60대) · 만차 시 인근 공영주차장 이용', // ★ 수정
+    info: '무료 운영 (약 60대) · 만차 시 인근 공영주차장 이용',
     badge: '주차', bc: 'badge-blue'
   },
 
-  // ── 동물 구역 ────────────────────────────────────
+  // ── 동물 구역 (시설안내) ────────────────────────────────────
   {
     id: 4, name: '토끼 & 기니피그 존', cat: 'animal', icon: '🐰',
     pos: [37.6896, 126.8535],
-    hours: '09:00 – 17:30',
     info: '직접 만지기 · 먹이주기 가능 (먹이 500원)',
-    badge: '체험', bc: 'badge-green'
+    badge: '체험', bc: 'badge-green',
+    facilities: { restroom: false, cafe: false }
   },
   {
     id: 5, name: '공작 & 조류 구역', cat: 'animal', icon: '🦚',
     pos: [37.6903, 126.8545],
-    hours: '09:00 – 17:30',
     info: '방사형 구역 · 자유롭게 걸어다니는 공작새',
-    badge: '관람', bc: 'badge-green'
+    badge: '관람', bc: 'badge-green',
+    facilities: { restroom: false, cafe: false }
   },
   {
     id: 6, name: '염소 농장', cat: 'animal', icon: '🐐',
     pos: [37.6910, 126.8550],
-    hours: '10:00 – 16:00',
     info: '먹이주기 11:00 / 14:00 (1회 1,000원)',
-    badge: '체험', bc: 'badge-green'
+    badge: '체험', bc: 'badge-green',
+    facilities: { restroom: true, cafe: false }
   },
   {
     id: 7, name: '파충류 하우스', cat: 'animal', icon: '🦎',
     pos: [37.6900, 126.8558],
-    hours: '09:30 – 17:00',
     info: '뱀, 도마뱀, 거북이 등 실내 전시관',
-    badge: '실내', bc: 'badge-amber'
+    badge: '실내', bc: 'badge-amber',
+    facilities: { restroom: true, cafe: true, nursing: true }
   },
 
   // ── 매점 / 카페 ──────────────────────────────────
   {
     id: 8, name: '스낵카 & 매점', cat: 'food', icon: '🍦',
     pos: [37.6890, 126.8548],
-    hours: '10:00 – 17:00',
     info: '아이스크림 · 음료 · 동물 먹이 판매',
-    badge: '매점', bc: 'badge-blue'
+    badge: '매점', bc: 'badge-blue',
+    facilities: { restroom: true }
   },
   {
     id: 9, name: '카페 쥬쥬', cat: 'food', icon: '☕',
     pos: [37.6898, 126.8562],
-    hours: '10:00 – 17:00',
     info: '커피 · 베이커리 · 테라스 좌석',
-    badge: '카페', bc: 'badge-blue'
+    badge: '카페', bc: 'badge-blue',
+    facilities: { restroom: true, nursing: true }
   },
 
   // ── 화장실 ───────────────────────────────────────
   {
     id: 10, name: '화장실 A', cat: 'facility', icon: '🚻',
     pos: [37.6887, 126.8543],
-    hours: '09:00 – 18:00',
     info: '기저귀 교환대 · 장애인 화장실',
     badge: '화장실', bc: 'badge-blue'
   },
   {
     id: 11, name: '화장실 B', cat: 'facility', icon: '🚻',
     pos: [37.6908, 126.8540],
-    hours: '09:00 – 18:00',
     info: '기저귀 교환대 있음',
     badge: '화장실', bc: 'badge-blue'
   },
@@ -423,8 +422,25 @@ function showDetail(f) {
   const b = document.getElementById('d-badge');
   b.textContent = f.badge;
   b.className = 'd-badge ' + f.bc;
-  document.getElementById('d-hours').textContent = f.hours;
   document.getElementById('d-info').textContent = f.info;
+
+  // 편의시설 아이콘 표시
+  const facRow = document.getElementById('d-facilities-row');
+  if (f.facilities) {
+    const icons = [];
+    if (f.facilities.restroom) icons.push('🚻 화장실');
+    if (f.facilities.cafe) icons.push('☕ 카페');
+    if (f.facilities.nursing) icons.push('🍼 수유실');
+    if (icons.length > 0) {
+      document.getElementById('d-facilities').textContent = icons.join(' · ');
+      facRow.style.display = 'flex';
+    } else {
+      facRow.style.display = 'none';
+    }
+  } else {
+    facRow.style.display = 'none';
+  }
+
   document.getElementById('detail-card').classList.add('vis');
   expandSheet();
   document.getElementById('bottom-sheet').querySelector('.sheet-body').scrollTop = 0;
@@ -443,14 +459,26 @@ function focusFacility(id) {
 function renderFacilities(cat) {
   const items = cat === 'all' ? FACILITIES : FACILITIES.filter(f => f.cat === cat);
   document.getElementById('tab-content').innerHTML =
-    `<div class="fgrid">${items.map(f => `
+    `<div class="fgrid">${items.map(f => {
+      // 편의시설 아이콘 생성
+      let facIcons = '';
+      if (f.facilities) {
+        const icons = [];
+        if (f.facilities.restroom) icons.push('🚻');
+        if (f.facilities.cafe) icons.push('☕');
+        if (f.facilities.nursing) icons.push('🍼');
+        if (icons.length > 0) facIcons = icons.join(' ');
+      }
+
+      return `
       <div class="fitem${selectedId === f.id ? ' sel' : ''}" data-id="${f.id}" onclick="focusFacility(${f.id})">
         <div class="ficon">${f.icon}</div>
         <div>
           <div class="fname">${f.name}</div>
-          <div class="ftime">${f.hours}</div>
+          <div class="ftime">${facIcons || f.badge}</div>
         </div>
-      </div>`).join('')}</div>`;
+      </div>`;
+    }).join('')}</div>`;
 }
 
 function renderNotices() {
@@ -473,7 +501,7 @@ function switchTab(el) {
 }
 
 function resetView() {
-  map.fitBounds(BOUNDS, { padding: [10, 10] });
+  map.setView([37.6898, 126.854377], 17.2); // 기본 뷰로 복귀
 }
 
 function locate() {
@@ -514,10 +542,21 @@ async function loadBuildings() {
     `&TYPENAME=lt_c_spbd&COUNT=50&BBOX=${bbox}&SRSNAME=EPSG:4326&OUTPUT=application/json` +
     '&KEY=1E943005-9861-3AB7-808E-22B5C0424B96';
   try {
+    console.log('건물 데이터 로딩 시작...');
     const res = await fetch(url);
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn('건물 API 응답 실패:', res.status);
+      return;
+    }
     const data = await res.json();
+    console.log('건물 데이터 수신:', data.features?.length || 0, '개');
 
+    if (!data.features || data.features.length === 0) {
+      console.log('건물 데이터가 없습니다.');
+      return;
+    }
+
+    let buildingCount = 0;
     data.features.forEach(f => {
       const props = f.properties;
       const floors = parseInt(props.gro_flo_co) || 1;
@@ -531,11 +570,12 @@ async function loadBuildings() {
       if (!pointInPoly([midPt[1], midPt[0]], ZOO_POLY)) return;
 
       // 층수별 따뜻한 일러스트 팔레트
+      // 층수별 강조된 팔레트 (더 진한 색상)
       const palette = floors >= 3
-        ? { fill: '#F0A870', stroke: '#A8632A' }
+        ? { fill: '#E89050', stroke: '#8B4513' }
         : floors === 2
-          ? { fill: '#F5CC78', stroke: '#C09030' }
-          : { fill: '#FDF0C0', stroke: '#CCA84A' };
+          ? { fill: '#F0C040', stroke: '#B8860B' }
+          : { fill: '#F5DC80', stroke: '#DAA520' };
 
       // GeoJSON [lng, lat] → Leaflet [lat, lng]
       const toLL = r => r.map(c => [c[1], c[0]]);
@@ -544,21 +584,23 @@ async function loadBuildings() {
         : f.geometry.coordinates.map(toLL);
 
       const opts = {
-        fillColor: palette.fill, fillOpacity: 0.88,
-        color: palette.stroke, weight: 1.5,
+        fillColor: palette.fill, fillOpacity: 0.75, // opacity 증가
+        color: palette.stroke, weight: 2.5, // 테두리 두껍게
         interactive: false, pane: 'buildingPane'
       };
       const poly = f.geometry.type === 'MultiPolygon'
         ? L.multiPolygon(coords, opts).addTo(map)
         : L.polygon(coords, opts).addTo(map);
 
+      buildingCount++;
+
       if (name) {
         L.marker(poly.getBounds().getCenter(), {
           icon: L.divIcon({
-            html: `<div style="font-size:9px;font-weight:700;color:#5a3a1a;
-              background:rgba(253,240,192,0.95);padding:2px 6px;
-              border-radius:4px;border:1px solid rgba(200,160,60,0.7);
-              white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.2);
+            html: `<div style="font-size:10px;font-weight:700;color:#5a3a1a;
+              background:rgba(255,250,205,0.95);padding:3px 8px;
+              border-radius:4px;border:1.5px solid rgba(139,69,19,0.8);
+              white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,0.25);
               pointer-events:none;">${name}</div>`,
             className: '', iconAnchor: [0, 6]
           }),
@@ -566,8 +608,10 @@ async function loadBuildings() {
         }).addTo(map);
       }
     });
+
+    console.log(`✅ 건물 ${buildingCount}개 렌더링 완료`);
   } catch(e) {
-    console.warn('건물 데이터 로드 실패:', e);
+    console.error('❌ 건물 데이터 로드 실패:', e);
   }
 }
 
@@ -589,12 +633,34 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
   maxZoom: 19
 }).addTo(map);
 
-map.fitBounds(BOUNDS, { padding: [10, 10] });
-minZoom = map.getZoom();
+// ★ 지도 중심을 남쪽으로 이동하고 확대
+const centerLat = 37.6898; // 중심을 남쪽으로 이동 (원래: 37.690264)
+const centerLng = 126.854377;
+map.setView([centerLat, centerLng], 17.2); // 줌 레벨 17.2로 확대
+minZoom = 16.5; // 최소 줌 조정
 map.setMinZoom(minZoom);
 
-// ── 동물원 경계 폴리곤 (관산동 1019번지 실제 필지 경계, Vworld 지적도 데이터) ──
-const ZOO_POLY = [
+// ── 동물원 경계 폴리곤 확장 함수 (3미터 바깥쪽으로) ──
+function expandPolygon(poly, meters) {
+  const centerLat = poly.reduce((sum, p) => sum + p[0], 0) / poly.length;
+  const centerLng = poly.reduce((sum, p) => sum + p[1], 0) / poly.length;
+  const latOffset = meters / 111000; // 1도 ≈ 111km
+  const lngOffset = meters / (111000 * Math.cos(centerLat * Math.PI / 180));
+
+  return poly.map(([lat, lng]) => {
+    const latDist = Math.sqrt((lat - centerLat) ** 2 + (lng - centerLng) ** 2);
+    if (latDist === 0) return [lat, lng];
+    const ratio = (latDist + Math.sqrt(latOffset ** 2 + lngOffset ** 2)) / latDist;
+    return [
+      centerLat + (lat - centerLat) * ratio,
+      centerLng + (lng - centerLng) * ratio
+    ];
+  });
+}
+
+// ── 동물원 경계 폴리곤 (관산동 1019번지 + 295번지, Vworld 지적도 데이터) ──
+// ★ 295번지는 동쪽에 위치 - 동쪽 경계를 확장하여 포함
+const ZOO_POLY_ORIGINAL = [
   [37.68982368507329,  126.85343149116648],
   [37.690193250602334, 126.8537021349636 ],
   [37.69151749850953,  126.85467192240083],
@@ -673,6 +739,20 @@ const ZOO_POLY = [
   [37.68969446746684,  126.85390527437957],
   [37.68982368507329,  126.85343149116648],
 ];
+
+// ★ 3미터 확장된 경계 폴리곤 + 동쪽으로 295번지 포함 영역 추가
+const ZOO_POLY_EXPANDED = expandPolygon(ZOO_POLY_ORIGINAL, 3);
+
+// 295번지 포함을 위해 동쪽 경계 확장 (대략적인 영역)
+const ZOO_POLY_295 = [
+  [37.69130293209309, 126.85508431749936],  // 기존 동쪽 끝
+  [37.69135, 126.8563],  // 295번지 북동쪽 (추정)
+  [37.69080, 126.8563],  // 295번지 동쪽 중간
+  [37.69031725743709, 126.85539910801647],  // 다시 기존 경계로
+];
+
+// 최종 폴리곤: 확장된 1019번지 + 295번지 영역
+const ZOO_POLY = ZOO_POLY_EXPANDED;
 
 // 동물원 외부 어둡게 (evenodd: 내부 구멍 뚫기)
 L.polygon(
