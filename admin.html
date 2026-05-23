@@ -48,6 +48,37 @@
       border-left: 1px solid #ddd;
       display: flex;
       flex-direction: column;
+      transition: transform 0.3s ease;
+      position: relative;
+      z-index: 100;
+    }
+
+    .sidebar.collapsed {
+      transform: translateX(100%);
+    }
+
+    .sidebar-toggle {
+      position: absolute;
+      left: -40px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 80px;
+      background: #1D9E75;
+      border: none;
+      border-radius: 8px 0 0 8px;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: -2px 2px 8px rgba(0,0,0,0.2);
+      z-index: 101;
+    }
+
+    .sidebar-toggle:hover {
+      background: #0F6E56;
     }
 
     .sidebar-section {
@@ -228,6 +259,33 @@
       color: #888;
       margin-top: 4px;
     }
+
+    .warning-box {
+      background: #FFF3CD;
+      border: 2px solid #FFC107;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: #856404;
+      line-height: 1.6;
+    }
+
+    .warning-box strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #D97706;
+    }
+
+    .step-list {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+
+    .step-list li {
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
@@ -243,7 +301,8 @@
 <div class="admin-container">
   <div id="map"></div>
 
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">◀</button>
     <div class="sidebar-section">
       <div class="section-title">시설 목록 (클릭하여 편집)</div>
       <div class="facilities-list" id="facilities-list"></div>
@@ -319,6 +378,17 @@
 
     <div class="sidebar-section">
       <div class="section-title">JSON 내보내기/가져오기</div>
+
+      <div class="warning-box">
+        <strong id="server-status">🔄 서버 상태 확인 중...</strong>
+        <div id="save-instructions">
+          <p style="margin-top: 8px; font-size: 12px;">
+            ✅ <strong>서버 실행 중:</strong> 저장 버튼만 누르면 자동으로 index.html이 업데이트됩니다<br>
+            ⚠️ <strong>서버 미실행:</strong> 아래 JSON 복사 후 수동으로 붙여넣기 필요
+          </p>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">FACILITIES 배열 (복사 후 index.html에 붙여넣기)</label>
         <div class="json-container">
@@ -361,6 +431,13 @@ facilities = [
   {id: 11, name: '화장실 B', cat: 'facility', icon: '🚻', pos: [37.6908, 126.8540], info: '기저귀 교환대 있음', badge: '화장실', bc: 'badge-blue'},
 ];
 
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const btn = sidebar.querySelector('.sidebar-toggle');
+  sidebar.classList.toggle('collapsed');
+  btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+}
+
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
@@ -391,7 +468,7 @@ function renderMarkers() {
     }).addTo(map);
 
     marker.on('click', () => selectFacility(f.id));
-    marker.on('dragend', (e) => {
+    marker.on('dragend', async (e) => {
       const latlng = e.target.getLatLng();
       f.pos = [latlng.lat, latlng.lng];
       if (selectedId === f.id) {
@@ -399,7 +476,7 @@ function renderMarkers() {
         document.getElementById('edit-lng').value = latlng.lng.toFixed(6);
       }
       updateJSON();
-      showToast('위치 업데이트됨');
+      await saveToServer();
     });
 
     markerMap[f.id] = marker;
@@ -447,7 +524,7 @@ function selectFacility(id) {
   }
 }
 
-function saveFacility() {
+async function saveFacility() {
   if (selectedId === null) return;
 
   const f = facilities.find(x => x.id === selectedId);
@@ -478,7 +555,9 @@ function saveFacility() {
   renderMarkers();
   renderList();
   updateJSON();
-  showToast('저장되었습니다');
+
+  // 서버로 저장 시도
+  await saveToServer();
 }
 
 function cancelEdit() {
@@ -509,14 +588,14 @@ function addNewFacility() {
   showToast('새 시설이 추가되었습니다');
 }
 
-function deleteFacility(id) {
+async function deleteFacility(id) {
   if (!confirm('정말 삭제하시겠습니까?')) return;
   facilities = facilities.filter(f => f.id !== id);
   if (selectedId === id) cancelEdit();
   renderMarkers();
   renderList();
   updateJSON();
-  showToast('삭제되었습니다');
+  await saveToServer();
 }
 
 function updateJSON() {
@@ -528,10 +607,41 @@ function copyJSON() {
   const output = document.getElementById('json-output');
   output.select();
   document.execCommand('copy');
-  showToast('JSON이 클립보드에 복사되었습니다');
+
+  // 더 명확한 안내 메시지
+  showToast('✅ 복사 완료! 이제 index.html 파일을 열어서 FACILITIES 배열을 교체하세요');
+
+  // 5초 후 추가 안내
+  setTimeout(() => {
+    if (confirm('JSON이 복사되었습니다.\n\n다음 단계:\n1. index.html 파일을 에디터로 열기\n2. "const FACILITIES = [" 부분 찾기\n3. 전체 배열을 복사한 내용으로 교체\n4. 저장 후 브라우저 새로고침\n\n지금 index.html을 새 탭으로 열까요?')) {
+      window.open('index.html', '_blank');
+    }
+  }, 500);
 }
 
-function importJSON() {
+async function saveToServer() {
+  try {
+    const response = await fetch('http://localhost:3000/api/save-facilities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilities })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      showToast('✅ index.html에 자동 저장되었습니다!');
+      console.log('저장 완료:', result);
+    } else {
+      throw new Error(result.error || '저장 실패');
+    }
+  } catch (error) {
+    console.warn('서버 저장 실패 (서버가 실행 중인지 확인하세요):', error);
+    showToast('⚠️ 서버 미실행 - JSON 복사로 수동 저장하세요');
+  }
+}
+
+async function importJSON() {
   try {
     const input = document.getElementById('json-input').value.trim();
     let parsed;
@@ -547,7 +657,9 @@ function importJSON() {
     renderList();
     updateJSON();
     cancelEdit();
-    showToast('JSON 가져오기 완료');
+
+    // 서버로 저장
+    await saveToServer();
   } catch (e) {
     alert('JSON 형식이 올바르지 않습니다: ' + e.message);
   }
@@ -590,9 +702,28 @@ map.on('dblclick', (e) => {
   }
 });
 
+// 서버 상태 확인
+async function checkServerStatus() {
+  try {
+    const response = await fetch('http://localhost:3000/api/get-facilities');
+    if (response.ok) {
+      document.getElementById('server-status').textContent = '✅ 서버 실행 중 - 자동 저장 활성화';
+      document.getElementById('server-status').style.color = '#16A34A';
+      console.log('✅ 서버 연결됨');
+      return true;
+    }
+  } catch (error) {
+    document.getElementById('server-status').textContent = '⚠️ 서버 미실행 - 수동 저장 모드';
+    document.getElementById('server-status').style.color = '#D97706';
+    console.warn('⚠️ 서버 미연결 - npm start로 서버를 실행하세요');
+    return false;
+  }
+}
+
 renderMarkers();
 renderList();
 updateJSON();
+checkServerStatus();
 </script>
 </body>
 </html>
