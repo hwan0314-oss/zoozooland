@@ -1,6 +1,6 @@
 import asyncio
 import os
-from datetime import date
+from datetime import date, timedelta
 from playwright.async_api import async_playwright
 import telegram
 
@@ -24,7 +24,9 @@ STORE_LABELS = {
 
 def get_date_ranges(today):
     tf = today.strftime
-    d_range = (tf("%Y-%m-%d"), tf("%Y-%m-%d"))
+    yesterday = today - timedelta(days=1)
+    yf = yesterday.strftime
+    d_range = (yf("%Y-%m-%d"), yf("%Y-%m-%d"))
     m_range = (today.replace(day=1).strftime("%Y-%m-%d"), tf("%Y-%m-%d"))
     prev = today.replace(year=today.year - 1)
     pf = prev.strftime
@@ -35,14 +37,16 @@ PARSE_JS = """
 () => {
     try {
         const xml = mySheet1.GetXmlData();
-        if (!xml) return {};
+        if (!xml || xml.length < 50) return { _empty: true };
         const parser = new DOMParser();
         const doc = parser.parseFromString(xml, "text/xml");
         const rows = doc.querySelectorAll("Row");
         const result = {};
+        let found = 0;
         for (const row of rows) {
             const c3 = row.getAttribute("C3") || "";
             if (!c3.includes("소계")) continue;
+            found++;
             const name = c3.replace(/소계\s*:\s*/g, "").trim();
             const qty = parseFloat(row.getAttribute("C13") || "0") || 0;
             const sales = parseFloat((row.getAttribute("C17") || "0").replace(/,/g, "")) || 0;
@@ -50,6 +54,7 @@ PARSE_JS = """
             const yoy = yoy_raw !== "" ? parseFloat(yoy_raw) : null;
             result[name] = { qty, sales, yoy };
         }
+        if (found === 0) return { _empty: true, rowCount: rows.length };
         return result;
     } catch(e) {
         return { _error: e.toString() };
@@ -139,7 +144,6 @@ async def navigate_to_prod(page):
     await page.wait_for_timeout(3000)
 
 async def get_prod_frame(page):
-    # Wait for prod011 frame to load AND fnSearch to be defined
     for attempt in range(40):
         for frame in page.frames:
             if "prod011" in (frame.url or ""):
@@ -164,10 +168,18 @@ async def fetch(prod_frame, date_from, date_to):
         }})()
     """)
     await prod_frame.wait_for_timeout(500)
-    # Call fnSearch() to trigger data load
     await prod_frame.evaluate("() => fnSearch()")
-    await prod_frame.wait_for_timeout(7000)
-    return await prod_frame.evaluate(PARSE_JS) or {}
+
+    # Poll for data with 15s timeout
+    for _ in range(30):
+        await prod_frame.wait_for_timeout(500)
+        result = await prod_frame.evaluate(PARSE_JS)
+        if result and "_empty" not in result and "_error" not in result and len(result) > 0:
+            return result
+
+    # Return whatever we got
+    final = await prod_frame.evaluate(PARSE_JS)
+    return final or {}
 
 def fmt_num(n):
     if n is None:
@@ -182,20 +194,26 @@ def fmt_yoy(yoy):
 
 def build_message(today, daily, monthly, yearly):
     lines = []
-    lines.append(f"\U0001f4ca 쥬쥬랜드 매출 리포트 [{today.strftime('%Y-%m-%d')}]")
+    yesterday = today - timedelta(days=1)
+    lines.append(f"\U0001f4ca 쥬쥬랜드 매출 리포트")
+    lines.append(f"[{today.strftime('%Y-%m-%d')} 기준]")
     lines.append("")
 
     sections = [
-        ("\U0001f4c5 일별", daily),
-        ("\U0001f4c6 월누계", monthly),
-        ("\U0001f4c8 연누계", yearly),
+        (f"\U0001f4c5 일별 ({yesterday.strftime('%m/%d')})", daily),
+        (f"\U0001f4c6 월누계 ({today.strftime('%m')}월)", monthly),
+        (f"\U0001f4c8 연누계 ({today.year}년)", yearly),
     ]
 
     for sec_name, data in sections:
         lines.append(f"━━━ {sec_name} ━━━")
-        if not data or "_error" in data:
-            err = data.get("_error", "데이터 없음") if data else "데이터 없음"
-            lines.append(f"  {err}")
+        if not data or "_error" in data or "_empty" in data:
+            info = ""
+            if data and "_error" in data:
+                info = f": {data['_error'][:50]}"
+            elif data and "_empty" in data:
+                info = " (데이터 없음)"
+            lines.append(f"  조회 결과 없음{info}")
             lines.append("")
             continue
 
@@ -251,21 +269,22 @@ async def main():
 
         print(f"Fetching daily: {d_range}")
         daily = await fetch(prod_frame, *d_range)
-        print(f"Daily data keys: {list(daily.keys())}")
+        print(f"Daily data: {daily}")
 
         print(f"Fetching monthly: {m_range}")
         monthly = await fetch(prod_frame, *m_range)
-        print(f"Monthly data keys: {list(monthly.keys())}")
+        print(f"Monthly data keys: {list(monthly.keys()) if monthly else []}")
 
         print(f"Fetching yearly: {y_range}")
         yearly = await fetch(prod_frame, *y_range)
-        print(f"Yearly data keys: {list(yearly.keys())}")
+        print(f"Yearly data keys: {list(yearly.keys()) if yearly else []}")
 
         await browser.close()
 
     msg = build_message(today, daily, monthly, yearly)
-    print("Message:")
+    print("=== MESSAGE ===")
     print(msg)
+    print("===============")
 
     bot = telegram.Bot(token=BOT_TOKEN)
     await bot.send_message(chat_id=CHAT_ID, text=msg)
