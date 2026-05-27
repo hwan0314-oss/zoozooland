@@ -8,7 +8,7 @@ import requests
 import telegram
 
 BASE_URL   = "https://kis.okpos.co.kr"
-LOGIN_URL  = BASE_URL + "/login/login_ok.jsp"
+LOGIN_URL  = BASE_URL + "/login/login_check.jsp"
 API_URL    = BASE_URL + "/sale/sale/ddd.htmlSheetAction"
 
 USER_ID    = os.environ["KIS_ID"]
@@ -50,8 +50,8 @@ def do_login():
 
     # POST login
     resp = session.post(LOGIN_URL, data={
-        "id": USER_ID,
-        "pw": USER_PW,
+        "user_id": USER_ID,
+        "user_pwd": USER_PW,
     }, allow_redirects=True, verify=False)
     print(f"Login status: {resp.status_code}, URL: {resp.url}")
 
