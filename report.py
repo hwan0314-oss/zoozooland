@@ -45,15 +45,31 @@ def do_login():
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Referer": BASE_URL + "/login/login_form.jsp",
     })
-    # Get login page first (set cookies)
-    session.get(BASE_URL + "/login/login_form.jsp", verify=False)
+    # Get login page first (set cookies + CSRF token)
+    form_resp = session.get(BASE_URL + "/login/login_form.jsp", verify=False)
+    form_html = form_resp.text
 
-    # POST login
-    resp = session.post(LOGIN_URL, data={
+    # Extract hidden CSRF/token field
+    hidden_match = re.search(r'<input[^>]+type=["']hidden["'][^>]+name=["']([^"']+)["'][^>]+value=["']([^"']*)["']', form_html)
+    token_data = {}
+    if hidden_match:
+        token_name = hidden_match.group(1)
+        token_value = hidden_match.group(2)
+        token_data = {token_name: token_value}
+        print(f"Token found: {token_name[:20]}...")
+    else:
+        print("No hidden token found")
+
+    # POST login with token
+    login_data = {
         "user_id": USER_ID,
         "user_pwd": USER_PW,
-    }, allow_redirects=True, verify=False)
+        "AutoFg": "W",
+        **token_data,
+    }
+    resp = session.post(LOGIN_URL, data=login_data, allow_redirects=True, verify=False)
     print(f"Login status: {resp.status_code}, URL: {resp.url}")
+    print(f"Response: {resp.text[:100]}")
 
     # Access main page to init session
     session.get(BASE_URL + "/login/top_frame.jsp", verify=False)
