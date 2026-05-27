@@ -72,6 +72,13 @@ def do_login():
     session.get(BASE_URL + "/login/top_frame.jsp", verify=False)
     return session
 
+def init_prod_pages(session):
+    """Access prod pages to establish session context"""
+    r1 = session.get(BASE_URL + "/sale/sale/prod010.jsp", verify=False)
+    print(f"prod010 status: {r1.status_code}")
+    r2 = session.get(BASE_URL + "/sale/sale/prod011.jsp", verify=False)
+    print(f"prod011 status: {r2.status_code}")
+
 def fetch_data(session, date_from, date_to):
     payload = {
         "sheetjs": "mySheet1",
@@ -96,7 +103,7 @@ def fetch_data(session, date_from, date_to):
     }
     resp = session.post(API_URL, data=payload, headers=headers, verify=False)
     print(f"API status: {resp.status_code}, len: {len(resp.text)}")
-    print(f"Preview: {resp.text[:100]}")
+    print(f"Preview: {resp.text[:150]}")
     return resp.text
 
 def parse_xml(xml_text):
@@ -171,6 +178,7 @@ async def main():
     today = date.today()
     d_range, m_range, y_range = get_date_ranges(today)
     session = do_login()
+    init_prod_pages(session)
     print(f"Fetching daily: {d_range}")
     daily = parse_xml(fetch_data(session, *d_range))
     print(f"Fetching monthly: {m_range}")
