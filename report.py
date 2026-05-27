@@ -1,10 +1,16 @@
 import asyncio
 import os
+import re
+import xml.etree.ElementTree as ET
 from datetime import date, timedelta
-from playwright.async_api import async_playwright
+
+import requests
 import telegram
 
-LOGIN_URL = "https://kis.okpos.co.kr/login/login_form.jsp"
+BASE_URL   = "https://kis.okpos.co.kr"
+LOGIN_URL  = BASE_URL + "/login/login_ok.jsp"
+API_URL    = BASE_URL + "/sale/sale/ddd.htmlSheetAction"
+
 USER_ID    = os.environ["KIS_ID"]
 USER_PW    = os.environ["KIS_PW"]
 BOT_TOKEN  = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -23,163 +29,88 @@ STORE_LABELS = {
 }
 
 def get_date_ranges(today):
-    tf = today.strftime
     yesterday = today - timedelta(days=1)
     yf = yesterday.strftime
-    d_range = (yf("%Y-%m-%d"), yf("%Y-%m-%d"))
-    m_range = (today.replace(day=1).strftime("%Y-%m-%d"), tf("%Y-%m-%d"))
+    tf = today.strftime
     prev = today.replace(year=today.year - 1)
     pf = prev.strftime
+    d_range = (yf("%Y-%m-%d"), yf("%Y-%m-%d"))
+    m_range = (today.replace(day=1).strftime("%Y-%m-%d"), tf("%Y-%m-%d"))
     y_range = (pf("%Y-01-01"), pf("%Y-%m-%d"))
     return d_range, m_range, y_range
 
-PARSE_JS = """
-() => {
-    try {
-        const xml = mySheet1.GetXmlData();
-        if (!xml || xml.length < 50) return { _empty: true };
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(xml, "text/xml");
-        const rows = doc.querySelectorAll("Row");
-        const result = {};
-        let found = 0;
-        for (const row of rows) {
-            const c3 = row.getAttribute("C3") || "";
-            if (!c3.includes("소계")) continue;
-            found++;
-            const name = c3.replace(/소계\s*:\s*/g, "").trim();
-            const qty = parseFloat(row.getAttribute("C13") || "0") || 0;
-            const sales = parseFloat((row.getAttribute("C17") || "0").replace(/,/g, "")) || 0;
-            const yoy_raw = row.getAttribute("C27") || "";
-            const yoy = yoy_raw !== "" ? parseFloat(yoy_raw) : null;
-            result[name] = { qty, sales, yoy };
-        }
-        if (found === 0) return { _empty: true, rowCount: rows.length };
-        return result;
-    } catch(e) {
-        return { _error: e.toString() };
+def do_login():
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": BASE_URL + "/login/login_form.jsp",
+    })
+    # Get login page first (set cookies)
+    session.get(BASE_URL + "/login/login_form.jsp", verify=False)
+
+    # POST login
+    resp = session.post(LOGIN_URL, data={
+        "id": USER_ID,
+        "pw": USER_PW,
+    }, allow_redirects=True, verify=False)
+    print(f"Login status: {resp.status_code}, URL: {resp.url}")
+
+    # Access main page to init session
+    session.get(BASE_URL + "/login/top_frame.jsp", verify=False)
+    return session
+
+def fetch_data(session, date_from, date_to):
+    """Fetch IBSheet data via direct API call"""
+    payload = {
+        "sheetjs": "mySheet1",
+        "Act": "search",
+        "date1_1": date_from,
+        "date1_2": date_to,
+        "cls_cd": "",
+        "mid_cls_cd": "",
+        "sm_cls_cd": "",
+        "prod_cd": "",
+        "prod_nm": "",
+        "cls_sel": "전체",
+        "jum_sel": "전체",
+        "deal_sel": "전체",
+        "noprd_fg": "N",
+        "view_cnt": "100",
+        "SheetName": "mySheet1",
     }
-}
-""";
+    headers = {
+        "Referer": BASE_URL + "/sale/sale/prod011.jsp",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+    resp = session.post(API_URL, data=payload, headers=headers, verify=False)
+    print(f"API status: {resp.status_code}, length: {len(resp.text)}")
+    print(f"Response preview: {resp.text[:200]}")
+    return resp.text
 
-async def do_login(page):
-    found = False
-    for frame in page.frames:
-        try:
-            el = await frame.query_selector("input[placeholder='아이디']")
-            if el:
-                await frame.fill("input[placeholder='아이디']", USER_ID)
-                await frame.fill("input[type='password']", USER_PW)
-                await frame.evaluate("document.querySelector('form').submit()")
-                found = True
-                break
-        except Exception:
-            continue
-    if not found:
-        raise RuntimeError("로그인 폼을 찾을 수 없습니다")
-    await page.wait_for_timeout(3000)
-
-async def close_popup(page):
-    await page.wait_for_timeout(2000)
-    for frame in page.frames:
-        try:
-            btns = await frame.query_selector_all("button, a, input[type='button']")
-            for btn in btns:
-                txt = (await btn.inner_text()).strip()
-                if txt in ["닫기", "확인", "취소", "나중에", "Close", "X", "×"]:
-                    await btn.click()
-                    await page.wait_for_timeout(500)
-                    break
-        except Exception:
-            continue
-
-async def navigate_to_prod(page):
-    await page.wait_for_timeout(2000)
-    clicked = False
-    for frame in page.frames:
-        try:
-            links = await frame.query_selector_all("a, li, td, div")
-            for el in links:
-                txt = (await el.inner_text()).strip()
-                if "매출관리" in txt and len(txt) < 20:
-                    await el.click()
-                    clicked = True
-                    break
-        except Exception:
-            continue
-        if clicked:
-            break
-    await page.wait_for_timeout(1500)
-
-    clicked = False
-    for frame in page.frames:
-        try:
-            links = await frame.query_selector_all("a, li, td, div")
-            for el in links:
-                txt = (await el.inner_text()).strip()
-                if "매출현황" in txt and len(txt) < 20:
-                    await el.click()
-                    clicked = True
-                    break
-        except Exception:
-            continue
-        if clicked:
-            break
-    await page.wait_for_timeout(1500)
-
-    clicked = False
-    for frame in page.frames:
-        try:
-            links = await frame.query_selector_all("a, li, td, div")
-            for el in links:
-                txt = (await el.inner_text()).strip()
-                if "상품별" in txt and len(txt) < 20:
-                    await el.click()
-                    clicked = True
-                    break
-        except Exception:
-            continue
-        if clicked:
-            break
-    await page.wait_for_timeout(3000)
-
-async def get_prod_frame(page):
-    for attempt in range(40):
-        for frame in page.frames:
-            if "prod011" in (frame.url or ""):
-                try:
-                    has_fn = await frame.evaluate("typeof fnSearch !== 'undefined'")
-                    if has_fn:
-                        print(f"prod011 frame ready at attempt {attempt}")
-                        return frame
-                except Exception:
-                    pass
-        await page.wait_for_timeout(500)
-    raise RuntimeError("prod011 프레임을 찾을 수 없거나 fnSearch가 로드되지 않았습니다")
-
-async def fetch(prod_frame, date_from, date_to):
-    # Set readonly date fields via JS
-    await prod_frame.evaluate(f"""
-        (() => {{
-            const d1 = document.getElementById('date1_1');
-            const d2 = document.getElementById('date1_2');
-            if (d1) d1.value = '{date_from}';
-            if (d2) d2.value = '{date_to}';
-        }})()
-    """)
-    await prod_frame.wait_for_timeout(500)
-    await prod_frame.evaluate("() => fnSearch()")
-
-    # Poll for data with 15s timeout
-    for _ in range(30):
-        await prod_frame.wait_for_timeout(500)
-        result = await prod_frame.evaluate(PARSE_JS)
-        if result and "_empty" not in result and "_error" not in result and len(result) > 0:
-            return result
-
-    # Return whatever we got
-    final = await prod_frame.evaluate(PARSE_JS)
-    return final or {}
+def parse_xml(xml_text):
+    """Parse IBSheet XML response"""
+    if not xml_text or len(xml_text) < 10:
+        return {}
+    try:
+        # IBSheet response format: XML with Row elements
+        root = ET.fromstring(xml_text)
+        result = {}
+        for row in root.iter("Row"):
+            c3 = row.get("C3", "")
+            if "소계" not in c3:
+                continue
+            name = re.sub(r"소계\s*:\s*", "", c3).strip()
+            qty = float(row.get("C13", "0").replace(",", "") or "0")
+            sales = float(row.get("C17", "0").replace(",", "") or "0")
+            yoy_raw = row.get("C27", "")
+            yoy = float(yoy_raw) if yoy_raw else None
+            result[name] = {"qty": qty, "sales": sales, "yoy": yoy}
+        print(f"Parsed {len(result)} store entries: {list(result.keys())}")
+        return result
+    except Exception as e:
+        print(f"Parse error: {e}")
+        return {"_error": str(e)}
 
 def fmt_num(n):
     if n is None:
@@ -193,8 +124,8 @@ def fmt_yoy(yoy):
     return f"{sign}{yoy:.1f}%"
 
 def build_message(today, daily, monthly, yearly):
-    lines = []
     yesterday = today - timedelta(days=1)
+    lines = []
     lines.append(f"\U0001f4ca 쥬쥬랜드 매출 리포트")
     lines.append(f"[{today.strftime('%Y-%m-%d')} 기준]")
     lines.append("")
@@ -207,13 +138,9 @@ def build_message(today, daily, monthly, yearly):
 
     for sec_name, data in sections:
         lines.append(f"━━━ {sec_name} ━━━")
-        if not data or "_error" in data or "_empty" in data:
-            info = ""
-            if data and "_error" in data:
-                info = f": {data['_error'][:50]}"
-            elif data and "_empty" in data:
-                info = " (데이터 없음)"
-            lines.append(f"  조회 결과 없음{info}")
+        if not data or "_error" in data or not data:
+            err = data.get("_error", "")[:50] if data and "_error" in data else ""
+            lines.append(f"  조회 결과 없음{' (' + err + ')' if err else ''}")
             lines.append("")
             continue
 
@@ -245,41 +172,25 @@ def build_message(today, daily, monthly, yearly):
     return "\n".join(lines)
 
 async def main():
+    import urllib3
+    urllib3.disable_warnings()
+
     today = date.today()
     d_range, m_range, y_range = get_date_ranges(today)
 
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=True)
-        context = await browser.new_context()
-        page = await context.new_page()
+    session = do_login()
 
-        await page.goto(LOGIN_URL, wait_until="networkidle", timeout=30000)
-        print(f"Login page loaded: {page.url}")
+    print(f"Fetching daily: {d_range}")
+    raw = fetch_data(session, *d_range)
+    daily = parse_xml(raw)
 
-        await do_login(page)
-        print(f"Login OK: {page.url}")
+    print(f"Fetching monthly: {m_range}")
+    raw = fetch_data(session, *m_range)
+    monthly = parse_xml(raw)
 
-        await close_popup(page)
-
-        await navigate_to_prod(page)
-        print("Navigation done")
-
-        prod_frame = await get_prod_frame(page)
-        print(f"prod_frame ready: {prod_frame.url}")
-
-        print(f"Fetching daily: {d_range}")
-        daily = await fetch(prod_frame, *d_range)
-        print(f"Daily data: {daily}")
-
-        print(f"Fetching monthly: {m_range}")
-        monthly = await fetch(prod_frame, *m_range)
-        print(f"Monthly data keys: {list(monthly.keys()) if monthly else []}")
-
-        print(f"Fetching yearly: {y_range}")
-        yearly = await fetch(prod_frame, *y_range)
-        print(f"Yearly data keys: {list(yearly.keys()) if yearly else []}")
-
-        await browser.close()
+    print(f"Fetching yearly: {y_range}")
+    raw = fetch_data(session, *y_range)
+    yearly = parse_xml(raw)
 
     msg = build_message(today, daily, monthly, yearly)
     print("=== MESSAGE ===")
