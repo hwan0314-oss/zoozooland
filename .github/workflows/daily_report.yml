@@ -2,7 +2,7 @@ name: Daily Report - Zoozooland
 
 on:
   schedule:
-    - cron: '0 10 * * *'
+    - cron: '0 10 * * *'  # Runs at 10:00 UTC = 19:00 KST
   workflow_dispatch:
 
 jobs:
@@ -21,8 +21,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          playwright install chromium
-          playwright install-deps chromium
 
       - name: Run report
         env:
