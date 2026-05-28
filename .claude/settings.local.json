@@ -12,7 +12,8 @@
       "Bash(npm start *)",
       "Bash(New-Item -ItemType File -Path \"c:\\\\Users\\\\202512065\\\\OneDrive - Shinsegae\\\\문서\\\\GitHub\\\\zoozooland\\\\admin.html\" -Force)",
       "Bash(Out-Null)",
-      "Bash(Write-Output \"created\")"
+      "Bash(Write-Output \"created\")",
+      "Bash(git push *)"
     ]
   }
 }
