@@ -133,6 +133,24 @@ def get_api_token(sess):
     return tok11n, tok11v
 
 
+def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
+    start = date.fromisoformat(date_from_str)
+    end = date.fromisoformat(date_to_str)
+    total_agg = {}
+    current = start
+    while current <= end:
+        chunk_end = min(current + timedelta(days=max_days - 1), end)
+        tn, tv = get_api_token(sess)
+        chunk = fetch_sales(sess, tn, tv, current.isoformat(), chunk_end.isoformat())
+        for cat, vals in chunk.items():
+            if cat not in total_agg:
+                total_agg[cat] = {"qty": 0, "amt": 0}
+            total_agg[cat]["qty"] += vals["qty"]
+            total_agg[cat]["amt"] += vals["amt"]
+        current = chunk_end + timedelta(days=1)
+    return total_agg
+
+
 def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     payload = {
         tok_name: tok_val,
@@ -250,16 +268,14 @@ async def main():
     dc = fetch_sales(sess, tn, tv, fmt_d(yd), fmt_d(yd))
     tn, tv = get_api_token(sess)
     mc = fetch_sales(sess, tn, tv, fmt_d(ms), fmt_d(yd))
-    tn, tv = get_api_token(sess)
-    yc = fetch_sales(sess, tn, tv, fmt_d(ys), fmt_d(yd))
+    yc = fetch_sales_chunked(sess, fmt_d(ys), fmt_d(yd))
 
     print("=== Previous year ===")
     tn, tv = get_api_token(sess)
     dp = fetch_sales(sess, tn, tv, fmt_d(pyd), fmt_d(pyd))
     tn, tv = get_api_token(sess)
     mp = fetch_sales(sess, tn, tv, fmt_d(pms), fmt_d(pyd))
-    tn, tv = get_api_token(sess)
-    yp = fetch_sales(sess, tn, tv, fmt_d(pys), fmt_d(pyd))
+    yp = fetch_sales_chunked(sess, fmt_d(pys), fmt_d(pyd))
 
     header = f"\U0001f4ca \uc8fc\uc8fc\ub7e0\ub4dc \ub9e4\uc6cd \ub9ac\ud3ec\ud2b8 [{today.strftime('%Y-%m-%d')} \uae30\uc900]"
     lines = [header, ""]
