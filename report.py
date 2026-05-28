@@ -27,6 +27,9 @@ FOOD_KEYWORDS = ["먹이", "양분유체험"]
 ONLINE_TICKETS = {"온라인티켓(LS)", "네이버 주중", "네이버 주말"}
 ONLINE_TICKET_PRICE = 15_000
 
+# 무료 입장 상품명 (정확히 일치)
+FREE_PRODUCTS = {"24개월미만무료입장", "초대권"}
+
 # 점포매출 집계 대상 카테고리 (API MCLS_NM 값 → 표시 레이블)
 STORE_KEYS = [
     ("레스토랑",     "레스토랑"),
@@ -184,7 +187,7 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
 
     cats = {}
     food = {"qty": 0, "amt": 0}
-    admission = {"total": 0, "individual": 0, "group": 0}
+    admission = {"total": 0, "individual": 0, "group": 0, "free": 0}
 
     for row in rows:
         cat      = row.get("MCLS_NM") or row.get("LCLS_NM") or "기타"
@@ -209,10 +212,12 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
             food["qty"] += qty
             food["amt"] += amt
 
-        # 입장객 집계 (매표소 카테고리, 단체/개인 구분)
+        # 입장객 집계 (매표소 카테고리, 무료/단체/개인 구분)
         if cat == "매표소":
             admission["total"] += qty
-            if "단체" in prod_nm or "단체" in scls_nm:
+            if prod_nm in FREE_PRODUCTS:
+                admission["free"] += qty
+            elif "단체" in prod_nm or "단체" in scls_nm:
                 admission["group"] += qty
             else:
                 admission["individual"] += qty
@@ -227,7 +232,7 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
     total = {
         "cats": {},
         "food": {"qty": 0, "amt": 0},
-        "admission": {"total": 0, "individual": 0, "group": 0},
+        "admission": {"total": 0, "individual": 0, "group": 0, "free": 0},
     }
     current = start
     while current <= end:
@@ -241,7 +246,7 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
             total["cats"][cat]["amt"] += vals["amt"]
         total["food"]["qty"] += chunk["food"]["qty"]
         total["food"]["amt"] += chunk["food"]["amt"]
-        for k in ("total", "individual", "group"):
+        for k in ("total", "individual", "group", "free"):
             total["admission"][k] += chunk["admission"][k]
         current = chunk_end + timedelta(days=1)
     return total
@@ -274,8 +279,9 @@ def build_section(title, curr, prev):
 
     # 입장객
     tot_c = adm_c["total"];      tot_p = adm_p["total"]
-    ind_c = adm_c["individual"]; grp_c = adm_c["group"]
-    ind_p = adm_p["individual"]; grp_p = adm_p["group"]
+    ind_c = adm_c["individual"]; ind_p = adm_p["individual"]
+    grp_c = adm_c["group"];      grp_p = adm_p["group"]
+    fre_c = adm_c["free"];       fre_p = adm_p["free"]
 
     # 먹이판매
     fa = food_c["amt"]; pfa = food_p["amt"]
@@ -300,7 +306,9 @@ def build_section(title, curr, prev):
         "",
         "👥 <b>입장객</b>",
         f"  전체 <b>{fmt_num(tot_c)}명</b>  <i>전년비 {fyoy(yoy(tot_c, tot_p))}</i>",
-        f"  개인 {fmt_num(ind_c)}명  ·  단체 {fmt_num(grp_c)}명",
+        f"  개인 {fmt_num(ind_c)}명  <i>전년비 {fyoy(yoy(ind_c, ind_p))}</i>",
+        f"  단체 {fmt_num(grp_c)}명  <i>전년비 {fyoy(yoy(grp_c, grp_p))}</i>",
+        f"  무료 {fmt_num(fre_c)}명  <i>전년비 {fyoy(yoy(fre_c, fre_p))}</i>",
         "",
         "🐾 <b>먹이판매</b>",
         f"  <b>{fmt_num(fa)}원</b>  <i>전년비 {fyoy(yoy(fa, pfa))}</i>",
