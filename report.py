@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import re
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 
 import requests
 import telegram
@@ -17,6 +17,25 @@ USER_ID   = os.environ["KIS_ID"]
 USER_PW   = os.environ["KIS_PW"]
 BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID   = os.environ["TELEGRAM_CHAT_ID"]
+
+KST = timezone(timedelta(hours=9))
+
+# 상품명에 이 키워드가 포함되면 카테고리 무관하게 먹이판매로 집계
+FOOD_KEYWORDS = ["먹이", "양분유체험"]
+
+# 매출 0원이지만 건당 15,000원으로 산정할 온라인 티켓 상품명 (정확히 일치)
+ONLINE_TICKETS = {"온라인티켓(LS)", "네이버 주중", "네이버 주말"}
+ONLINE_TICKET_PRICE = 15_000
+
+# 점포매출 집계 대상 카테고리 (API MCLS_NM 값 → 표시 레이블)
+STORE_KEYS = [
+    ("레스토랑",     "레스토랑"),
+    ("카페테리아",   "카페테리아"),
+    ("레스토랑신규", "레스토랑(신)"),
+    ("무인점포",     "무인점포"),
+    ("드론체험",     "드론체험"),
+    ("베이커리",     "베이커리"),
+]
 
 S_SAVENAME = (
     "sSeq|LCLS_NM|MCLS_NM|SCLS_NM|SALE_DATE|PROD_CD|BAR_CD|MAP_PROD_CD"
@@ -50,7 +69,6 @@ def extract_token(html):
     )
     if m:
         return m.group(1), m.group(2)
-    # Also try: name=UUID (with value=UUID, where value may not be UUID format)
     m = re.search(
         r'name="([0-9a-f-]{36})"[^>]*value="([^"]+)"',
         html, re.IGNORECASE,
@@ -69,7 +87,6 @@ def extract_token(html):
 def do_login():
     sess = requests.Session()
     sess.headers.update(HEADERS)
-    # Step 0: Load login form to get initial CSRF token
     r0 = sess.get(
         BASE_URL + "/login/login_form.jsp",
         verify=False, timeout=30,
@@ -77,7 +94,6 @@ def do_login():
     print(f"login_form: {r0.status_code} len={len(r0.text)}")
     form_tok_n, form_tok_v = extract_token(r0.text)
     print(f"form token: {form_tok_n[:8] if form_tok_n else None}...")
-    # Step 1: Post credentials + form token to login_check.jsp to get second CSRF token
     login_data = {"user_id": USER_ID, "user_pwd": USER_PW, "AutoFg": "W"}
     if form_tok_n:
         login_data[form_tok_n] = form_tok_v
@@ -92,7 +108,6 @@ def do_login():
     if not tok_name:
         raise RuntimeError(f"No CSRF token. HTML: {r1.text[:300]}")
     print(f"CSRF: {tok_name[:8]}...")
-    # Step 2: Post with CSRF token to complete login
     r2 = sess.post(
         BASE_URL + "/login/login_check_action.jsp",
         data={"user_id": USER_ID, "user_pwd": USER_PW, "AutoFg": "W", tok_name: tok_val},
@@ -133,24 +148,6 @@ def get_api_token(sess):
     return tok11n, tok11v
 
 
-def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
-    start = date.fromisoformat(date_from_str)
-    end = date.fromisoformat(date_to_str)
-    total_agg = {}
-    current = start
-    while current <= end:
-        chunk_end = min(current + timedelta(days=max_days - 1), end)
-        tn, tv = get_api_token(sess)
-        chunk = fetch_sales(sess, tn, tv, current.isoformat(), chunk_end.isoformat())
-        for cat, vals in chunk.items():
-            if cat not in total_agg:
-                total_agg[cat] = {"qty": 0, "amt": 0}
-            total_agg[cat]["qty"] += vals["qty"]
-            total_agg[cat]["amt"] += vals["amt"]
-        current = chunk_end + timedelta(days=1)
-    return total_agg
-
-
 def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     payload = {
         tok_name: tok_val,
@@ -166,11 +163,11 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
         "ss_PROD_CD": "", "ss_PROD_NM": "",
         "ss_LCLS_CD": "", "ss_MCLS_CD": "", "ss_SCLS_CD": "",
         "ss_SIZE_CLS_CD": "",
-        "ss_CLS_TEXT": "\uc804\uccb4",
+        "ss_CLS_TEXT": "전체",
         "ss_BAR_CD": "", "ss_SHOP_CD": "",
-        "ss_SHOP_NM": "\uc804\uccb4",
+        "ss_SHOP_NM": "전체",
         "ss_SHOP_INFO": "[]", "ss_VENDOR_CD": "",
-        "ss_VENDOR_NM": "\uc804\uccb4",
+        "ss_VENDOR_NM": "전체",
         "ss_VENDOR_INFO": "[]", "ss_chk": "0",
         "ss_PAGE_SIZE": "500", "ss_PAGE_NO1": "1",
     }
@@ -184,17 +181,70 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     if "Result" in data and data["Result"].get("Code", 0) < 0:
         raise RuntimeError(f"API error: {data['Result']['Message']}")
     rows = data.get("Data", [])
-    agg = {}
+
+    cats = {}
+    food = {"qty": 0, "amt": 0}
+    admission = {"total": 0, "individual": 0, "group": 0}
+
     for row in rows:
-        cat = row.get("MCLS_NM") or row.get("LCLS_NM") or "\uae30\ud0c0"
-        qty = int(row.get("SALE_QTY", 0) or 0)
-        amt = int(row.get("TOT_SALE_AMT", 0) or 0)
-        if cat not in agg:
-            agg[cat] = {"qty": 0, "amt": 0}
-        agg[cat]["qty"] += qty
-        agg[cat]["amt"] += amt
-    print(f"  Categories: {list(agg.keys())}")
-    return agg
+        cat      = row.get("MCLS_NM") or row.get("LCLS_NM") or "기타"
+        prod_nm  = (row.get("PROD_NM") or "").strip()
+        scls_nm  = (row.get("SCLS_NM") or "").strip()
+        qty      = int(row.get("SALE_QTY", 0) or 0)
+
+        # 온라인 티켓은 POS 매출이 0원이므로 건당 고정가 적용
+        if prod_nm in ONLINE_TICKETS:
+            amt = qty * ONLINE_TICKET_PRICE
+        else:
+            amt = int(row.get("TOT_SALE_AMT", 0) or 0)
+
+        # 카테고리별 집계
+        if cat not in cats:
+            cats[cat] = {"qty": 0, "amt": 0}
+        cats[cat]["qty"] += qty
+        cats[cat]["amt"] += amt
+
+        # 상품명 기반 먹이판매 집계 (카테고리 무관)
+        if any(kw in prod_nm for kw in FOOD_KEYWORDS):
+            food["qty"] += qty
+            food["amt"] += amt
+
+        # 입장객 집계 (매표소 카테고리, 단체/개인 구분)
+        if cat == "매표소":
+            admission["total"] += qty
+            if "단체" in prod_nm or "단체" in scls_nm:
+                admission["group"] += qty
+            else:
+                admission["individual"] += qty
+
+    print(f"  Categories: {list(cats.keys())}")
+    return {"cats": cats, "food": food, "admission": admission}
+
+
+def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
+    start = date.fromisoformat(date_from_str)
+    end   = date.fromisoformat(date_to_str)
+    total = {
+        "cats": {},
+        "food": {"qty": 0, "amt": 0},
+        "admission": {"total": 0, "individual": 0, "group": 0},
+    }
+    current = start
+    while current <= end:
+        chunk_end = min(current + timedelta(days=max_days - 1), end)
+        tn, tv = get_api_token(sess)
+        chunk = fetch_sales(sess, tn, tv, current.isoformat(), chunk_end.isoformat())
+        for cat, vals in chunk["cats"].items():
+            if cat not in total["cats"]:
+                total["cats"][cat] = {"qty": 0, "amt": 0}
+            total["cats"][cat]["qty"] += vals["qty"]
+            total["cats"][cat]["amt"] += vals["amt"]
+        total["food"]["qty"] += chunk["food"]["qty"]
+        total["food"]["amt"] += chunk["food"]["amt"]
+        for k in ("total", "individual", "group"):
+            total["admission"][k] += chunk["admission"][k]
+        current = chunk_end + timedelta(days=1)
+    return total
 
 
 def yoy(curr, prev):
@@ -215,83 +265,99 @@ def fyoy(v):
 
 
 def build_section(title, curr, prev):
-    adm = curr.get("\ub9e4\ud45c\uc18c", {})
-    padm = prev.get("\ub9e4\ud45c\uc18c", {})
-    aq = adm.get("qty", 0)
-    paq = padm.get("qty", 0)
-    fd = curr.get("\uc5f4\ub9b0\ub9e4\ub300", {})
-    pfd = prev.get("\uc5f4\ub9b0\ub9e4\ub300", {})
-    fa = fd.get("amt", 0)
-    pfa = pfd.get("amt", 0)
-    store_keys = [
-        ("\ub808\uc2a4\ud1a0\ub791", "\ub808\uc2a4\ud1a0\ub791"),
-        ("\uce74\ud398\ud14c\ub9ac\uc544", "\uce74\ud398\ud14c\ub9ac\uc544"),
-        ("\ub808\uc2a4\ud1a0\ub791\uc2e0\uaddc", "\ub808\uc2a4\ud1a0\ub791(\uc2e0)"),
-        ("\ubb34\uc778\uc810\ud3ec", "\ubb34\uc778\uc810\ud3ec"),
-        ("\ub4dc\ub860\uccb4\ud5d8", "\ub4dc\ub860\uccb4\ud5d8"),
-        ("\ubca0\uc774\ucee4\ub9ac", "\ubca0\uc774\ucee4\ub9ac"),
-    ]
+    cats_c = curr["cats"]
+    cats_p = prev["cats"]
+    food_c = curr["food"]
+    food_p = prev["food"]
+    adm_c  = curr["admission"]
+    adm_p  = prev["admission"]
+
+    # 입장객
+    tot_c = adm_c["total"];      tot_p = adm_p["total"]
+    ind_c = adm_c["individual"]; grp_c = adm_c["group"]
+    ind_p = adm_p["individual"]; grp_p = adm_p["group"]
+
+    # 먹이판매
+    fa = food_c["amt"]; pfa = food_p["amt"]
+
+    # 점포별 매출
     tc, tp = 0, 0
-    sl = []
-    for k, lbl in store_keys:
-        c = curr.get(k, {})
-        p = prev.get(k, {})
-        ca = c.get("amt", 0)
-        pa = p.get("amt", 0)
-        tc += ca
-        tp += pa
-        sl.append(f"  - {lbl}: {fmt_num(ca)}\uc6d0 ({fyoy(yoy(ca, pa))})")
-    result = [
-        f"\u2501\u2501 {title} \u2501\u2501",
-        f"\U0001f465 \uc785\uc7a5\uac1d: {fmt_num(aq)}\uba85  \uc804\ub144\ube44 {fyoy(yoy(aq, paq))}",
-        f"\U0001f43e \uba39\uc774\ud310\ub9e4: {fmt_num(fa)}\uc6d0  \uc804\ub144\ube44 {fyoy(yoy(fa, pfa))}",
-        f"\U0001f3ea \uc810\ud3ec\ud569\uacc4: {fmt_num(tc)}\uc6d0  \uc804\ub144\ube44 {fyoy(yoy(tc, tp))}",
+    store_lines = []
+    for k, lbl in STORE_KEYS:
+        ca = cats_c.get(k, {}).get("amt", 0)
+        pa = cats_p.get(k, {}).get("amt", 0)
+        tc += ca; tp += pa
+        store_lines.append(
+            f"  • {lbl}: <b>{fmt_num(ca)}원</b>  <i>{fyoy(yoy(ca, pa))}</i>"
+        )
+
+    # 전체매출 (모든 카테고리 합산)
+    all_c = sum(v["amt"] for v in cats_c.values())
+    all_p = sum(v["amt"] for v in cats_p.values())
+
+    lines = [
+        f"━━ {title} ━━",
+        "",
+        "👥 <b>입장객</b>",
+        f"  전체 <b>{fmt_num(tot_c)}명</b>  <i>전년비 {fyoy(yoy(tot_c, tot_p))}</i>",
+        f"  개인 {fmt_num(ind_c)}명  ·  단체 {fmt_num(grp_c)}명",
+        "",
+        "🐾 <b>먹이판매</b>",
+        f"  <b>{fmt_num(fa)}원</b>  <i>전년비 {fyoy(yoy(fa, pfa))}</i>",
+        "",
+        "🏪 <b>점포매출</b>",
     ]
-    result.extend(sl)
-    return result
+    lines.extend(store_lines)
+    lines.append(f"  합계: <b>{fmt_num(tc)}원</b>  <i>전년비 {fyoy(yoy(tc, tp))}</i>")
+    lines.append("")
+    lines.append(f"💰 <b>전체매출: {fmt_num(all_c)}원</b>  <i>전년비 {fyoy(yoy(all_c, all_p))}</i>")
+
+    return lines
 
 
 async def main():
-    today = date.today()
-    yd = today - timedelta(days=1)
-    pyd = yd.replace(year=yd.year - 1)
-    ms = today.replace(day=1)
-    pms = ms.replace(year=ms.year - 1)
-    ys = today.replace(month=1, day=1)
-    pys = ys.replace(year=ys.year - 1)
+    today = datetime.now(KST).date()          # 항상 KST 기준
+    ms  = today.replace(day=1)                # 이번 달 1일
+    pms = ms.replace(year=ms.year - 1)        # 전년 동월 1일
+    ys  = today.replace(month=1, day=1)       # 올해 1월 1일
+    pys = ys.replace(year=ys.year - 1)        # 전년 1월 1일
+    ptd = today.replace(year=today.year - 1)  # 전년 동일
     fmt_d = lambda d: d.strftime("%Y-%m-%d")
 
     sess = do_login()
 
     print("=== Current year ===")
     tn, tv = get_api_token(sess)
-    dc = fetch_sales(sess, tn, tv, fmt_d(yd), fmt_d(yd))
+    dc = fetch_sales(sess, tn, tv, fmt_d(today), fmt_d(today))
     tn, tv = get_api_token(sess)
-    mc = fetch_sales(sess, tn, tv, fmt_d(ms), fmt_d(yd))
-    yc = fetch_sales_chunked(sess, fmt_d(ys), fmt_d(yd))
+    mc = fetch_sales(sess, tn, tv, fmt_d(ms), fmt_d(today))
+    yc = fetch_sales_chunked(sess, fmt_d(ys), fmt_d(today))
 
     print("=== Previous year ===")
     tn, tv = get_api_token(sess)
-    dp = fetch_sales(sess, tn, tv, fmt_d(pyd), fmt_d(pyd))
+    dp = fetch_sales(sess, tn, tv, fmt_d(ptd), fmt_d(ptd))
     tn, tv = get_api_token(sess)
-    mp = fetch_sales(sess, tn, tv, fmt_d(pms), fmt_d(pyd))
-    yp = fetch_sales_chunked(sess, fmt_d(pys), fmt_d(pyd))
+    mp = fetch_sales(sess, tn, tv, fmt_d(pms), fmt_d(ptd))
+    yp = fetch_sales_chunked(sess, fmt_d(pys), fmt_d(ptd))
 
-    header = f"\U0001f4ca \uc8fc\uc8fc\ub7e0\ub4dc \ub9e4\uc6cd \ub9ac\ud3ec\ud2b8 [{today.strftime('%Y-%m-%d')} \uae30\uc900]"
+    header = (
+        f"📊 <b>쥬쥬랜드 실적 리포트</b>\n"
+        f"📅 <b>{today.strftime('%Y-%m-%d')}</b> 기준"
+    )
     lines = [header, ""]
-    lines += build_section(f"\U0001f4c5 \uc77c\ubcc4 ({yd.strftime('%m/%d')})", dc, dp)
+    lines += build_section(f"📅 일별 ({today.strftime('%m/%d')})", dc, dp)
     lines.append("")
-    lines += build_section(f"\U0001f4c6 \uc6d4\ub204\uacc4 ({today.strftime('%m')}\uc6d4)", mc, mp)
+    lines += build_section(f"📆 월누계 ({today.strftime('%m')}월)", mc, mp)
     lines.append("")
-    lines += build_section(f"\U0001f4c8 \uc5f0\ub204\uacc4 ({today.year}\ub144)", yc, yp)
+    lines += build_section(f"📈 연누계 ({today.year}년)", yc, yp)
 
-    msg = chr(10).join(lines)
+    msg = "\n".join(lines)
     print("=== MESSAGE ===")
     print(msg)
     print("===============")
 
     bot = telegram.Bot(token=BOT_TOKEN)
-    await bot.send_message(chat_id=CHAT_ID, text=msg)
+    await bot.send_message(chat_id=CHAT_ID, text=msg, parse_mode="HTML")
     print("Sent!")
 
 
