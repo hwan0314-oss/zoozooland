@@ -56,6 +56,13 @@ def extract_token(html):
 def do_login():
     sess = requests.Session()
     sess.headers.update(HEADERS)
+    # Step 0: Initialize session by loading login form first
+    r0 = sess.get(
+        BASE_URL + "/login/login_form.jsp",
+        verify=False, timeout=30,
+    )
+    print(f"login_form: {r0.status_code} len={len(r0.text)}")
+    # Step 1: Post credentials to get CSRF token
     r1 = sess.post(
         BASE_URL + "/login/login_check.jsp",
         data={"user_id": USER_ID, "user_pwd": USER_PW, "AutoFg": "W"},
@@ -67,6 +74,7 @@ def do_login():
     if not tok_name:
         raise RuntimeError(f"No CSRF token. HTML: {r1.text[:300]}")
     print(f"CSRF: {tok_name[:8]}...")
+    # Step 2: Post with CSRF token to complete login
     r2 = sess.post(
         BASE_URL + "/login/login_check_action.jsp",
         data={"user_id": USER_ID, "user_pwd": USER_PW, "AutoFg": "W", tok_name: tok_val},
