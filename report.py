@@ -18,7 +18,7 @@ API_URL   = BASE_URL + "/sale/sale/ddd.htmlSheetAction"
 USER_ID   = os.environ["KIS_ID"]
 USER_PW   = os.environ["KIS_PW"]
 BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-CHAT_ID   = os.environ["TELEGRAM_CHAT_ID"]
+CHAT_ID   = -1003990713280
 
 KST = timezone(timedelta(hours=9))
 
