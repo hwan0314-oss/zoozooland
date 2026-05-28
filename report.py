@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import re
+import unicodedata
 from datetime import date, timedelta, datetime, timezone
 
 import requests
@@ -269,58 +270,70 @@ def fyoy(v):
     return f"{sign}{v:.1f}%"
 
 
-def build_section(title, curr, prev):
-    cats_c = curr["cats"]
-    cats_p = prev["cats"]
-    food_c = curr["food"]
-    food_p = prev["food"]
-    adm_c  = curr["admission"]
-    adm_p  = prev["admission"]
+def _dw(s: str) -> int:
+    """한국어/CJK 문자를 2칸으로 계산한 표시 너비"""
+    return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in s)
 
-    # 입장객
+def _rpad(s: str, w: int) -> str:
+    return s + " " * max(0, w - _dw(s))
+
+def _lpad(s: str, w: int) -> str:
+    return " " * max(0, w - _dw(s)) + s
+
+
+def build_section(title, curr, prev):
+    cats_c = curr["cats"];  cats_p = prev["cats"]
+    food_c = curr["food"];  food_p = prev["food"]
+    adm_c  = curr["admission"]; adm_p = prev["admission"]
+
     tot_c = adm_c["total"];      tot_p = adm_p["total"]
     ind_c = adm_c["individual"]; ind_p = adm_p["individual"]
     grp_c = adm_c["group"];      grp_p = adm_p["group"]
     fre_c = adm_c["free"];       fre_p = adm_p["free"]
+    fa    = food_c["amt"];        pfa   = food_p["amt"]
 
-    # 먹이판매
-    fa = food_c["amt"]; pfa = food_p["amt"]
-
-    # 점포별 매출
     tc, tp = 0, 0
-    store_lines = []
+    store_rows = []
     for k, lbl in STORE_KEYS:
         ca = cats_c.get(k, {}).get("amt", 0)
         pa = cats_p.get(k, {}).get("amt", 0)
         tc += ca; tp += pa
-        store_lines.append(
-            f"  • {lbl}: <b>{fmt_num(ca)}원</b>  <i>{fyoy(yoy(ca, pa))}</i>"
-        )
+        store_rows.append((f"  {lbl}", f"{fmt_num(ca)}원", fyoy(yoy(ca, pa))))
 
-    # 전체매출 (모든 카테고리 합산)
     all_c = sum(v["amt"] for v in cats_c.values())
     all_p = sum(v["amt"] for v in cats_p.values())
 
-    lines = [
-        f"━━ {title} ━━",
-        "",
-        "👥 <b>입장객</b>",
-        f"  전체 <b>{fmt_num(tot_c)}명</b>  <i>전년비 {fyoy(yoy(tot_c, tot_p))}</i>",
-        f"  개인 {fmt_num(ind_c)}명  <i>전년비 {fyoy(yoy(ind_c, ind_p))}</i>",
-        f"  단체 {fmt_num(grp_c)}명  <i>전년비 {fyoy(yoy(grp_c, grp_p))}</i>",
-        f"  무료 {fmt_num(fre_c)}명  <i>전년비 {fyoy(yoy(fre_c, fre_p))}</i>",
-        "",
-        "🐾 <b>먹이판매</b>",
-        f"  <b>{fmt_num(fa)}원</b>  <i>전년비 {fyoy(yoy(fa, pfa))}</i>",
-        "",
-        "🏪 <b>점포매출</b>",
+    # (레이블, 값, 전년비) 순서로 행 구성. None = 구분선
+    rows = [
+        ("입장(전체)", f"{fmt_num(tot_c)}명", fyoy(yoy(tot_c, tot_p))),
+        ("  개인",     f"{fmt_num(ind_c)}명", fyoy(yoy(ind_c, ind_p))),
+        ("  단체",     f"{fmt_num(grp_c)}명", fyoy(yoy(grp_c, grp_p))),
+        ("  무료",     f"{fmt_num(fre_c)}명", fyoy(yoy(fre_c, fre_p))),
+        None,
+        ("먹이판매",   f"{fmt_num(fa)}원",    fyoy(yoy(fa, pfa))),
+        None,
+        *store_rows,
+        ("  점포합계", f"{fmt_num(tc)}원",    fyoy(yoy(tc, tp))),
+        None,
+        ("전체매출",   f"{fmt_num(all_c)}원", fyoy(yoy(all_c, all_p))),
     ]
-    lines.extend(store_lines)
-    lines.append(f"  합계: <b>{fmt_num(tc)}원</b>  <i>전년비 {fyoy(yoy(tc, tp))}</i>")
-    lines.append("")
-    lines.append(f"💰 <b>전체매출: {fmt_num(all_c)}원</b>  <i>전년비 {fyoy(yoy(all_c, all_p))}</i>")
 
-    return lines
+    data = [r for r in rows if r is not None]
+    hdr  = ("구분", "금액/수량", "전년비")
+    all_data = [hdr] + data
+    c0 = max(_dw(r[0]) for r in all_data)
+    c1 = max(_dw(r[1]) for r in all_data)
+    c2 = max(_dw(r[2]) for r in all_data)
+    sep = "─" * (c0 + c1 + c2 + 6)
+
+    def fmt_row(r):
+        return _rpad(r[0], c0 + 2) + _lpad(r[1], c1 + 2) + _lpad(r[2], c2)
+
+    table = [fmt_row(hdr), sep]
+    for row in rows:
+        table.append(sep if row is None else fmt_row(row))
+
+    return [f"<b>{title}</b>", "<pre>" + "\n".join(table) + "</pre>"]
 
 
 async def main():
