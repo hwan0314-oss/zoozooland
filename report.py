@@ -10,8 +10,8 @@ import urllib3
 
 urllib3.disable_warnings()
 
-BASE_URL = "https://kis.okpos.co.kr"
-API_URL  = BASE_URL + "/sale/sale/ddd.htmlSheetAction"
+BASE_URL  = "https://kis.okpos.co.kr"
+API_URL   = BASE_URL + "/sale/sale/ddd.htmlSheetAction"
 
 USER_ID   = os.environ["KIS_ID"]
 USER_PW   = os.environ["KIS_PW"]
@@ -35,6 +35,7 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "ko-KR,ko;q=0.9",
 }
+
 
 def extract_token(html):
     m = re.search(
@@ -75,8 +76,10 @@ def do_login():
     print(f"login_action: {r2.status_code} len={len(r2.text)}")
     if "top_frame" not in r2.text:
         raise RuntimeError(f"Login failed. Response: {r2.text[:200]}")
+    sess.get(BASE_URL + "/login/top_frame.jsp", verify=False, timeout=30)
     print("Login OK!")
     return sess
+
 
 def get_api_token(sess):
     r1 = sess.get(
@@ -88,7 +91,6 @@ def get_api_token(sess):
     tok10n, tok10v = extract_token(r1.text)
     if not tok10n:
         raise RuntimeError(f"No token in prod010. HTML: {r1.text[:300]}")
-    print(f"prod010 token: {tok10n[:8]}...")
     r2 = sess.post(
         BASE_URL + "/sale/sale/prod011.jsp",
         data={tok10n: tok10v},
@@ -104,6 +106,7 @@ def get_api_token(sess):
     print(f"prod011 token: {tok11n[:8]}...")
     return tok11n, tok11v
 
+
 def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     payload = {
         tok_name: tok_val,
@@ -118,11 +121,12 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
         "date_period1": "366",
         "ss_PROD_CD": "", "ss_PROD_NM": "",
         "ss_LCLS_CD": "", "ss_MCLS_CD": "", "ss_SCLS_CD": "",
-        "ss_SIZE_CLS_CD": "", "ss_CLS_TEXT": "전체",
+        "ss_SIZE_CLS_CD": "",
+        "ss_CLS_TEXT": "\uc804\uccb4",
         "ss_BAR_CD": "", "ss_SHOP_CD": "",
-        "ss_SHOP_NM": "전체",
+        "ss_SHOP_NM": "\uc804\uccb4",
         "ss_SHOP_INFO": "[]", "ss_VENDOR_CD": "",
-        "ss_VENDOR_NM": "전체",
+        "ss_VENDOR_NM": "\uc804\uccb4",
         "ss_VENDOR_INFO": "[]", "ss_chk": "0",
         "ss_PAGE_SIZE": "500", "ss_PAGE_NO1": "1",
     }
@@ -138,7 +142,7 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     rows = data.get("Data", [])
     agg = {}
     for row in rows:
-        cat = row.get("MCLS_NM") or row.get("LCLS_NM") or "기타"
+        cat = row.get("MCLS_NM") or row.get("LCLS_NM") or "\uae30\ud0c0"
         qty = int(row.get("SALE_QTY", 0) or 0)
         amt = int(row.get("TOT_SALE_AMT", 0) or 0)
         if cat not in agg:
@@ -148,52 +152,60 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     print(f"  Categories: {list(agg.keys())}")
     return agg
 
+
 def yoy(curr, prev):
     if not prev:
         return None
     return (curr - prev) / prev * 100
 
 
-def fmt(n):
+def fmt_num(n):
     return f"{int(n):,}"
 
 
 def fyoy(v):
     if v is None:
         return "N/A"
-    return f"{'+' if v >= 0 else ''}{v:.1f}%"
+    sign = "+" if v >= 0 else ""
+    return f"{sign}{v:.1f}%"
 
 
-def section(title, curr, prev):
-    lines = [f"━━ {title} ━━"]
-    adm = curr.get("매표소", {})
-    padm = prev.get("매표소", {})
-    aq, paq = adm.get("qty", 0), padm.get("qty", 0)
-    lines.append(f"U0001f465 입장객: {fmt(aq)}명  전년비 {fyoy(yoy(aq, paq))}")
-    fd = curr.get("열린매대", {})
-    pfd = prev.get("열린매대", {})
-    fa, pfa = fd.get("amt", 0), pfd.get("amt", 0)
-    lines.append(f"U0001f43e 먹이판매: {fmt(fa)}원  전년비 {fyoy(yoy(fa, pfa))}")
-    cats = [
-        ("레스토랑", "레스토랑"),
-        ("카페테리아", "카페테리아"),
-        ("레스토랑신규", "레스토랑신규"),
-        ("무인점포", "무인점포"),
-        ("드론체험", "드론체험"),
-        ("베이커리", "베이커리"),
+def build_section(title, curr, prev):
+    adm = curr.get("\ub9e4\ud45c\uc18c", {})
+    padm = prev.get("\ub9e4\ud45c\uc18c", {})
+    aq = adm.get("qty", 0)
+    paq = padm.get("qty", 0)
+    fd = curr.get("\uc5f4\ub9b0\ub9e4\ub300", {})
+    pfd = prev.get("\uc5f4\ub9b0\ub9e4\ub300", {})
+    fa = fd.get("amt", 0)
+    pfa = pfd.get("amt", 0)
+    store_keys = [
+        ("\ub808\uc2a4\ud1a0\ub791", "\ub808\uc2a4\ud1a0\ub791"),
+        ("\uce74\ud398\ud14c\ub9ac\uc544", "\uce74\ud398\ud14c\ub9ac\uc544"),
+        ("\ub808\uc2a4\ud1a0\ub791\uc2e0\uaddc", "\ub808\uc2a4\ud1a0\ub791(\uc2e0)"),
+        ("\ubb34\uc778\uc810\ud3ec", "\ubb34\uc778\uc810\ud3ec"),
+        ("\ub4dc\ub860\uccb4\ud5d8", "\ub4dc\ub860\uccb4\ud5d8"),
+        ("\ubca0\uc774\ucee4\ub9ac", "\ubca0\uc774\ucee4\ub9ac"),
     ]
     tc, tp = 0, 0
     sl = []
-    for k, lbl in cats:
+    for k, lbl in store_keys:
         c = curr.get(k, {})
         p = prev.get(k, {})
-        ca, pa = c.get("amt", 0), p.get("amt", 0)
+        ca = c.get("amt", 0)
+        pa = p.get("amt", 0)
         tc += ca
         tp += pa
-        sl.append(f"  - {lbl}: {fmt(ca)}원 ({fyoy(yoy(ca, pa))})")
-    lines.append(f"U0001f3ea 점포합계: {fmt(tc)}원  전년비 {fyoy(yoy(tc, tp))}")
-    lines.extend(sl)
-    return lines
+        sl.append(f"  - {lbl}: {fmt_num(ca)}\uc6d0 ({fyoy(yoy(ca, pa))})")
+    result = [
+        f"\u2501\u2501 {title} \u2501\u2501",
+        f"\U0001f465 \uc785\uc7a5\uac1d: {fmt_num(aq)}\uba85  \uc804\ub144\ube44 {fyoy(yoy(aq, paq))}",
+        f"\U0001f43e \uba39\uc774\ud310\ub9e4: {fmt_num(fa)}\uc6d0  \uc804\ub144\ube44 {fyoy(yoy(fa, pfa))}",
+        f"\U0001f3ea \uc810\ud3ec\ud569\uacc4: {fmt_num(tc)}\uc6d0  \uc804\ub144\ube44 {fyoy(yoy(tc, tp))}",
+    ]
+    result.extend(sl)
+    return result
+
 
 async def main():
     today = date.today()
@@ -223,18 +235,15 @@ async def main():
     tn, tv = get_api_token(sess)
     yp = fetch_sales(sess, tn, tv, fmt_d(pys), fmt_d(pyd))
 
-    lines = [
-        f"U0001f4ca 주주랜드 매출 리포트  [{today.strftime('%Y-%m-%d')} 기준]",
-        "",
-    ]
-    lines += section(f"U0001f4c5 일별 ({yd.strftime('%m/%d')})", dc, dp)
+    header = f"\U0001f4ca \uc8fc\uc8fc\ub7e0\ub4dc \ub9e4\uc6cd \ub9ac\ud3ec\ud2b8 [{today.strftime('%Y-%m-%d')} \uae30\uc900]"
+    lines = [header, ""]
+    lines += build_section(f"\U0001f4c5 \uc77c\ubcc4 ({yd.strftime('%m/%d')})", dc, dp)
     lines.append("")
-    lines += section(f"U0001f4c6 월누계 ({today.strftime('%m')}월)", mc, mp)
+    lines += build_section(f"\U0001f4c6 \uc6d4\ub204\uacc4 ({today.strftime('%m')}\uc6d4)", mc, mp)
     lines.append("")
-    lines += section(f"U0001f4c8 연누계 ({today.year}년)", yc, yp)
+    lines += build_section(f"\U0001f4c8 \uc5f0\ub204\uacc4 ({today.year}\ub144)", yc, yp)
 
-    msg = "
-".join(lines)
+    msg = chr(10).join(lines)
     print("=== MESSAGE ===")
     print(msg)
     print("===============")
