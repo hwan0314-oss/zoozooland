@@ -50,22 +50,40 @@ def extract_token(html):
     )
     if m:
         return m.group(1), m.group(2)
+    # Also try: name=UUID (with value=UUID, where value may not be UUID format)
+    m = re.search(
+        r'name="([0-9a-f-]{36})"[^>]*value="([^"]+)"',
+        html, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1), m.group(2)
+    m = re.search(
+        r"name='([0-9a-f-]{36})'[^>]*value='([^']+)'",
+        html, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1), m.group(2)
     return None, None
 
 
 def do_login():
     sess = requests.Session()
     sess.headers.update(HEADERS)
-    # Step 0: Initialize session by loading login form first
+    # Step 0: Load login form to get initial CSRF token
     r0 = sess.get(
         BASE_URL + "/login/login_form.jsp",
         verify=False, timeout=30,
     )
     print(f"login_form: {r0.status_code} len={len(r0.text)}")
-    # Step 1: Post credentials to get CSRF token
+    form_tok_n, form_tok_v = extract_token(r0.text)
+    print(f"form token: {form_tok_n[:8] if form_tok_n else None}...")
+    # Step 1: Post credentials + form token to login_check.jsp to get second CSRF token
+    login_data = {"user_id": USER_ID, "user_pwd": USER_PW, "AutoFg": "W"}
+    if form_tok_n:
+        login_data[form_tok_n] = form_tok_v
     r1 = sess.post(
         BASE_URL + "/login/login_check.jsp",
-        data={"user_id": USER_ID, "user_pwd": USER_PW, "AutoFg": "W"},
+        data=login_data,
         headers={"Referer": BASE_URL + "/login/login_form.jsp"},
         verify=False, timeout=30,
     )
