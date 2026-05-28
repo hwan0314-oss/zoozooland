@@ -188,7 +188,7 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
 
     cats = {}
     food = {"qty": 0, "amt": 0}
-    admission = {"total": 0, "individual": 0, "group": 0, "free": 0}
+    admission = {"individual": 0, "group": 0, "free": 0}
 
     for row in rows:
         cat      = row.get("MCLS_NM") or row.get("LCLS_NM") or "기타"
@@ -213,15 +213,15 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
             food["qty"] += qty
             food["amt"] += amt
 
-        # 입장객 집계 (매표소 카테고리, 무료/단체/개인 구분)
+        # 입장객 집계: 소분류(SCLS_NM) 기반, 장난감 등 비입장 상품 제외
         if cat == "매표소":
-            admission["total"] += qty
             if prod_nm in FREE_PRODUCTS:
                 admission["free"] += qty
-            elif "단체" in prod_nm or "단체" in scls_nm:
+            elif "단체" in scls_nm or "단체" in prod_nm:
                 admission["group"] += qty
-            else:
+            elif "개인" in scls_nm:
                 admission["individual"] += qty
+            # 소분류가 개인/단체/무료가 아닌 경우(장난감 등)는 집계 제외
 
     print(f"  Categories: {list(cats.keys())}")
     return {"cats": cats, "food": food, "admission": admission}
@@ -233,7 +233,7 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
     total = {
         "cats": {},
         "food": {"qty": 0, "amt": 0},
-        "admission": {"total": 0, "individual": 0, "group": 0, "free": 0},
+        "admission": {"individual": 0, "group": 0, "free": 0},
     }
     current = start
     while current <= end:
@@ -247,7 +247,7 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
             total["cats"][cat]["amt"] += vals["amt"]
         total["food"]["qty"] += chunk["food"]["qty"]
         total["food"]["amt"] += chunk["food"]["amt"]
-        for k in ("total", "individual", "group", "free"):
+        for k in ("individual", "group", "free"):
             total["admission"][k] += chunk["admission"][k]
         current = chunk_end + timedelta(days=1)
     return total
@@ -286,10 +286,11 @@ def build_section(title, curr, prev):
     food_c = curr["food"];  food_p = prev["food"]
     adm_c  = curr["admission"]; adm_p = prev["admission"]
 
-    tot_c = adm_c["total"];      tot_p = adm_p["total"]
     ind_c = adm_c["individual"]; ind_p = adm_p["individual"]
     grp_c = adm_c["group"];      grp_p = adm_p["group"]
     fre_c = adm_c["free"];       fre_p = adm_p["free"]
+    tot_c = ind_c + grp_c + fre_c
+    tot_p = ind_p + grp_p + fre_p
     fa    = food_c["amt"];        pfa   = food_p["amt"]
 
     tc, tp = 0, 0
