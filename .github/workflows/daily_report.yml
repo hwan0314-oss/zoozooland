@@ -2,7 +2,7 @@ name: Daily Report - Zoozooland
 
 on:
   schedule:
-    - cron: '0 10 * * *'  # Runs at 10:00 UTC = 19:00 KST
+    - cron: '40 11 * * *'  # Runs at 11:40 UTC = 20:40 KST
   workflow_dispatch:
 
 jobs:
