@@ -1,10 +1,7 @@
 name: Daily Report - Zoozooland
 
 on:
-  schedule:
-    - cron: '10 6 * * *'   # Runs at 06:10 UTC = 15:10 KST
-    - cron: '10 9 * * *'   # Runs at 09:10 UTC = 18:10 KST
-  workflow_dispatch:
+  workflow_dispatch:  # Claude 스케줄러가 매일 19:00 KST에 트리거
 
 jobs:
   report:
