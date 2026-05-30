@@ -31,6 +31,7 @@ FREE_PRODUCTS    = {"24개월미만무료입장", "초대권"}
 
 ZOOZOOLAND_LAT = 37.6899
 ZOOZOOLAND_LON = 126.8547
+KMA_ASOS_STN   = 108  # 서울 ASOS 관측소 (전년 날씨 조회용)
 WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"]
 WMO_WEATHER = {
     0: "맑음", 1: "대체로맑음", 2: "구름조금", 3: "흐림",
@@ -293,19 +294,24 @@ def latlon_to_kma_grid(lat, lon):
 
 
 def get_weather(target_date):
-    """날씨 조회. 오늘은 KMA API(기상청), 과거는 Open-Meteo archive 사용."""
+    """날씨 조회. KMA API 우선, 실패 시 Open-Meteo fallback."""
     fmt = target_date.strftime("%Y-%m-%d")
     today_kst = datetime.now(KST).date()
     try:
-        if target_date >= today_kst and KMA_API_KEY:
-            return _get_weather_kma()
-        elif target_date >= today_kst:
-            return _get_weather_openmeteo_today()
+        if target_date >= today_kst:
+            return _get_weather_kma() if KMA_API_KEY else _get_weather_openmeteo_today()
         else:
-            return _get_weather_openmeteo_archive(fmt)
+            return _get_weather_kma_archive(fmt) if KMA_API_KEY else _get_weather_openmeteo_archive(fmt)
     except Exception as e:
         print(f"Weather fetch failed ({fmt}): {e}")
-        return "", "--", "--"
+        # fallback
+        try:
+            if target_date >= today_kst:
+                return _get_weather_openmeteo_today()
+            else:
+                return _get_weather_openmeteo_archive(fmt)
+        except Exception:
+            return "", "--", "--"
 
 
 def _get_weather_kma():
@@ -385,6 +391,49 @@ def _get_weather_openmeteo_today():
     tmin  = daily.get("temperature_2m_min", [None])[0]
     desc  = WMO_WEATHER.get(int(code) if code is not None else -1, "")
     return desc, (f"{tmax:.0f}" if tmax is not None else "--"), (f"{tmin:.0f}" if tmin is not None else "--")
+
+
+def _get_weather_kma_archive(fmt):
+    """기상청 ASOS 일자료로 과거 날씨 조회."""
+    r = requests.get(
+        "http://apis.data.go.kr/1360000/AsosDalyInfoService/getWthrDataList",
+        params={
+            "serviceKey": KMA_API_KEY,
+            "pageNo": 1, "numOfRows": 1, "dataType": "JSON",
+            "dataCd": "ASOS", "dateCd": "DAY",
+            "startDt": fmt.replace("-", ""), "endDt": fmt.replace("-", ""),
+            "stnIds": KMA_ASOS_STN,
+        },
+        timeout=15,
+    )
+    items = r.json()["response"]["body"].get("items", {})
+    if not items or not items.get("item"):
+        return "", "--", "--"
+    item = items["item"]
+    if isinstance(item, list):
+        item = item[0]
+
+    tmax    = item.get("maxTa")
+    tmin    = item.get("minTa")
+    avg_tmp = float(item.get("avgTa") or 0)
+    sum_rn  = float(item.get("sumRn") or 0)
+    avg_tca = float(item.get("avgTca") or 5)   # 전운량 0~10
+    ddmes   = float(item.get("ddMes") or 0)    # 신적설
+
+    if sum_rn > 0:
+        desc = "눈" if avg_tmp <= 2 else "비"
+    elif ddmes > 0:
+        desc = "눈"
+    elif avg_tca <= 2:
+        desc = "맑음"
+    elif avg_tca <= 5:
+        desc = "구름조금"
+    elif avg_tca <= 8:
+        desc = "구름많음"
+    else:
+        desc = "흐림"
+
+    return desc, (f"{float(tmax):.0f}" if tmax else "--"), (f"{float(tmin):.0f}" if tmin else "--")
 
 
 def _get_weather_openmeteo_archive(fmt):
