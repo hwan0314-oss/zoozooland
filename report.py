@@ -27,6 +27,19 @@ ONLINE_TICKETS   = {"온라인티켓(LS)", "네이버 주중", "네이버 주말
 ONLINE_TICKET_PRICE = 15_000
 FREE_PRODUCTS    = {"24개월미만무료입장", "초대권"}
 
+ZOOZOOLAND_LAT = 37.6899
+ZOOZOOLAND_LON = 126.8547
+WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"]
+WMO_WEATHER = {
+    0: "맑음", 1: "대체로맑음", 2: "구름조금", 3: "흐림",
+    45: "안개", 48: "안개",
+    51: "이슬비", 53: "이슬비", 55: "이슬비",
+    61: "비", 63: "비", 65: "강한비",
+    71: "눈", 73: "눈", 75: "강한눈", 77: "눈",
+    80: "소나기", 81: "소나기", 82: "강한소나기",
+    95: "뇌우", 96: "뇌우", 99: "뇌우",
+}
+
 STORE_KEYS = [
     ("레스토랑",     "레스토랑"),
     ("카페테리아",   "카페테리아"),
@@ -252,6 +265,46 @@ def fyoy(v):
     return f"{sign}{v:.1f}%"
 
 
+def nearest_same_weekday_last_year(today):
+    """전년 중 today와 가장 가까운 동일 요일 날짜 반환."""
+    base = today.replace(year=today.year - 1)
+    diff = (today.weekday() - base.weekday()) % 7
+    if diff > 3:
+        diff -= 7
+    return base + timedelta(days=diff)
+
+
+def get_weather(target_date):
+    """Open-Meteo로 날씨 조회. (설명, 최고기온, 최저기온) 반환."""
+    fmt = target_date.strftime("%Y-%m-%d")
+    today_kst = datetime.now(KST).date()
+    try:
+        if target_date >= today_kst:
+            url = (
+                f"https://api.open-meteo.com/v1/forecast"
+                f"?latitude={ZOOZOOLAND_LAT}&longitude={ZOOZOOLAND_LON}"
+                f"&daily=temperature_2m_max,temperature_2m_min,weathercode"
+                f"&timezone=Asia/Seoul&forecast_days=1"
+            )
+        else:
+            url = (
+                f"https://archive-api.open-meteo.com/v1/archive"
+                f"?latitude={ZOOZOOLAND_LAT}&longitude={ZOOZOOLAND_LON}"
+                f"&daily=temperature_2m_max,temperature_2m_min,weathercode"
+                f"&timezone=Asia/Seoul&start_date={fmt}&end_date={fmt}"
+            )
+        r = requests.get(url, timeout=15)
+        d = r.json().get("daily", {})
+        tmax = d.get("temperature_2m_max", [None])[0]
+        tmin = d.get("temperature_2m_min", [None])[0]
+        code = d.get("weathercode", [None])[0]
+        desc = WMO_WEATHER.get(int(code) if code is not None else -1, "")
+        return desc, (f"{tmax:.0f}" if tmax is not None else "--"), (f"{tmin:.0f}" if tmin is not None else "--")
+    except Exception as e:
+        print(f"Weather fetch failed ({fmt}): {e}")
+        return "", "--", "--"
+
+
 def _section_data(curr, prev):
     """(label, val_str, yoy_str) 리스트. None 은 구분선."""
     cats_c = curr["cats"];  cats_p = prev["cats"]
@@ -305,7 +358,7 @@ def _yoy_color(s):
     return C_TEXT
 
 
-def create_report_image(today, dc, dp, mc, mp, yc, yp):
+def create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, yc, yp):
     fnt_r = _load_font(FONT_REGULAR, 14)
     fnt_b = _load_font(FONT_BOLD,    14)
     fnt_s = _load_font(FONT_REGULAR, 12)   # yoy values, sub-items
@@ -362,14 +415,15 @@ def create_report_image(today, dc, dp, mc, mp, yc, yp):
     VPAD    = 10
     base_h  = max(_th("가나Ag", fnt_r), _th("가나Ag", fnt_s))
     RH      = base_h + VPAD * 2   # data row height
-    TITLE_H = 52
+    TITLE_H = 44
+    SUB_H   = 28                   # 날짜+날씨 서브타이틀
     P_H     = base_h + VPAD       # period header row
     C_H     = base_h + VPAD       # column header row
     SEP_H   = 4
 
     n_data = sum(1 for r in combined if r is not None)
     n_sep  = sum(1 for r in combined if r is None)
-    img_h  = TITLE_H + P_H + C_H + n_data * RH + n_sep * SEP_H + 2
+    img_h  = TITLE_H + SUB_H + P_H + C_H + n_data * RH + n_sep * SEP_H + 2
 
     img  = Image.new("RGB", (total_w, img_h), C_ROW_ODD)
     draw = ImageDraw.Draw(img)
@@ -396,10 +450,20 @@ def create_report_image(today, dc, dp, mc, mp, yc, yp):
     # ── Title ─────────────────────────────────────────────────────────────
     cur_y = 0
     fill(0, cur_y, total_w, TITLE_H, C_TITLE_BG)
-    cell_text(0, cur_y, total_w - 140, TITLE_H, "쥬쥬랜드 실적 리포트", fnt_t, C_WHITE)
-    cell_text(total_w - 140, cur_y, 140, TITLE_H,
-              today.strftime("%Y-%m-%d"), fnt_s, (160, 190, 215), "right")
+    cell_text(0, cur_y, total_w, TITLE_H, "쥬쥬랜드 실적 리포트", fnt_t, C_WHITE)
     cur_y += TITLE_H
+
+    # ── Subtitle: 날짜 + 날씨 ─────────────────────────────────────────────
+    fill(0, cur_y, total_w, SUB_H, (20, 35, 50))
+    wd0 = WEEKDAY_KO[today.weekday()]
+    wd1 = WEEKDAY_KO[ptd.weekday()]
+    w0_desc, w0_max, w0_min = weather_today
+    w1_desc, w1_max, w1_min = weather_ptd
+    sub0 = f"오늘 {today.strftime('%Y-%m-%d')}({wd0})  {w0_desc}  {w0_max}/{w0_min}°"
+    sub1 = f"작년 {ptd.strftime('%Y-%m-%d')}({wd1})  {w1_desc}  {w1_max}/{w1_min}°"
+    cell_text(0, cur_y, total_w // 2, SUB_H, sub0, fnt_s, (170, 200, 225), "center")
+    cell_text(total_w // 2, cur_y, total_w // 2, SUB_H, sub1, fnt_s, (150, 175, 200), "center")
+    cur_y += SUB_H
     header_top = cur_y
 
     # ── Period header (구분 spans P_H + C_H vertically) ───────────────────
@@ -487,7 +551,7 @@ async def main():
     pms = ms.replace(year=ms.year - 1)
     ys  = today.replace(month=1, day=1)
     pys = ys.replace(year=ys.year - 1)
-    ptd = today.replace(year=today.year - 1)
+    ptd = nearest_same_weekday_last_year(today)  # 전년 가장 가까운 동일 요일
     fmt_d = lambda d: d.strftime("%Y-%m-%d")
 
     sess = do_login()
@@ -506,8 +570,13 @@ async def main():
     mp = fetch_sales(sess, tn, tv, fmt_d(pms), fmt_d(ptd))
     yp = fetch_sales_chunked(sess, fmt_d(pys), fmt_d(ptd))
 
+    print("Fetching weather...")
+    weather_today = get_weather(today)
+    weather_ptd   = get_weather(ptd)
+    print(f"  today: {weather_today}, ptd({ptd}): {weather_ptd}")
+
     print("Creating image...")
-    img_buf = create_report_image(today, dc, dp, mc, mp, yc, yp)
+    img_buf = create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, yc, yp)
 
     bot = telegram.Bot(token=BOT_TOKEN)
     await bot.send_photo(chat_id=CHAT_ID, photo=img_buf)
