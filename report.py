@@ -1,6 +1,7 @@
 import asyncio
 import io
 import json
+import math
 import os
 import re
 from datetime import date, timedelta, datetime, timezone
@@ -21,6 +22,7 @@ BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID   = -1003990713280
 
 KST = timezone(timedelta(hours=9))
+KMA_API_KEY = os.environ.get("KMA_API_KEY", "")
 
 FOOD_KEYWORDS    = ["먹이", "양분유체험"]
 ONLINE_TICKETS   = {"온라인티켓(LS)", "네이버 주중", "네이버 주말"}
@@ -274,44 +276,132 @@ def nearest_same_weekday_last_year(today):
     return base + timedelta(days=diff)
 
 
+def latlon_to_kma_grid(lat, lon):
+    """위경도 → 기상청 격자 좌표(nx, ny) 변환."""
+    RE, GRID = 6371.00877, 5.0
+    SLAT1, SLAT2, OLON, OLAT, XO, YO = 30.0, 60.0, 126.0, 38.0, 43, 136
+    d = math.pi / 180.0
+    re = RE / GRID
+    sn = math.log(math.cos(SLAT1 * d) / math.cos(SLAT2 * d)) / \
+         math.log(math.tan(math.pi * 0.25 + SLAT2 * d * 0.5) /
+                  math.tan(math.pi * 0.25 + SLAT1 * d * 0.5))
+    sf = (math.tan(math.pi * 0.25 + SLAT1 * d * 0.5) ** sn) * math.cos(SLAT1 * d) / sn
+    ro = re * sf / (math.tan(math.pi * 0.25 + OLAT * d * 0.5) ** sn)
+    ra = re * sf / (math.tan(math.pi * 0.25 + lat * d * 0.5) ** sn)
+    theta = (lon - OLON) * d * sn
+    return round(ra * math.sin(theta) + XO), round(ro - ra * math.cos(theta) + YO)
+
+
 def get_weather(target_date):
-    """Open-Meteo로 날씨 조회. (설명, 최고기온, 최저기온) 반환."""
+    """날씨 조회. 오늘은 KMA API(기상청), 과거는 Open-Meteo archive 사용."""
     fmt = target_date.strftime("%Y-%m-%d")
     today_kst = datetime.now(KST).date()
     try:
-        if target_date >= today_kst:
-            # 오늘: current_weather(현재 실황) + 일별 최고/최저 기온
-            url = (
-                f"https://api.open-meteo.com/v1/forecast"
-                f"?latitude={ZOOZOOLAND_LAT}&longitude={ZOOZOOLAND_LON}"
-                f"&current_weather=true"
-                f"&daily=temperature_2m_max,temperature_2m_min"
-                f"&timezone=Asia/Seoul&forecast_days=1"
-            )
-            r = requests.get(url, timeout=15)
-            data = r.json()
-            code = data.get("current_weather", {}).get("weathercode")
-            daily = data.get("daily", {})
-            tmax = daily.get("temperature_2m_max", [None])[0]
-            tmin = daily.get("temperature_2m_min", [None])[0]
+        if target_date >= today_kst and KMA_API_KEY:
+            return _get_weather_kma()
+        elif target_date >= today_kst:
+            return _get_weather_openmeteo_today()
         else:
-            # 과거: archive API 일별 요약
-            url = (
-                f"https://archive-api.open-meteo.com/v1/archive"
-                f"?latitude={ZOOZOOLAND_LAT}&longitude={ZOOZOOLAND_LON}"
-                f"&daily=temperature_2m_max,temperature_2m_min,weathercode"
-                f"&timezone=Asia/Seoul&start_date={fmt}&end_date={fmt}"
-            )
-            r = requests.get(url, timeout=15)
-            daily = r.json().get("daily", {})
-            tmax = daily.get("temperature_2m_max", [None])[0]
-            tmin = daily.get("temperature_2m_min", [None])[0]
-            code = daily.get("weathercode", [None])[0]
-        desc = WMO_WEATHER.get(int(code) if code is not None else -1, "")
-        return desc, (f"{tmax:.0f}" if tmax is not None else "--"), (f"{tmin:.0f}" if tmin is not None else "--")
+            return _get_weather_openmeteo_archive(fmt)
     except Exception as e:
         print(f"Weather fetch failed ({fmt}): {e}")
         return "", "--", "--"
+
+
+def _get_weather_kma():
+    """기상청 공공API: 초단기실황(현재기온/강수) + 단기예보(최고/최저/하늘)."""
+    now  = datetime.now(KST)
+    nx, ny = latlon_to_kma_grid(ZOOZOOLAND_LAT, ZOOZOOLAND_LON)
+    print(f"  KMA grid: nx={nx}, ny={ny}")
+    base_date = now.strftime("%Y%m%d")
+
+    # 초단기실황 (현재 기온 T1H, 강수형태 PTY)
+    ncst_h = now.hour if now.minute >= 45 else max(now.hour - 1, 0)
+    r_ncst = requests.get(
+        "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst",
+        params={"serviceKey": KMA_API_KEY, "numOfRows": 10, "pageNo": 1,
+                "dataType": "JSON", "base_date": base_date,
+                "base_time": f"{ncst_h:02d}00", "nx": nx, "ny": ny},
+        timeout=15,
+    )
+    t1h, pty = None, 0
+    for it in r_ncst.json()["response"]["body"]["items"]["item"]:
+        if it["category"] == "T1H": t1h = float(it["obsrValue"])
+        if it["category"] == "PTY": pty = int(float(it["obsrValue"]))
+    print(f"  KMA Ncst: T1H={t1h}, PTY={pty}")
+
+    # 단기예보 (일 최고/최저 TMX/TMN, 하늘상태 SKY)
+    bases = [2, 5, 8, 11, 14, 17, 20, 23]
+    fcst_h = max((b for b in bases if now.hour > b or (now.hour == b and now.minute >= 10)), default=2)
+    r_fcst = requests.get(
+        "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst",
+        params={"serviceKey": KMA_API_KEY, "numOfRows": 300, "pageNo": 1,
+                "dataType": "JSON", "base_date": base_date,
+                "base_time": f"{fcst_h:02d}00", "nx": nx, "ny": ny},
+        timeout=15,
+    )
+    tmx = tmn = sky = None
+    sky_map = {}
+    for it in r_fcst.json()["response"]["body"]["items"]["item"]:
+        if it["fcstDate"] != base_date:
+            continue
+        cat = it["category"]
+        if cat == "TMX": tmx = float(it["fcstValue"])
+        elif cat == "TMN": tmn = float(it["fcstValue"])
+        elif cat == "SKY": sky_map[it["fcstTime"]] = int(it["fcstValue"])
+    # 현재 시각에 가장 가까운 하늘상태
+    if sky_map:
+        sky = sky_map.get(f"{now.hour:02d}00") or \
+              sky_map[min(sky_map, key=lambda t: abs(int(t[:2]) - now.hour))]
+    print(f"  KMA Fcst: TMX={tmx}, TMN={tmn}, SKY={sky}")
+
+    if pty == 1: desc = "비"
+    elif pty == 2: desc = "비/눈"
+    elif pty == 3: desc = "눈"
+    elif pty == 4: desc = "소나기"
+    elif sky == 1: desc = "맑음"
+    elif sky == 3: desc = "구름많음"
+    elif sky == 4: desc = "흐림"
+    else: desc = ""
+
+    tmax_s = f"{tmx:.0f}" if tmx is not None else (f"{t1h:.0f}" if t1h is not None else "--")
+    tmin_s = f"{tmn:.0f}" if tmn is not None else "--"
+    return desc, tmax_s, tmin_s
+
+
+def _get_weather_openmeteo_today():
+    """Open-Meteo 현재 실황 (KMA 키 없을 때 fallback)."""
+    url = (
+        f"https://api.open-meteo.com/v1/forecast"
+        f"?latitude={ZOOZOOLAND_LAT}&longitude={ZOOZOOLAND_LON}"
+        f"&current_weather=true&daily=temperature_2m_max,temperature_2m_min"
+        f"&timezone=Asia/Seoul&forecast_days=1"
+    )
+    r = requests.get(url, timeout=15)
+    data  = r.json()
+    code  = data.get("current_weather", {}).get("weathercode")
+    daily = data.get("daily", {})
+    tmax  = daily.get("temperature_2m_max", [None])[0]
+    tmin  = daily.get("temperature_2m_min", [None])[0]
+    desc  = WMO_WEATHER.get(int(code) if code is not None else -1, "")
+    return desc, (f"{tmax:.0f}" if tmax is not None else "--"), (f"{tmin:.0f}" if tmin is not None else "--")
+
+
+def _get_weather_openmeteo_archive(fmt):
+    """Open-Meteo 과거 날씨 (전년 비교용)."""
+    url = (
+        f"https://archive-api.open-meteo.com/v1/archive"
+        f"?latitude={ZOOZOOLAND_LAT}&longitude={ZOOZOOLAND_LON}"
+        f"&daily=temperature_2m_max,temperature_2m_min,weathercode"
+        f"&timezone=Asia/Seoul&start_date={fmt}&end_date={fmt}"
+    )
+    r     = requests.get(url, timeout=15)
+    daily = r.json().get("daily", {})
+    tmax  = daily.get("temperature_2m_max", [None])[0]
+    tmin  = daily.get("temperature_2m_min", [None])[0]
+    code  = daily.get("weathercode", [None])[0]
+    desc  = WMO_WEATHER.get(int(code) if code is not None else -1, "")
+    return desc, (f"{tmax:.0f}" if tmax is not None else "--"), (f"{tmin:.0f}" if tmin is not None else "--")
 
 
 def _section_data(curr, prev):
