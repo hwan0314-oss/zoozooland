@@ -337,8 +337,8 @@ def _get_weather_kma():
     print(f"  KMA Ncst: T1H={t1h}, PTY={pty}")
 
     # 단기예보 (일 최고/최저 TMX/TMN, 하늘상태 SKY)
-    bases = [2, 5, 8, 11, 14, 17, 20, 23]
-    fcst_h = max((b for b in bases if now.hour > b or (now.hour == b and now.minute >= 10)), default=2)
+    # base_time=0200 고정 → TMX(fcstTime=1500), TMN(fcstTime=0600) 항상 포함
+    fcst_h = 2
     r_fcst = requests.get(
         "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst",
         params={"serviceKey": KMA_API_KEY, "numOfRows": 300, "pageNo": 1,
