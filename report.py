@@ -280,24 +280,33 @@ def get_weather(target_date):
     today_kst = datetime.now(KST).date()
     try:
         if target_date >= today_kst:
+            # 오늘: current_weather(현재 실황) + 일별 최고/최저 기온
             url = (
                 f"https://api.open-meteo.com/v1/forecast"
                 f"?latitude={ZOOZOOLAND_LAT}&longitude={ZOOZOOLAND_LON}"
-                f"&daily=temperature_2m_max,temperature_2m_min,weathercode"
+                f"&current_weather=true"
+                f"&daily=temperature_2m_max,temperature_2m_min"
                 f"&timezone=Asia/Seoul&forecast_days=1"
             )
+            r = requests.get(url, timeout=15)
+            data = r.json()
+            code = data.get("current_weather", {}).get("weathercode")
+            daily = data.get("daily", {})
+            tmax = daily.get("temperature_2m_max", [None])[0]
+            tmin = daily.get("temperature_2m_min", [None])[0]
         else:
+            # 과거: archive API 일별 요약
             url = (
                 f"https://archive-api.open-meteo.com/v1/archive"
                 f"?latitude={ZOOZOOLAND_LAT}&longitude={ZOOZOOLAND_LON}"
                 f"&daily=temperature_2m_max,temperature_2m_min,weathercode"
                 f"&timezone=Asia/Seoul&start_date={fmt}&end_date={fmt}"
             )
-        r = requests.get(url, timeout=15)
-        d = r.json().get("daily", {})
-        tmax = d.get("temperature_2m_max", [None])[0]
-        tmin = d.get("temperature_2m_min", [None])[0]
-        code = d.get("weathercode", [None])[0]
+            r = requests.get(url, timeout=15)
+            daily = r.json().get("daily", {})
+            tmax = daily.get("temperature_2m_max", [None])[0]
+            tmin = daily.get("temperature_2m_min", [None])[0]
+            code = daily.get("weathercode", [None])[0]
         desc = WMO_WEATHER.get(int(code) if code is not None else -1, "")
         return desc, (f"{tmax:.0f}" if tmax is not None else "--"), (f"{tmin:.0f}" if tmin is not None else "--")
     except Exception as e:
