@@ -1193,14 +1193,14 @@ button { font-family: var(--ff); cursor: pointer; border: none; background: none
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  align-items: start;
+  align-items: stretch; /* 양쪽 높이 동일하게 */
 }
 
 .loc-map-box {
   border-radius: var(--r-xl);
   overflow: hidden;
   box-shadow: var(--sh-lg);
-  min-height: 320px;
+  min-height: 380px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1212,6 +1212,16 @@ button { font-family: var(--ff); cursor: pointer; border: none; background: none
   min-height: 300px;
   border: none;
   display: block;
+}
+
+.loc-closed {
+  font-weight: 700;
+  color: var(--r500, #ef4444);
+}
+
+.loc-note {
+  font-size: 12px;
+  color: var(--n500);
 }
 
 .loc-map-links {
@@ -1231,7 +1241,8 @@ button { font-family: var(--ff); cursor: pointer; border: none; background: none
   box-shadow: var(--sh-md);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 0;
+  justify-content: space-between;
 }
 
 .loc-item {
