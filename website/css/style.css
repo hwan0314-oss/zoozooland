@@ -1114,6 +1114,11 @@ button { font-family: var(--ff); cursor: pointer; border: none; background: none
   border-radius: var(--r-md);
 }
 
+/* 예약+이용안내 합친 섹션의 info-grid 상단 간격 */
+.booking-info-grid {
+  margin-top: 40px;
+}
+
 /* 2-column contact grid */
 .contact-grid-2 {
   display: grid;

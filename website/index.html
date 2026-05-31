@@ -26,15 +26,15 @@
         <span class="logo-en">ZooZoo Land</span>
       </a>
       <div class="nav-links" id="navLinks">
-        <a href="#notices"    class="nav-item">공지/이벤트</a>
-        <a href="#tickets"    class="nav-item">입장권/이용안내</a>
         <a href="#gallery"    class="nav-item">갤러리</a>
+        <a href="#booking"    class="nav-item">예약/이용안내</a>
+        <a href="#notices"    class="nav-item">공지/이벤트</a>
         <a href="#guidemap"   class="nav-item nav-item--map">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
           가이드맵
         </a>
-        <a href="#reservation" class="nav-item">예약/문의</a>
         <a href="#location"   class="nav-item">오시는 길</a>
+        <a href="#contact"    class="nav-item">문의</a>
       </div>
       <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--nav" target="_blank" rel="noopener">예약하기</a>
       <button class="nav-toggle" id="navToggle" aria-label="메뉴 열기/닫기" aria-expanded="false">
@@ -42,12 +42,12 @@
       </button>
     </div>
     <div class="nav-mobile" id="navMobile">
-      <a href="#notices"    class="nav-mobile-item">공지/이벤트</a>
-      <a href="#tickets"    class="nav-mobile-item">입장권/이용안내</a>
       <a href="#gallery"    class="nav-mobile-item">갤러리</a>
+      <a href="#booking"    class="nav-mobile-item">예약/이용안내</a>
+      <a href="#notices"    class="nav-mobile-item">공지/이벤트</a>
       <a href="#guidemap"   class="nav-mobile-item">🗺 가이드맵</a>
-      <a href="#reservation" class="nav-mobile-item">예약/문의</a>
       <a href="#location"   class="nav-mobile-item">오시는 길</a>
+      <a href="#contact"    class="nav-mobile-item">문의</a>
       <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="nav-mobile-book" target="_blank" rel="noopener">📅 네이버 예약하기</a>
     </div>
   </nav>
@@ -89,43 +89,59 @@
     </div>
   </section>
 
-  <!-- ── 공지/이벤트 ── -->
-  <section class="sec" id="notices">
+  <!-- ── 갤러리 ── -->
+  <section class="sec" id="gallery">
     <div class="container">
       <div class="sec-hd">
-        <span class="sec-tag">Notice &amp; Event</span>
-        <h2 class="sec-title">공지 / 이벤트</h2>
+        <span class="sec-tag">Gallery</span>
+        <h2 class="sec-title">갤러리</h2>
+        <a href="https://www.instagram.com/themeparkzoozoo/" class="sec-insta" target="_blank" rel="noopener" id="instaLink">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          @themeparkzoozoo
+        </a>
       </div>
-
-      <div class="swiper notices-swiper">
-        <div class="swiper-wrapper" id="noticesWrapper">
-          <!-- JS로 채워짐. 없을 때 보이는 placeholder -->
-          <div class="swiper-slide" id="noticePlaceholder">
-            <div class="notice-empty">
-              <div class="notice-empty-icon">📢</div>
-              <p>등록된 공지/이벤트가 없습니다</p>
-              <span>관리자 페이지에서 이미지를 업로드해주세요</span>
-            </div>
-          </div>
+      <div class="gallery-wrap">
+        <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
+        <iframe src="https://cdn.lightwidget.com/widgets/32f54e0fcb97522380cb96c203bb1a40.html" scrolling="no" allowtransparency="true" class="lightwidget-widget" title="쥬쥬랜드 인스타그램 피드" style="width:100%;border:0;overflow:hidden;min-height:480px;"></iframe>
+        <div class="gallery-ph" id="galleryPlaceholder" style="display:none">
+          <div class="gallery-ph-grid" aria-hidden="true"><div class="gallery-ph-item"></div><div class="gallery-ph-item"></div><div class="gallery-ph-item"></div><div class="gallery-ph-item"></div><div class="gallery-ph-item"></div><div class="gallery-ph-item"></div></div>
+          <p class="gallery-ph-msg">갤러리 준비 중 · 곧 인스타그램 피드가 연동됩니다</p>
         </div>
-        <div class="swiper-pagination"></div>
-        <div class="swiper-button-prev"></div>
-        <div class="swiper-button-next"></div>
       </div>
     </div>
   </section>
 
-  <!-- ── 입장권 / 이용안내 ── -->
-  <section class="sec sec--alt" id="tickets">
+  <!-- ── 예약 / 이용안내 ── -->
+  <section class="sec sec--alt" id="booking">
     <div class="container">
       <div class="sec-hd">
-        <span class="sec-tag">Ticket &amp; Guide</span>
-        <h2 class="sec-title">입장권 / 이용안내</h2>
+        <span class="sec-tag">Reservation &amp; Guide</span>
+        <h2 class="sec-title">예약 / 이용안내</h2>
       </div>
 
-      <div class="info-grid">
+      <!-- 네이버 예매 상품 -->
+      <div class="products-section reveal">
+        <div class="products-head">
+          <span class="products-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            네이버 예매 상품
+          </span>
+          <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--outline btn--sm" target="_blank" rel="noopener">
+            네이버에서 열기 ↗
+          </a>
+        </div>
+        <div class="products-grid" id="productsGrid">
+          <div class="products-empty" id="productsEmpty">
+            <div class="products-empty-icon">🎟</div>
+            <p>현재 등록된 예매 상품이 없습니다</p>
+            <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--naver" target="_blank" rel="noopener">네이버에서 예매하기</a>
+          </div>
+        </div>
+      </div>
 
-        <!-- 입장권 -->
+      <!-- 이용안내 -->
+      <div class="info-grid booking-info-grid">
+
         <div class="info-card reveal">
           <div class="info-icon" style="--ic:#E8F5E9;--cc:#2E7D32">🎟</div>
           <h3 class="info-title">입장권</h3>
@@ -139,7 +155,6 @@
           <a href="https://map.naver.com/p/entry/place/1008136590" class="btn btn--outline btn--sm" target="_blank" rel="noopener">네이버 플레이스 보기</a>
         </div>
 
-        <!-- 먹이 판매 -->
         <div class="info-card reveal">
           <div class="info-icon" style="--ic:#FFF3E0;--cc:#E65100">🥕</div>
           <h3 class="info-title">먹이 판매</h3>
@@ -160,44 +175,18 @@
           </div>
         </div>
 
-        <!-- 주말 프로그램 -->
         <div class="info-card reveal">
           <div class="info-icon" style="--ic:#E3F2FD;--cc:#1565C0">🦜</div>
           <h3 class="info-title">주말 프로그램</h3>
           <div class="prog-list">
-            <div class="prog-row">
-              <span class="prog-time">12:30</span>
-              <div class="prog-info">
-                <b>앵무새 설명회</b>
-                <span>파충류관 2F</span>
-              </div>
-            </div>
-            <div class="prog-row">
-              <span class="prog-time">13:30<br>15:30</span>
-              <div class="prog-info">
-                <b>애니멀 스타</b>
-                <span>파충류관 1F 무대</span>
-              </div>
-            </div>
-            <div class="prog-row">
-              <span class="prog-time">13:50<br>15:50</span>
-              <div class="prog-info">
-                <b>로봇 공연</b>
-                <span>파충류관 1F 무대</span>
-              </div>
-            </div>
-            <div class="prog-row">
-              <span class="prog-time">14:30</span>
-              <div class="prog-info">
-                <b>악어 설명회</b>
-                <span>실내 동물원 악어빌리지</span>
-              </div>
-            </div>
+            <div class="prog-row"><span class="prog-time">12:30</span><div class="prog-info"><b>앵무새 설명회</b><span>파충류관 2F</span></div></div>
+            <div class="prog-row"><span class="prog-time">13:30<br>15:30</span><div class="prog-info"><b>애니멀 스타</b><span>파충류관 1F 무대</span></div></div>
+            <div class="prog-row"><span class="prog-time">13:50<br>15:50</span><div class="prog-info"><b>로봇 공연</b><span>파충류관 1F 무대</span></div></div>
+            <div class="prog-row"><span class="prog-time">14:30</span><div class="prog-info"><b>악어 설명회</b><span>실내 동물원 악어빌리지</span></div></div>
           </div>
           <p class="info-note">* 주말 및 공휴일 진행</p>
         </div>
 
-        <!-- 이용 수칙 -->
         <div class="info-card reveal">
           <div class="info-icon" style="--ic:#FCE4EC;--cc:#AD1457">📋</div>
           <h3 class="info-title">이용 수칙</h3>
@@ -211,49 +200,30 @@
           </ul>
         </div>
 
-      </div><!-- /info-grid -->
+      </div>
     </div>
   </section>
 
-  <!-- ── 갤러리 ── -->
-  <section class="sec" id="gallery">
+  <!-- ── 공지/이벤트 ── -->
+  <section class="sec" id="notices">
     <div class="container">
       <div class="sec-hd">
-        <span class="sec-tag">Gallery</span>
-        <h2 class="sec-title">갤러리</h2>
-        <a href="https://www.instagram.com/themeparkzoozoo/" class="sec-insta" target="_blank" rel="noopener" id="instaLink">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          @themeparkzoozoo
-        </a>
+        <span class="sec-tag">Notice &amp; Event</span>
+        <h2 class="sec-title">공지 / 이벤트</h2>
       </div>
-
-      <div class="gallery-wrap">
-        <!-- LightWidget Instagram 피드 -->
-        <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
-        <iframe
-          src="https://cdn.lightwidget.com/widgets/32f54e0fcb97522380cb96c203bb1a40.html"
-          scrolling="no"
-          allowtransparency="true"
-          class="lightwidget-widget"
-          title="쥬쥬랜드 인스타그램 피드"
-          style="width:100%;border:0;overflow:hidden;min-height:480px;">
-        </iframe>
-
-        <!-- placeholder (로딩 중 또는 차단 시 대체 표시) -->
-        <div class="gallery-ph" id="galleryPlaceholder" style="display:none">
-          <div class="gallery-ph-grid" aria-hidden="true">
-            <div class="gallery-ph-item"></div>
-            <div class="gallery-ph-item"></div>
-            <div class="gallery-ph-item"></div>
-            <div class="gallery-ph-item"></div>
-            <div class="gallery-ph-item"></div>
-            <div class="gallery-ph-item"></div>
+      <div class="swiper notices-swiper">
+        <div class="swiper-wrapper" id="noticesWrapper">
+          <div class="swiper-slide" id="noticePlaceholder">
+            <div class="notice-empty">
+              <div class="notice-empty-icon">📢</div>
+              <p>등록된 공지/이벤트가 없습니다</p>
+              <span>관리자 페이지에서 이미지를 업로드해주세요</span>
+            </div>
           </div>
-          <p class="gallery-ph-msg">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>
-            갤러리 준비 중 · 곧 인스타그램 피드가 연동됩니다
-          </p>
         </div>
+        <div class="swiper-pagination"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
       </div>
     </div>
   </section>
@@ -312,72 +282,8 @@
     </div>
   </div>
 
-  <!-- ── 예약 / 문의 ── -->
-  <section class="sec" id="reservation">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag">Reservation &amp; Contact</span>
-        <h2 class="sec-title">예약 / 문의</h2>
-      </div>
-
-      <!-- 네이버 예매 상품 카드 -->
-      <div class="products-section reveal">
-        <div class="products-head">
-          <span class="products-label">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            네이버 예매 상품
-          </span>
-          <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--outline btn--sm" target="_blank" rel="noopener">
-            네이버에서 열기 ↗
-          </a>
-        </div>
-        <div class="products-grid" id="productsGrid">
-          <!-- JS로 채워짐 -->
-          <div class="products-empty" id="productsEmpty">
-            <div class="products-empty-icon">🎟</div>
-            <p>현재 등록된 예매 상품이 없습니다</p>
-            <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--naver" target="_blank" rel="noopener">네이버에서 예매하기</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 단체문의 + 마케팅 제휴 -->
-      <div class="contact-grid-2">
-
-        <div class="contact-card reveal">
-          <div class="contact-icon">👥</div>
-          <h3>단체 문의</h3>
-          <p>20인 이상 단체 방문은<br>사전 문의 바랍니다.</p>
-          <div class="contact-links">
-            <a href="tel:031-962-4500" class="contact-link">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.48 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              031-962-4500
-            </a>
-            <a href="mailto:info@zoozoo.kr" class="contact-link">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              이메일 문의
-            </a>
-          </div>
-        </div>
-
-        <div class="contact-card reveal">
-          <div class="contact-icon">🤝</div>
-          <h3>마케팅 제휴</h3>
-          <p>광고 · 협찬 · 콜라보 등<br>제휴 문의를 환영합니다.</p>
-          <div class="contact-links">
-            <a href="mailto:biz@zoozoo.kr" class="contact-link">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              제휴 이메일 문의
-            </a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
   <!-- ── 오시는 길 ── -->
-  <section class="sec sec--alt" id="location">
+  <section class="sec" id="location">
     <div class="container">
       <div class="sec-hd">
         <span class="sec-tag">Location</span>
@@ -432,6 +338,47 @@
     </div>
   </section>
 
+  <!-- ── 문의 ── -->
+  <section class="sec sec--alt" id="contact">
+    <div class="container">
+      <div class="sec-hd">
+        <span class="sec-tag">Contact</span>
+        <h2 class="sec-title">문의</h2>
+      </div>
+      <div class="contact-grid-2">
+
+        <div class="contact-card reveal">
+          <div class="contact-icon">👥</div>
+          <h3>단체 문의</h3>
+          <p>20인 이상 단체 방문은<br>사전 문의 바랍니다.</p>
+          <div class="contact-links">
+            <a href="tel:031-962-4500" class="contact-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.48 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              031-962-4500
+            </a>
+            <a href="mailto:info@zoozoo.kr" class="contact-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              이메일 문의
+            </a>
+          </div>
+        </div>
+
+        <div class="contact-card reveal">
+          <div class="contact-icon">🤝</div>
+          <h3>마케팅 제휴</h3>
+          <p>광고 · 협찬 · 콜라보 등<br>제휴 문의를 환영합니다.</p>
+          <div class="contact-links">
+            <a href="mailto:biz@zoozoo.kr" class="contact-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              제휴 이메일 문의
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- ── FOOTER ── -->
   <footer class="footer">
     <div class="container">
@@ -443,12 +390,12 @@
           <p>🌐 zoozoo.kr</p>
         </div>
         <nav class="footer-nav" aria-label="푸터 네비게이션">
-          <a href="#notices">공지/이벤트</a>
-          <a href="#tickets">입장권/이용안내</a>
           <a href="#gallery">갤러리</a>
+          <a href="#booking">예약/이용안내</a>
+          <a href="#notices">공지/이벤트</a>
           <a href="#guidemap">가이드맵</a>
-          <a href="#reservation">예약/문의</a>
           <a href="#location">오시는 길</a>
+          <a href="#contact">문의</a>
         </nav>
         <div class="footer-social">
           <a href="https://www.instagram.com/themeparkzoozoo/" target="_blank" rel="noopener" id="footerInstaLink" aria-label="인스타그램">
