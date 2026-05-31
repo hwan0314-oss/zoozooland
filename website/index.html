@@ -386,14 +386,7 @@
 
       <div class="loc-grid">
         <div class="loc-map-box reveal">
-          <iframe
-            src="https://maps.google.com/maps?q=쥬쥬랜드+경기도&output=embed&hl=ko&z=16"
-            class="loc-map-iframe"
-            title="쥬쥬랜드 위치"
-            allowfullscreen
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade">
-          </iframe>
+          <div id="kakaoMap" class="loc-map-iframe"></div>
           <div class="loc-map-links">
             <a href="https://map.naver.com/p/entry/place/1008136590" target="_blank" rel="noopener" class="btn btn--map-n">네이버 지도</a>
             <a href="https://map.kakao.com/link/search/쥬쥬랜드" target="_blank" rel="noopener" class="btn btn--map-k">카카오맵</a>
@@ -476,5 +469,40 @@
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="js/main.js"></script>
+
+  <!-- 카카오맵 — API 키를 발급받으면 아래 KAKAO_APP_KEY 부분만 교체하세요 -->
+  <script>
+    (function initKakaoMap() {
+      var APP_KEY = '055fac047582f3d122a979a3b1b0dfd4';
+      if (APP_KEY === 'KAKAO_APP_KEY') return; // 키 미설정 시 스킵
+
+      var script = document.createElement('script');
+      script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + APP_KEY + '&libraries=services&autoload=false';
+      script.onload = function () {
+        kakao.maps.load(function () {
+          var container = document.getElementById('kakaoMap');
+          var map = new kakao.maps.Map(container, {
+            center: new kakao.maps.LatLng(37.655, 126.882),
+            level: 4
+          });
+
+          // 장소 검색으로 정확한 위치 자동 찾기
+          var places = new kakao.maps.services.Places();
+          places.keywordSearch('쥬쥬랜드 고양', function (data, status) {
+            if (status !== kakao.maps.services.Status.OK) return;
+            var coords = new kakao.maps.LatLng(data[0].y, data[0].x);
+            map.setCenter(coords);
+
+            var marker = new kakao.maps.Marker({ map: map, position: coords });
+            var infowindow = new kakao.maps.InfoWindow({
+              content: '<div style="padding:8px 12px;font-size:13px;font-weight:700;white-space:nowrap;">🦁 쥬쥬랜드</div>'
+            });
+            infowindow.open(map, marker);
+          });
+        });
+      };
+      document.body.appendChild(script);
+    })();
+  </script>
 </body>
 </html>
