@@ -228,19 +228,19 @@
       </div>
 
       <div class="gallery-wrap">
-        <!--
-          =============================================
-          LightWidget 인스타그램 위젯 삽입 위치
-          =============================================
-          1. https://lightwidget.com 방문
-          2. Instagram 계정 연결 후 위젯 생성
-          3. 생성된 <script> 코드를 아래 주석 사이에 붙여넣기
-          4. id="galleryPlaceholder" 블록은 삭제
-          =============================================
-        -->
+        <!-- LightWidget Instagram 피드 -->
+        <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
+        <iframe
+          src="//lightwidget.com/widgets/32f54e0fcb97522380cb96c203bb1a40.html"
+          scrolling="no"
+          allowtransparency="true"
+          class="lightwidget-widget"
+          title="쥬쥬랜드 인스타그램 피드"
+          style="width:100%;border:0;overflow:hidden;min-height:480px;">
+        </iframe>
 
-        <!-- placeholder (LightWidget 설정 전) -->
-        <div class="gallery-ph" id="galleryPlaceholder">
+        <!-- placeholder (로딩 중 또는 차단 시 대체 표시) -->
+        <div class="gallery-ph" id="galleryPlaceholder" style="display:none">
           <div class="gallery-ph-grid" aria-hidden="true">
             <div class="gallery-ph-item"></div>
             <div class="gallery-ph-item"></div>
