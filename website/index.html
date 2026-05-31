@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="쥬쥬랜드 - 경기도 가족형 동물원. 알파카·라마·파충류·로봇 공연까지, 자연과 함께하는 특별한 하루를 만들어보세요.">
+  <meta property="og:title" content="쥬쥬랜드 | ZooZoo Land">
+  <meta property="og:description" content="자연과 동물이 함께하는 쥬쥬랜드에서 특별한 하루를 만들어보세요.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://zoozoo.kr">
+  <title>쥬쥬랜드 | ZooZoo Land</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="#home" class="nav-logo">
+        <span class="logo-kr">쥬쥬랜드</span>
+        <span class="logo-en">ZooZoo Land</span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#notices"    class="nav-item">공지/이벤트</a>
+        <a href="#tickets"    class="nav-item">입장권/이용안내</a>
+        <a href="#gallery"    class="nav-item">갤러리</a>
+        <a href="#guidemap"   class="nav-item nav-item--map">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          가이드맵
+        </a>
+        <a href="#reservation" class="nav-item">예약/문의</a>
+        <a href="#location"   class="nav-item">오시는 길</a>
+      </div>
+      <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--nav" target="_blank" rel="noopener">예약하기</a>
+      <button class="nav-toggle" id="navToggle" aria-label="메뉴 열기/닫기" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav-mobile" id="navMobile">
+      <a href="#notices"    class="nav-mobile-item">공지/이벤트</a>
+      <a href="#tickets"    class="nav-mobile-item">입장권/이용안내</a>
+      <a href="#gallery"    class="nav-mobile-item">갤러리</a>
+      <a href="#guidemap"   class="nav-mobile-item">🗺 가이드맵</a>
+      <a href="#reservation" class="nav-mobile-item">예약/문의</a>
+      <a href="#location"   class="nav-mobile-item">오시는 길</a>
+      <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="nav-mobile-book" target="_blank" rel="noopener">📅 네이버 예약하기</a>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero" id="home">
+    <div class="hero-deco hero-deco--1" aria-hidden="true"></div>
+    <div class="hero-deco hero-deco--2" aria-hidden="true"></div>
+    <div class="hero-deco hero-deco--3" aria-hidden="true"></div>
+    <div class="hero-overlay" aria-hidden="true"></div>
+
+    <div class="hero-body">
+      <div class="hero-badge">🌿 가족과 함께하는 자연 체험</div>
+      <h1 class="hero-title">자연과 동물이<br>함께하는 곳</h1>
+      <p class="hero-sub">다양한 동물 친구들과 교감하고<br>잊지 못할 추억을 만들어보세요</p>
+      <div class="hero-cta">
+        <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--primary btn--lg" target="_blank" rel="noopener">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          네이버 예약하기
+        </a>
+        <a href="#guidemap" class="btn btn--ghost btn--lg">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          가이드맵 보기
+        </a>
+      </div>
+      <div class="hero-meta">
+        <a href="tel:031-962-4500" class="hero-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.48 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          031-962-4500
+        </a>
+        <span class="hero-meta-sep" aria-hidden="true">|</span>
+        <span class="hero-meta-item" id="heroHours">운영시간 확인 중…</span>
+      </div>
+    </div>
+
+    <div class="hero-scroll" aria-hidden="true">
+      <span>SCROLL</span>
+      <div class="hero-scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ── 공지/이벤트 ── -->
+  <section class="sec" id="notices">
+    <div class="container">
+      <div class="sec-hd">
+        <span class="sec-tag">Notice &amp; Event</span>
+        <h2 class="sec-title">공지 / 이벤트</h2>
+      </div>
+
+      <div class="swiper notices-swiper">
+        <div class="swiper-wrapper" id="noticesWrapper">
+          <!-- JS로 채워짐. 없을 때 보이는 placeholder -->
+          <div class="swiper-slide" id="noticePlaceholder">
+            <div class="notice-empty">
+              <div class="notice-empty-icon">📢</div>
+              <p>등록된 공지/이벤트가 없습니다</p>
+              <span>관리자 페이지에서 이미지를 업로드해주세요</span>
+            </div>
+          </div>
+        </div>
+        <div class="swiper-pagination"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 입장권 / 이용안내 ── -->
+  <section class="sec sec--alt" id="tickets">
+    <div class="container">
+      <div class="sec-hd">
+        <span class="sec-tag">Ticket &amp; Guide</span>
+        <h2 class="sec-title">입장권 / 이용안내</h2>
+      </div>
+
+      <div class="info-grid">
+
+        <!-- 입장권 -->
+        <div class="info-card reveal">
+          <div class="info-icon" style="--ic:#E8F5E9;--cc:#2E7D32">🎟</div>
+          <h3 class="info-title">입장권</h3>
+          <div class="ticket-box">
+            <div class="ticket-row">
+              <span class="ticket-label">입장권</span>
+              <span class="ticket-price">네이버 플레이스 참조</span>
+            </div>
+          </div>
+          <p class="info-note">* 정확한 요금은 네이버 플레이스 또는<br>031-962-4500으로 문의해주세요</p>
+          <a href="https://map.naver.com/p/entry/place/1008136590" class="btn btn--outline btn--sm" target="_blank" rel="noopener">네이버 플레이스 보기</a>
+        </div>
+
+        <!-- 먹이 판매 -->
+        <div class="info-card reveal">
+          <div class="info-icon" style="--ic:#FFF3E0;--cc:#E65100">🥕</div>
+          <h3 class="info-title">먹이 판매</h3>
+          <div class="feed-list">
+            <div class="feed-row">
+              <strong>채소 먹이</strong>
+              <span>당근 · 청경채 · 치커리 · 양배추 · 사료</span>
+              <em>양 · 라마 · 알파카 · 꽃사슴 · 유산양 · 보어염소<br>무플론 · 당나귀 · 토끼 <small>(토끼는 사료만)</small></em>
+            </div>
+            <div class="feed-row">
+              <strong>잉어먹이 <small>(호수)</small></strong>
+              <em>잉어 · 거북 · 오리</em>
+            </div>
+            <div class="feed-row">
+              <strong>우유 젖병</strong>
+              <em>양 · 염소</em>
+            </div>
+          </div>
+        </div>
+
+        <!-- 주말 프로그램 -->
+        <div class="info-card reveal">
+          <div class="info-icon" style="--ic:#E3F2FD;--cc:#1565C0">🦜</div>
+          <h3 class="info-title">주말 프로그램</h3>
+          <div class="prog-list">
+            <div class="prog-row">
+              <span class="prog-time">12:30</span>
+              <div class="prog-info">
+                <b>앵무새 설명회</b>
+                <span>파충류관 2F</span>
+              </div>
+            </div>
+            <div class="prog-row">
+              <span class="prog-time">13:30<br>15:30</span>
+              <div class="prog-info">
+                <b>애니멀 스타</b>
+                <span>파충류관 1F 무대</span>
+              </div>
+            </div>
+            <div class="prog-row">
+              <span class="prog-time">13:50<br>15:50</span>
+              <div class="prog-info">
+                <b>로봇 공연</b>
+                <span>파충류관 1F 무대</span>
+              </div>
+            </div>
+            <div class="prog-row">
+              <span class="prog-time">14:30</span>
+              <div class="prog-info">
+                <b>악어 설명회</b>
+                <span>실내 동물원 악어빌리지</span>
+              </div>
+            </div>
+          </div>
+          <p class="info-note">* 주말 및 공휴일 진행</p>
+        </div>
+
+        <!-- 이용 수칙 -->
+        <div class="info-card reveal">
+          <div class="info-icon" style="--ic:#FCE4EC;--cc:#AD1457">📋</div>
+          <h3 class="info-title">이용 수칙</h3>
+          <ul class="rules-list">
+            <li>허가된 먹이만 동물에게 제공해주세요</li>
+            <li>동물을 놀라게 하는 행동은 삼가주세요</li>
+            <li>쓰레기는 지정된 장소에 버려주세요</li>
+            <li>사진 촬영 시 플래시 사용을 자제해주세요</li>
+            <li>반려동물 동반 시 사전 문의 바랍니다</li>
+            <li>안전 구역 밖에서의 흡연은 금지입니다</li>
+          </ul>
+        </div>
+
+      </div><!-- /info-grid -->
+    </div>
+  </section>
+
+  <!-- ── 갤러리 ── -->
+  <section class="sec" id="gallery">
+    <div class="container">
+      <div class="sec-hd">
+        <span class="sec-tag">Gallery</span>
+        <h2 class="sec-title">갤러리</h2>
+        <a href="https://www.instagram.com/" class="sec-insta" target="_blank" rel="noopener" id="instaLink">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          인스타그램 바로가기
+        </a>
+      </div>
+
+      <div class="gallery-wrap">
+        <!--
+          =============================================
+          LightWidget 인스타그램 위젯 삽입 위치
+          =============================================
+          1. https://lightwidget.com 방문
+          2. Instagram 계정 연결 후 위젯 생성
+          3. 생성된 <script> 코드를 아래 주석 사이에 붙여넣기
+          4. id="galleryPlaceholder" 블록은 삭제
+          =============================================
+        -->
+
+        <!-- placeholder (LightWidget 설정 전) -->
+        <div class="gallery-ph" id="galleryPlaceholder">
+          <div class="gallery-ph-grid" aria-hidden="true">
+            <div class="gallery-ph-item"></div>
+            <div class="gallery-ph-item"></div>
+            <div class="gallery-ph-item"></div>
+            <div class="gallery-ph-item"></div>
+            <div class="gallery-ph-item"></div>
+            <div class="gallery-ph-item"></div>
+          </div>
+          <p class="gallery-ph-msg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>
+            갤러리 준비 중 · 곧 인스타그램 피드가 연동됩니다
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 가이드맵 ── -->
+  <section class="sec sec--alt sec--map" id="guidemap">
+    <div class="container">
+      <div class="sec-hd">
+        <span class="sec-tag">Guide Map</span>
+        <h2 class="sec-title">가이드맵</h2>
+      </div>
+
+      <div class="gmap-wrap reveal">
+        <div class="gmap-toolbar">
+          <button class="btn btn--outline btn--sm" id="btnMapZoom">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            크게 보기
+          </button>
+          <a href="images/guidemap.jpg" download="쥬쥬랜드_가이드맵.jpg" class="btn btn--outline btn--sm" id="dlGuideMap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            다운로드
+          </a>
+        </div>
+        <div class="gmap-preview" id="gmapPreview">
+          <img src="images/guidemap.jpg" alt="쥬쥬랜드 가이드맵" class="gmap-img" id="gmapImg" loading="lazy">
+          <div class="gmap-missing" id="gmapMissing" style="display:none">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+            <p>가이드맵 이미지 준비 중</p>
+            <span>관리자 페이지에서 이미지를 업로드해주세요</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 가이드맵 모달 -->
+  <div class="map-modal" id="mapModal" aria-hidden="true" role="dialog" aria-label="가이드맵 전체보기" aria-modal="true">
+    <div class="map-modal-bg" id="mapModalBg"></div>
+    <div class="map-modal-body">
+      <div class="map-modal-head">
+        <span>가이드맵</span>
+        <button class="map-modal-close" id="mapModalClose" aria-label="닫기">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="map-modal-img-area" id="mapModalArea">
+        <img src="images/guidemap.jpg" alt="쥬쥬랜드 가이드맵" class="map-modal-img" id="mapModalImg">
+      </div>
+      <div class="map-modal-foot">
+        <span class="map-modal-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          핀치 줌 · 더블탭 확대
+        </span>
+        <a href="images/guidemap.jpg" download="쥬쥬랜드_가이드맵.jpg" class="btn btn--primary btn--sm">다운로드</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 예약 / 문의 ── -->
+  <section class="sec" id="reservation">
+    <div class="container">
+      <div class="sec-hd">
+        <span class="sec-tag">Reservation &amp; Contact</span>
+        <h2 class="sec-title">예약 / 문의</h2>
+      </div>
+
+      <!-- 네이버 예매 상품 카드 -->
+      <div class="products-section reveal">
+        <div class="products-head">
+          <span class="products-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            네이버 예매 상품
+          </span>
+          <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--outline btn--sm" target="_blank" rel="noopener">
+            네이버에서 열기 ↗
+          </a>
+        </div>
+        <div class="products-grid" id="productsGrid">
+          <!-- JS로 채워짐 -->
+          <div class="products-empty" id="productsEmpty">
+            <div class="products-empty-icon">🎟</div>
+            <p>현재 등록된 예매 상품이 없습니다</p>
+            <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation" class="btn btn--naver" target="_blank" rel="noopener">네이버에서 예매하기</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 단체문의 + 마케팅 제휴 -->
+      <div class="contact-grid-2">
+
+        <div class="contact-card reveal">
+          <div class="contact-icon">👥</div>
+          <h3>단체 문의</h3>
+          <p>20인 이상 단체 방문은<br>사전 문의 바랍니다.</p>
+          <div class="contact-links">
+            <a href="tel:031-962-4500" class="contact-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.48 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              031-962-4500
+            </a>
+            <a href="mailto:info@zoozoo.kr" class="contact-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              이메일 문의
+            </a>
+          </div>
+        </div>
+
+        <div class="contact-card reveal">
+          <div class="contact-icon">🤝</div>
+          <h3>마케팅 제휴</h3>
+          <p>광고 · 협찬 · 콜라보 등<br>제휴 문의를 환영합니다.</p>
+          <div class="contact-links">
+            <a href="mailto:biz@zoozoo.kr" class="contact-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              제휴 이메일 문의
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 오시는 길 ── -->
+  <section class="sec sec--alt" id="location">
+    <div class="container">
+      <div class="sec-hd">
+        <span class="sec-tag">Location</span>
+        <h2 class="sec-title">오시는 길</h2>
+      </div>
+
+      <div class="loc-grid">
+        <div class="loc-map-box reveal">
+          <iframe
+            src="https://maps.google.com/maps?q=쥬쥬랜드+경기도&output=embed&hl=ko&z=16"
+            class="loc-map-iframe"
+            title="쥬쥬랜드 위치"
+            allowfullscreen
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="loc-map-links">
+            <a href="https://map.naver.com/p/entry/place/1008136590" target="_blank" rel="noopener" class="btn btn--map-n">네이버 지도</a>
+            <a href="https://map.kakao.com/link/search/쥬쥬랜드" target="_blank" rel="noopener" class="btn btn--map-k">카카오맵</a>
+          </div>
+        </div>
+
+        <div class="loc-info-box reveal">
+          <div class="loc-item">
+            <span class="loc-ic" aria-hidden="true">📍</span>
+            <div>
+              <h4>주소</h4>
+              <p id="locAddress">주소 추가 예정</p>
+            </div>
+          </div>
+          <div class="loc-item">
+            <span class="loc-ic" aria-hidden="true">📞</span>
+            <div>
+              <h4>전화</h4>
+              <a href="tel:031-962-4500">031-962-4500</a>
+            </div>
+          </div>
+          <div class="loc-item">
+            <span class="loc-ic" aria-hidden="true">🕐</span>
+            <div>
+              <h4>운영시간</h4>
+              <p id="locHours">운영시간 추가 예정</p>
+            </div>
+          </div>
+          <div class="loc-item">
+            <span class="loc-ic" aria-hidden="true">🅿️</span>
+            <div>
+              <h4>주차</h4>
+              <p>무료 주차 가능</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">쥬쥬랜드</div>
+          <p class="footer-logo-sub">ZooZoo Land</p>
+          <p>📞 031-962-4500</p>
+          <p>🌐 zoozoo.kr</p>
+        </div>
+        <nav class="footer-nav" aria-label="푸터 네비게이션">
+          <a href="#notices">공지/이벤트</a>
+          <a href="#tickets">입장권/이용안내</a>
+          <a href="#gallery">갤러리</a>
+          <a href="#guidemap">가이드맵</a>
+          <a href="#reservation">예약/문의</a>
+          <a href="#location">오시는 길</a>
+        </nav>
+        <div class="footer-social">
+          <a href="https://www.instagram.com/" target="_blank" rel="noopener" id="footerInstaLink" aria-label="인스타그램">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+          <a href="https://map.naver.com/p/entry/place/1008136590" target="_blank" rel="noopener" aria-label="네이버 플레이스">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© <span id="footerYear"></span> 쥬쥬랜드. All rights reserved.</p>
+        <a href="admin/" class="footer-admin">관리자</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── 가이드맵 플로팅 버튼 ── -->
+  <a href="#guidemap" class="float-btn" id="floatBtn" title="가이드맵 보기">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+    <span>가이드맵</span>
+  </a>
+
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
