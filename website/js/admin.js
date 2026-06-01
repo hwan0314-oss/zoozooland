@@ -84,6 +84,13 @@
     });
   }
 
+  /* ── base64 → UTF-8 문자열 (한글 깨짐 방지) ── */
+  function b64utf8(str) {
+    return new TextDecoder('utf-8').decode(
+      Uint8Array.from(atob(str.replace(/\n/g, '')), c => c.charCodeAt(0))
+    );
+  }
+
   /* ── File → base64 ── */
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -245,7 +252,7 @@
     try {
       const { ok, data } = await ghFetch('website/data/notices.json');
       if (ok && data.content) {
-        const raw = atob(data.content.replace(/\n/g, ''));
+        const raw = b64utf8(data.content);
         noticesData = JSON.parse(raw);
       }
     } catch {
@@ -400,7 +407,7 @@
     try {
       const { ok, data } = await ghFetch('website/data/programs.json');
       if (ok && data.content) {
-        programsData = JSON.parse(atob(data.content.replace(/\n/g, '')));
+        programsData = JSON.parse(b64utf8(data.content));
       }
     } catch { programsData = { weekday: [], weekend: [] }; }
     renderProgramAdminList();
@@ -504,7 +511,7 @@
     try {
       const { ok, data } = await ghFetch('website/data/settings.json');
       if (ok && data.content) {
-        const s = JSON.parse(atob(data.content.replace(/\n/g, '')));
+        const s = JSON.parse(b64utf8(data.content));
         const ge = document.getElementById('settingGroupEmail');
         const be = document.getElementById('settingBizEmail');
         if (ge) ge.value = s.group_email || '';
@@ -546,7 +553,7 @@
     try {
       const { ok, data } = await ghFetch('website/data/products.json');
       if (ok && data.content) {
-        const raw = atob(data.content.replace(/\n/g, ''));
+        const raw = b64utf8(data.content);
         productsData = JSON.parse(raw);
       }
     } catch { productsData = { products: [] }; }
