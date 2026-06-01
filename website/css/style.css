@@ -1114,9 +1114,24 @@ button { font-family: var(--ff); cursor: pointer; border: none; background: none
   border-radius: var(--r-md);
 }
 
-/* 예약+이용안내 합친 섹션의 info-grid 상단 간격 */
+/* 예약+이용안내 합친 섹션의 info-grid */
 .booking-info-grid {
   margin-top: 40px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* 프로그램 카드 — 주중/주말 구분 */
+.prog-day-section { margin-bottom: 14px; }
+.prog-day-section:last-child { margin-bottom: 0; }
+.prog-day-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--g700);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1.5px solid var(--g100);
 }
 
 /* 2-column contact grid */
@@ -1410,6 +1425,7 @@ button { font-family: var(--ff); cursor: pointer; border: none; background: none
 /* ── 17. Responsive ── */
 @media (max-width: 1024px) {
   .info-grid { grid-template-columns: repeat(2, 1fr); }
+  .booking-info-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 860px) {

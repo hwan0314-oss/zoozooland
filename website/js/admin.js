@@ -164,6 +164,8 @@
     loadCurrentMap();
     loadNotices();
     loadProducts();
+    loadAdminPrograms();
+    loadAdminSettings();
   }
 
   logoutBtn?.addEventListener('click', () => {
@@ -388,6 +390,148 @@
   });
 
   setupDragDrop(noticeUploadZone, noticeFileInput, uploadNoticeImage);
+
+  /* ══════════════════════════════════════
+     프로그램 관리
+  ══════════════════════════════════════ */
+  let programsData = { weekday: [], weekend: [] };
+
+  async function loadAdminPrograms() {
+    try {
+      const { ok, data } = await ghFetch('website/data/programs.json');
+      if (ok && data.content) {
+        programsData = JSON.parse(atob(data.content.replace(/\n/g, '')));
+      }
+    } catch { programsData = { weekday: [], weekend: [] }; }
+    renderProgramAdminList();
+  }
+
+  function renderProgramAdminList() {
+    const container = document.getElementById('programAdminList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const sections = [
+      { key: 'weekend', label: '🎉 주말 · 공휴일' },
+      { key: 'weekday', label: '📅 주중 (화~금)' },
+    ];
+
+    sections.forEach(({ key, label }) => {
+      const list = programsData[key] || [];
+      const wrap = document.createElement('div');
+      wrap.style.marginBottom = '16px';
+      wrap.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--g700);margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--g100)">${label}</div>`;
+
+      if (list.length === 0) {
+        const empty = document.createElement('p');
+        empty.style.cssText = 'font-size:13px;color:var(--n500);padding:8px 0';
+        empty.textContent = '등록된 프로그램 없음';
+        wrap.appendChild(empty);
+      } else {
+        list.forEach((p, idx) => {
+          const item = document.createElement('div');
+          item.className = 'notice-item';
+          item.style.marginBottom = '8px';
+          item.innerHTML = `
+            <div class="product-item-info">
+              <div class="product-item-name">${p.time} · ${p.name}</div>
+              <div class="product-item-price">${p.location}</div>
+            </div>
+            <div class="notice-item-actions">
+              <button class="btn-del" data-key="${key}" data-idx="${idx}">삭제</button>
+            </div>`;
+          wrap.appendChild(item);
+        });
+      }
+      container.appendChild(wrap);
+    });
+
+    container.querySelectorAll('.btn-del').forEach(btn => {
+      btn.addEventListener('click', () => deleteProgram(btn.dataset.key, +btn.dataset.idx));
+    });
+  }
+
+  document.getElementById('btnAddProgram')?.addEventListener('click', addProgram);
+
+  async function addProgram() {
+    const type     = document.getElementById('progType')?.value;
+    const time     = document.getElementById('progTime')?.value.trim();
+    const name     = document.getElementById('progName')?.value.trim();
+    const location = document.getElementById('progLocation')?.value.trim();
+    const resultEl = document.getElementById('progResult');
+
+    if (!time || !name || !location) {
+      showResult(resultEl, false, '시간, 프로그램명, 장소는 필수입니다.');
+      return;
+    }
+
+    const btn = document.getElementById('btnAddProgram');
+    btn.disabled = true;
+
+    try {
+      programsData[type].push({ time, name, location });
+      const sha = await getFileSHA('website/data/programs.json');
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(programsData, null, 2))));
+      const { ok } = await putFile('website/data/programs.json', b64, '🎭 프로그램 추가', sha);
+
+      if (!ok) { programsData[type].pop(); throw new Error('저장 실패'); }
+      showResult(resultEl, true, '추가되었습니다. 1~3분 후 반영됩니다.');
+      renderProgramAdminList();
+      ['progTime','progName','progLocation'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    } catch (err) {
+      showResult(resultEl, false, `오류: ${err.message}`);
+    } finally { btn.disabled = false; }
+  }
+
+  async function deleteProgram(key, idx) {
+    if (!confirm('프로그램을 삭제하시겠습니까?')) return;
+    const removed = programsData[key].splice(idx, 1)[0];
+    try {
+      const sha = await getFileSHA('website/data/programs.json');
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(programsData, null, 2))));
+      await putFile('website/data/programs.json', b64, '🗑 프로그램 삭제', sha);
+      renderProgramAdminList();
+    } catch (err) {
+      programsData[key].splice(idx, 0, removed);
+      alert(`삭제 실패: ${err.message}`);
+    }
+  }
+
+  /* ══════════════════════════════════════
+     이메일 설정
+  ══════════════════════════════════════ */
+  async function loadAdminSettings() {
+    try {
+      const { ok, data } = await ghFetch('website/data/settings.json');
+      if (ok && data.content) {
+        const s = JSON.parse(atob(data.content.replace(/\n/g, '')));
+        const ge = document.getElementById('settingGroupEmail');
+        const be = document.getElementById('settingBizEmail');
+        if (ge) ge.value = s.group_email || '';
+        if (be) be.value = s.biz_email   || '';
+      }
+    } catch {}
+  }
+
+  document.getElementById('btnSaveSettings')?.addEventListener('click', saveSettings);
+
+  async function saveSettings() {
+    const groupEmail = document.getElementById('settingGroupEmail')?.value.trim();
+    const bizEmail   = document.getElementById('settingBizEmail')?.value.trim();
+    const resultEl   = document.getElementById('settingsResult');
+    const btn        = document.getElementById('btnSaveSettings');
+
+    btn.disabled = true;
+    try {
+      const settings = { group_email: groupEmail, biz_email: bizEmail };
+      const sha = await getFileSHA('website/data/settings.json');
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(settings, null, 2))));
+      const { ok } = await putFile('website/data/settings.json', b64, '✉️ 이메일 설정 저장', sha);
+      showResult(resultEl, ok, ok ? '저장되었습니다. 1~3분 후 반영됩니다.' : '저장 실패. 다시 시도해주세요.');
+    } catch (err) {
+      showResult(resultEl, false, `오류: ${err.message}`);
+    } finally { btn.disabled = false; }
+  }
 
   /* ══════════════════════════════════════
      예매 상품 관리

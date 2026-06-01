@@ -73,14 +73,6 @@
           가이드맵 보기
         </a>
       </div>
-      <div class="hero-meta">
-        <a href="tel:031-962-4500" class="hero-meta-item">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.48 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          031-962-4500
-        </a>
-        <span class="hero-meta-sep" aria-hidden="true">|</span>
-        <span class="hero-meta-item" id="heroHours">운영시간 확인 중…</span>
-      </div>
     </div>
 
     <div class="hero-scroll" aria-hidden="true">
@@ -139,25 +131,13 @@
         </div>
       </div>
 
-      <!-- 이용안내 -->
+      <!-- 이용안내 (3카드) -->
       <div class="info-grid booking-info-grid">
 
-        <div class="info-card reveal">
-          <div class="info-icon" style="--ic:#E8F5E9;--cc:#2E7D32">🎟</div>
-          <h3 class="info-title">입장권</h3>
-          <div class="ticket-box">
-            <div class="ticket-row">
-              <span class="ticket-label">입장권</span>
-              <span class="ticket-price">네이버 플레이스 참조</span>
-            </div>
-          </div>
-          <p class="info-note">* 정확한 요금은 네이버 플레이스 또는<br>031-962-4500으로 문의해주세요</p>
-          <a href="https://map.naver.com/p/entry/place/1008136590" class="btn btn--outline btn--sm" target="_blank" rel="noopener">네이버 플레이스 보기</a>
-        </div>
-
+        <!-- 먹이체험 -->
         <div class="info-card reveal">
           <div class="info-icon" style="--ic:#FFF3E0;--cc:#E65100">🥕</div>
-          <h3 class="info-title">먹이 판매</h3>
+          <h3 class="info-title">먹이체험</h3>
           <div class="feed-list">
             <div class="feed-row">
               <strong>채소 먹이</strong>
@@ -175,21 +155,19 @@
           </div>
         </div>
 
+        <!-- 프로그램 (동적 로딩) -->
         <div class="info-card reveal">
-          <div class="info-icon" style="--ic:#E3F2FD;--cc:#1565C0">🦜</div>
-          <h3 class="info-title">주말 프로그램</h3>
-          <div class="prog-list">
-            <div class="prog-row"><span class="prog-time">12:30</span><div class="prog-info"><b>앵무새 설명회</b><span>파충류관 2F</span></div></div>
-            <div class="prog-row"><span class="prog-time">13:30<br>15:30</span><div class="prog-info"><b>애니멀 스타</b><span>파충류관 1F 무대</span></div></div>
-            <div class="prog-row"><span class="prog-time">13:50<br>15:50</span><div class="prog-info"><b>로봇 공연</b><span>파충류관 1F 무대</span></div></div>
-            <div class="prog-row"><span class="prog-time">14:30</span><div class="prog-info"><b>악어 설명회</b><span>실내 동물원 악어빌리지</span></div></div>
+          <div class="info-icon" style="--ic:#E3F2FD;--cc:#1565C0">🎭</div>
+          <h3 class="info-title">프로그램</h3>
+          <div id="programsList">
+            <p class="info-note">로딩 중…</p>
           </div>
-          <p class="info-note">* 주말 및 공휴일 진행</p>
         </div>
 
+        <!-- 이용안내 -->
         <div class="info-card reveal">
           <div class="info-icon" style="--ic:#FCE4EC;--cc:#AD1457">📋</div>
-          <h3 class="info-title">이용 수칙</h3>
+          <h3 class="info-title">이용안내</h3>
           <ul class="rules-list">
             <li>허가된 먹이만 동물에게 제공해주세요</li>
             <li>동물을 놀라게 하는 행동은 삼가주세요</li>
@@ -356,7 +334,7 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.48 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
               031-962-4500
             </a>
-            <a href="mailto:info@zoozoo.kr" class="contact-link">
+            <a href="mailto:info@zoozoo.kr" class="contact-link" id="groupEmailLink">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               이메일 문의
             </a>
@@ -368,9 +346,9 @@
           <h3>마케팅 제휴</h3>
           <p>광고 · 협찬 · 콜라보 등<br>제휴 문의를 환영합니다.</p>
           <div class="contact-links">
-            <a href="mailto:biz@zoozoo.kr" class="contact-link">
+            <a href="mailto:biz@zoozoo.kr" class="contact-link" id="bizEmailLink">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              제휴 이메일 문의
+              이메일 문의
             </a>
           </div>
         </div>

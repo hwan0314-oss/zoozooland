@@ -250,6 +250,53 @@
     mapModalArea?.classList.remove('dragging');
   });
 
+  /* ── 프로그램 카드 렌더링 ── */
+  async function loadPrograms() {
+    const container = document.getElementById('programsList');
+    if (!container) return;
+    try {
+      const res = await fetch('data/programs.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error();
+      const { weekday = [], weekend = [] } = await res.json();
+      let html = '';
+      if (weekday.length) {
+        html += '<div class="prog-day-section"><div class="prog-day-label">📅 주중 (화~금)</div><div class="prog-list">';
+        weekday.forEach(p => {
+          html += `<div class="prog-row"><span class="prog-time">${p.time}</span><div class="prog-info"><b>${p.name}</b><span>${p.location}</span></div></div>`;
+        });
+        html += '</div></div>';
+      }
+      if (weekend.length) {
+        html += '<div class="prog-day-section"><div class="prog-day-label">🎉 주말 · 공휴일</div><div class="prog-list">';
+        weekend.forEach(p => {
+          html += `<div class="prog-row"><span class="prog-time">${p.time}</span><div class="prog-info"><b>${p.name}</b><span>${p.location}</span></div></div>`;
+        });
+        html += '</div></div>';
+      }
+      if (!weekday.length && !weekend.length) {
+        html = '<p class="info-note">등록된 프로그램이 없습니다</p>';
+      }
+      container.innerHTML = html;
+    } catch {
+      container.innerHTML = '<p class="info-note">프로그램 정보를 불러오지 못했습니다</p>';
+    }
+  }
+  loadPrograms();
+
+  /* ── 문의 이메일 동적 적용 ── */
+  async function loadSettings() {
+    try {
+      const res = await fetch('data/settings.json', { cache: 'no-cache' });
+      if (!res.ok) return;
+      const { group_email, biz_email } = await res.json();
+      const groupLink = document.getElementById('groupEmailLink');
+      const bizLink   = document.getElementById('bizEmailLink');
+      if (group_email && groupLink) groupLink.href = `mailto:${group_email}`;
+      if (biz_email   && bizLink)   bizLink.href   = `mailto:${biz_email}`;
+    } catch {}
+  }
+  loadSettings();
+
   /* ── 예매 상품 카드 렌더링 ── */
   async function loadProducts() {
     try {
