@@ -13,9 +13,9 @@
 
   /* ── Storage ── */
   const storage = {
-    getToken: () => sessionStorage.getItem('zz_token'),
-    setToken: t  => sessionStorage.setItem('zz_token', t),
-    clear:    ()  => sessionStorage.removeItem('zz_token'),
+    getToken: () => localStorage.getItem('zz_token'),
+    setToken: t  => localStorage.setItem('zz_token', t),
+    clear:    ()  => localStorage.removeItem('zz_token'),
   };
 
   /* ── DOM refs ── */
