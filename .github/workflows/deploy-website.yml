@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'website/**'
+      - 'website-zzl/**'
   workflow_dispatch:
 
 permissions:
@@ -28,13 +29,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare combined deployment
+        run: |
+          mkdir -p deploy/zzl
+          cp -r website/. deploy/
+          cp -r website-zzl/. deploy/zzl/
+          cp -r website/data deploy/zzl/data
+          cp -r website/images deploy/zzl/images
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Upload artifact (website/ folder)
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './website'
+          path: './deploy'
 
       - name: Deploy to GitHub Pages
         id: deployment
