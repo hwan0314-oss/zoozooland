@@ -314,6 +314,38 @@
     if (pinInput) pinInput.value = '';
   });
 
+  /* ── 전체 기기 연동 동기화 ── */
+  document.getElementById('btnSyncToken')?.addEventListener('click', async () => {
+    const resultEl = document.getElementById('syncTokenResult');
+    const token = storage.getToken();
+    if (!token) { showResult(resultEl, false, '연동 코드가 없습니다. 다시 로그인해주세요.'); return; }
+
+    const btn = document.getElementById('btnSyncToken');
+    btn.disabled = true;
+    btn.textContent = '저장 중…';
+
+    try {
+      const encrypted = await encryptToken(token, ADMIN_PIN);
+      const authRes = await fetch(`${API}/website/data/auth.json`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      const authData = await authRes.json().catch(() => ({}));
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify({ token: encrypted }, null, 2))));
+      const putRes = await fetch(`${API}/website/data/auth.json`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28' },
+        body: JSON.stringify({ message: '🔐 전체 기기 연동 코드 저장', content, branch: BRANCH, ...(authData.sha ? { sha: authData.sha } : {}) })
+      });
+      if (!putRes.ok) throw new Error('저장 실패');
+      showResult(resultEl, true, '완료! 1~3분 후 모든 기기에서 비밀번호만으로 접속 가능합니다.');
+    } catch (err) {
+      showResult(resultEl, false, `오류: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '전체 기기에 연동 코드 저장';
+    }
+  });
+
   /* ── 항상 비밀번호 화면 표시 ── */
   loginScreen.classList.remove('hidden');
 
