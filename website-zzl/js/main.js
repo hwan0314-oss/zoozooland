@@ -2,78 +2,43 @@
 (() => {
   'use strict';
 
-  /* ── 내비게이션 ── */
-  const nav = document.getElementById('nav');
-  const navToggle = document.getElementById('navToggle');
-  const navMobile = document.getElementById('navMobile');
-
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 40);
-  }, { passive: true });
-
-  navToggle?.addEventListener('click', () => {
-    const open = navMobile.classList.toggle('open');
-    navToggle.classList.toggle('open', open);
-    navToggle.setAttribute('aria-expanded', String(open));
-  });
-  navMobile?.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => {
-      navMobile.classList.remove('open');
-      navToggle.classList.remove('open');
-      navToggle.setAttribute('aria-expanded', 'false');
+  /* ── 스무스 스크롤 ── */
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (!target) return;
+      e.preventDefault();
+      window.scrollTo({ top: target.offsetTop - 68, behavior: 'smooth' });
     });
   });
 
-  /* ── 스크롤 활성 메뉴 ── */
-  const sections = document.querySelectorAll('[id]');
-  const navItems = document.querySelectorAll('.nav-item');
-  new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting)
-        navItems.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${e.target.id}`));
-    });
-  }, { rootMargin: '-60px 0px -60% 0px' }).observe && sections.forEach(s =>
-    new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting)
-          navItems.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${e.target.id}`));
-      });
-    }, { rootMargin: '-60px 0px -60% 0px' }).observe(s)
-  );
-
-  /* ── 스크롤 리빌 ── */
-  const ro = new IntersectionObserver(entries => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); ro.unobserve(e.target); } });
-  }, { threshold: 0.1 });
-  document.querySelectorAll('.reveal, .reveal-dark').forEach(el => ro.observe(el));
-
-  /* ── 플로팅 가이드맵 버튼 ── */
+  /* ── 플로팅 버튼 ── */
   const floatBtn = document.getElementById('floatBtn');
-  const guideSection = document.getElementById('guidemap');
-  if (guideSection) {
+  const guidemapSection = document.getElementById('guidemap');
+  if (guidemapSection) {
     new IntersectionObserver(entries => {
       entries.forEach(e => floatBtn?.classList.toggle('show', !e.isIntersecting));
-    }, { threshold: 0.1 }).observe(guideSection);
+    }, { threshold: 0.1 }).observe(guidemapSection);
   }
 
   /* ── 푸터 연도 ── */
   const fy = document.getElementById('footerYear');
   if (fy) fy.textContent = new Date().getFullYear();
 
-  /* ── 가이드맵 이미지 에러 ── */
-  const gmapImg = document.getElementById('gmapImg');
+  /* ── 가이드맵 이미지 에러 처리 ── */
+  const gmapImg     = document.getElementById('gmapImg');
   const gmapMissing = document.getElementById('gmapMissing');
-  const btnMapZoom = document.getElementById('btnMapZoom');
+  const btnMapZoom  = document.getElementById('btnMapZoom');
   const gmapPreview = document.getElementById('gmapPreview');
   let guideMapLoaded = false;
 
   if (gmapImg) {
-    gmapImg.addEventListener('load', () => { guideMapLoaded = true; });
+    gmapImg.addEventListener('load',  () => { guideMapLoaded = true; });
     gmapImg.addEventListener('error', () => {
       guideMapLoaded = false;
       gmapImg.style.display = 'none';
       if (gmapMissing) gmapMissing.style.display = 'flex';
-      if (btnMapZoom) btnMapZoom.style.display = 'none';
+      if (btnMapZoom)  btnMapZoom.style.display  = 'none';
       const dl = document.getElementById('dlGuideMap');
       if (dl) dl.style.display = 'none';
     });
@@ -81,56 +46,47 @@
   }
 
   /* ── 가이드맵 모달 ── */
-  const mapModal = document.getElementById('mapModal');
-  const mapModalBg = document.getElementById('mapModalBg');
+  const mapModal      = document.getElementById('mapModal');
+  const mapModalBg    = mapModal?.querySelector('.map-modal-body')?.parentElement;
   const mapModalClose = document.getElementById('mapModalClose');
-  const mapModalImg = document.getElementById('mapModalImg');
-  const mapModalArea = document.getElementById('mapModalArea');
-  let scale = 1, panX = 0, panY = 0;
+  const mapModalImg   = document.getElementById('mapModalImg');
+  const mapModalArea  = document.getElementById('mapModalArea');
+  let sc = 1, px = 0, py = 0;
 
-  function openModal()  { if (!guideMapLoaded) return; mapModal.classList.add('open'); mapModal.setAttribute('aria-hidden','false'); document.body.style.overflow = 'hidden'; resetTransform(); }
-  function closeModal() { mapModal.classList.remove('open'); mapModal.setAttribute('aria-hidden','true'); document.body.style.overflow = ''; }
-  function resetTransform() { scale = 1; panX = 0; panY = 0; applyTransform(); }
-  function applyTransform() { mapModalImg.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`; }
+  function openModal()  { if (!guideMapLoaded) return; mapModal.classList.add('open'); mapModal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; sc=1;px=0;py=0;applyT(); }
+  function closeModal() { mapModal.classList.remove('open'); mapModal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+  function applyT()     { mapModalImg.style.transform=`translate(${px}px,${py}px) scale(${sc})`; }
 
   btnMapZoom?.addEventListener('click', openModal);
   gmapPreview?.addEventListener('click', () => { if (guideMapLoaded) openModal(); });
-  mapModalBg?.addEventListener('click', closeModal);
   mapModalClose?.addEventListener('click', closeModal);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && mapModal?.classList.contains('open')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key==='Escape' && mapModal?.classList.contains('open')) closeModal(); });
 
-  /* 터치 줌 */
-  let lastDist = 0, lastTap = 0, isPan = false, psx = 0, psy = 0, ppx = 0, ppy = 0;
+  // 모달 외부 클릭 닫기
+  mapModal?.addEventListener('click', e => { if (e.target === mapModal) closeModal(); });
+
+  // 터치 줌/팬
+  let ld=0,lt=0,pan=false,psx=0,psy=0,ppx=0,ppy=0;
   mapModalArea?.addEventListener('touchstart', e => {
-    if (e.touches.length === 2) {
-      lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-    } else if (e.touches.length === 1) {
-      const now = Date.now();
-      if (now - lastTap < 300) { scale = scale > 1.5 ? 1 : 2.5; panX = 0; panY = 0; applyTransform(); lastTap = 0; return; }
-      lastTap = now; isPan = true; psx = e.touches[0].clientX; psy = e.touches[0].clientY; ppx = panX; ppy = panY;
+    if (e.touches.length===2) { ld=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); }
+    else if (e.touches.length===1) {
+      const now=Date.now();
+      if(now-lt<300){sc=sc>1.5?1:2.5;px=0;py=0;applyT();lt=0;return;}
+      lt=now;pan=true;psx=e.touches[0].clientX;psy=e.touches[0].clientY;ppx=px;ppy=py;
     }
-  }, { passive: true });
+  },{passive:true});
   mapModalArea?.addEventListener('touchmove', e => {
-    if (e.touches.length === 2) {
-      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      scale = Math.min(Math.max(scale * (d / lastDist), 1), 5); lastDist = d; applyTransform();
-    } else if (e.touches.length === 1 && isPan && scale > 1) {
-      panX = ppx + (e.touches[0].clientX - psx); panY = ppy + (e.touches[0].clientY - psy); applyTransform();
-    }
-  }, { passive: true });
-  mapModalArea?.addEventListener('touchend', () => { isPan = false; });
-  mapModalArea?.addEventListener('wheel', e => {
-    e.preventDefault();
-    scale = Math.min(Math.max(scale * (e.deltaY < 0 ? 1.12 : 0.89), 1), 5);
-    if (scale === 1) { panX = 0; panY = 0; }
-    applyTransform();
-  }, { passive: false });
+    if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);sc=Math.min(Math.max(sc*(d/ld),1),5);ld=d;applyT();}
+    else if(e.touches.length===1&&pan&&sc>1){px=ppx+(e.touches[0].clientX-psx);py=ppy+(e.touches[0].clientY-psy);applyT();}
+  },{passive:true});
+  mapModalArea?.addEventListener('touchend',()=>{pan=false;});
+  mapModalArea?.addEventListener('wheel',e=>{e.preventDefault();sc=Math.min(Math.max(sc*(e.deltaY<0?1.12:0.89),1),5);if(sc===1){px=0;py=0;}applyT();},{passive:false});
 
-  /* 마우스 패닝 */
-  let md = false, msx = 0, msy = 0, mpx = 0, mpy = 0;
-  mapModalArea?.addEventListener('mousedown', e => { if (scale <= 1) return; md = true; msx = e.clientX; msy = e.clientY; mpx = panX; mpy = panY; mapModalArea.classList.add('dragging'); });
-  document.addEventListener('mousemove', e => { if (!md) return; panX = mpx + (e.clientX - msx); panY = mpy + (e.clientY - msy); applyTransform(); });
-  document.addEventListener('mouseup', () => { md = false; mapModalArea?.classList.remove('dragging'); });
+  // 마우스 드래그
+  let md=false,msx=0,msy=0,mpx=0,mpy=0;
+  mapModalArea?.addEventListener('mousedown',e=>{if(sc<=1)return;md=true;msx=e.clientX;msy=e.clientY;mpx=px;mpy=py;mapModalArea.classList.add('dragging');});
+  document.addEventListener('mousemove',e=>{if(!md)return;px=mpx+(e.clientX-msx);py=mpy+(e.clientY-msy);applyT();});
+  document.addEventListener('mouseup',()=>{md=false;mapModalArea?.classList.remove('dragging');});
 
   /* ── 프로그램 로딩 ── */
   async function loadPrograms() {
@@ -139,30 +95,44 @@
     try {
       const res = await fetch('data/programs.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error();
-      const { weekday = [], weekend = [] } = await res.json();
+      const { weekday=[], weekend=[] } = await res.json();
       let html = '';
+
       if (weekday.length) {
-        html += '<div class="prog-day-section"><div class="prog-day-label">📅 주중 (화~금)</div><div class="prog-list">';
-        weekday.forEach(p => { html += `<div class="prog-row"><span class="prog-time">${p.time}</span><div class="prog-info"><b>${p.name}</b><span>${p.location}</span></div></div>`; });
-        html += '</div></div>';
+        html += '<div class="mono text-[9px] text-gray-600 mb-2 uppercase">WEEKDAY (TUE-FRI)</div>';
+        weekday.forEach(p => {
+          html += `<div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-[10px] mono">${p.name.toUpperCase()}</span>
+            <span class="text-[10px] text-[#D4FF00] font-bold">${p.time} / ${p.location}</span>
+          </div>`;
+        });
       }
       if (weekend.length) {
-        html += '<div class="prog-day-section"><div class="prog-day-label">🎉 주말 · 공휴일</div><div class="prog-list">';
-        weekend.forEach(p => { html += `<div class="prog-row"><span class="prog-time">${p.time}</span><div class="prog-info"><b>${p.name}</b><span>${p.location}</span></div></div>`; });
-        html += '</div></div>';
+        if (weekday.length) html += '<div class="h-3"></div>';
+        html += '<div class="mono text-[9px] text-gray-600 mb-2 uppercase">WEEKEND / HOLIDAY</div>';
+        weekend.forEach(p => {
+          html += `<div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-[10px] mono">${p.name.toUpperCase()}</span>
+            <span class="text-[10px] text-[#D4FF00] font-bold">${p.time}</span>
+          </div>`;
+        });
       }
-      if (!weekday.length && !weekend.length) html = '<p style="color:var(--text-muted-dark);font-size:13px">등록된 프로그램이 없습니다</p>';
+      if (!weekday.length && !weekend.length) {
+        html = '<div class="mono text-[10px] text-gray-600">NO_PROGRAMS_REGISTERED</div>';
+      }
       c.innerHTML = html;
-    } catch { c.innerHTML = '<p style="color:var(--text-muted-dark);font-size:13px">프로그램 정보 없음</p>'; }
+    } catch {
+      c.innerHTML = '<div class="mono text-[10px] text-gray-600">SCHEDULE_UNAVAILABLE</div>';
+    }
   }
   loadPrograms();
 
-  /* ── 설정(이메일) 로딩 ── */
+  /* ── 설정(이메일) ── */
   async function loadSettings() {
     try {
       const res = await fetch('data/settings.json', { cache: 'no-cache' });
       if (!res.ok) return;
-      const { group_email, biz_email } = await res.json();
+      const { group_email } = await res.json();
       const gl = document.getElementById('groupEmailLink');
       if (group_email && gl) gl.href = `mailto:${group_email}`;
     } catch {}
@@ -174,34 +144,61 @@
     try {
       const res = await fetch('data/products.json', { cache: 'no-cache' });
       if (!res.ok) return;
-      const { products = [] } = await res.json();
+      const { products=[] } = await res.json();
       if (!products.length) return;
-      document.getElementById('productsEmpty')?.remove();
-      const grid = document.getElementById('productsGrid');
-      products.forEach(p => grid?.appendChild(buildCard(p)));
+
+      const slot  = document.getElementById('productSlot');
+      const empty = document.getElementById('productEmpty');
+      if (!slot) return;
+      empty?.remove();
+
+      // 첫 번째 상품만 슬롯에 표시 (나머지는 row로 추가 가능)
+      const p = products[0];
+      const rate = p.discount_rate ?? (p.original_price && p.sale_price && p.original_price > p.sale_price
+        ? Math.round((1 - p.sale_price / p.original_price) * 100) : 0);
+      const imgSrc = p.image || p.og_image || null;
+
+      slot.innerHTML = `
+        <div class="card-frame bg-black p-6 h-full flex flex-col">
+          <div class="aspect-[4/5] bg-[#111] mb-5 overflow-hidden relative">
+            ${imgSrc
+              ? `<img src="${imgSrc}" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition duration-500">`
+              : `<div class="w-full h-full flex items-center justify-center"><span class="text-4xl">🎟</span></div>`}
+            ${rate ? `<div class="absolute top-3 right-3 tag-badge">SALE ${rate}%</div>` : ''}
+          </div>
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="text-xl font-bold">${p.name}</h3>
+          </div>
+          <div class="mono text-3xl font-bold text-[#D4FF00] mb-2">₩ ${Number(p.sale_price).toLocaleString()}</div>
+          ${p.valid_until ? `<div class="mono text-[10px] text-gray-600 mb-5">VALID_UNTIL: ${p.valid_until}</div>` : '<div class="mb-5"></div>'}
+          <a href="${p.booking_url}" target="_blank" rel="noopener"
+             class="mt-auto block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">
+            BOOK VIA NAVER →
+          </a>
+        </div>`;
+
+      // 추가 상품이 있으면 아래에 작은 카드로 표시
+      if (products.length > 1) {
+        const extra = document.createElement('div');
+        extra.className = 'mt-4 space-y-3';
+        products.slice(1).forEach(p2 => {
+          const r2 = p2.discount_rate ?? 0;
+          extra.innerHTML += `
+            <div class="card-frame p-4 flex justify-between items-center cursor-pointer"
+                 onclick="window.open('${p2.booking_url}','_blank')">
+              <div>
+                <div class="text-sm font-bold">${p2.name}</div>
+                ${p2.valid_until ? `<div class="mono text-[9px] text-gray-600">VALID: ${p2.valid_until}</div>` : ''}
+              </div>
+              <div class="text-right">
+                ${r2 ? `<div class="tag-badge mb-1">-${r2}%</div>` : ''}
+                <div class="mono text-[#D4FF00] font-bold">₩${Number(p2.sale_price).toLocaleString()}</div>
+              </div>
+            </div>`;
+        });
+        slot.appendChild(extra);
+      }
     } catch {}
-  }
-  function buildCard(p) {
-    const rate = p.discount_rate ?? (p.original_price && p.sale_price && p.original_price > p.sale_price ? Math.round((1 - p.sale_price / p.original_price) * 100) : 0);
-    const imgSrc = p.image || p.og_image || null;
-    const imgHtml = imgSrc ? `<img src="${imgSrc}" alt="${p.name}" class="product-img" loading="lazy">` : `<div class="product-img-ph">🎟</div>`;
-    const origHtml = p.original_price && p.original_price !== p.sale_price ? `<p class="product-original">${p.original_price.toLocaleString()}원</p>` : '';
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    card.innerHTML = `
-      <div class="product-img-wrap">${imgHtml}<span class="product-badge">N 예약</span></div>
-      <div class="product-body">
-        <h4 class="product-name">${p.name}</h4>
-        <div class="product-price-row">
-          ${rate ? `<span class="product-discount">${rate}%</span>` : ''}
-          <span class="product-sale">${Number(p.sale_price).toLocaleString()}원</span>
-        </div>
-        ${origHtml}
-        ${p.valid_until ? `<p class="product-meta">${p.valid_until}까지</p>` : ''}
-      </div>
-      <a href="${p.booking_url || 'https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation'}"
-         class="product-book-btn" target="_blank" rel="noopener">예약하기</a>`;
-    return card;
   }
   loadProducts();
 
@@ -212,17 +209,16 @@
     try {
       const res = await fetch('data/notices.json', { cache: 'no-cache' });
       if (!res.ok) return;
-      const { notices = [] } = await res.json();
+      const { notices=[] } = await res.json();
       if (!notices.length) { initSwiper(false); return; }
       placeholder?.remove();
       notices.forEach(n => {
         const slide = document.createElement('div');
         slide.className = 'swiper-slide';
-        if (n.link) {
-          slide.innerHTML = `<a href="${n.link}" target="_blank" rel="noopener"><img src="${n.image}" alt="${n.alt||'공지'}" class="notice-img" loading="lazy"></a>`;
-        } else {
-          slide.innerHTML = `<img src="${n.image}" alt="${n.alt||'공지'}" class="notice-img" loading="lazy">`;
-        }
+        const inner = n.link
+          ? `<a href="${n.link}" target="_blank" rel="noopener"><img src="${n.image}" alt="${n.alt||'공지'}" class="notice-img"></a>`
+          : `<img src="${n.image}" alt="${n.alt||'공지'}" class="notice-img">`;
+        slide.innerHTML = inner;
         wrapper?.appendChild(slide);
       });
       initSwiper(notices.length > 1);
@@ -250,16 +246,14 @@
     const email   = document.getElementById('fEmail')?.value.trim();
     const content = document.getElementById('fContent')?.value.trim();
     const note    = document.getElementById('partnerNote');
-
     if (!email) {
-      if (note) { note.style.display = 'block'; note.style.color = '#c0392b'; note.textContent = '이메일은 필수입니다.'; }
+      if (note) { note.classList.remove('hidden'); note.style.color='#ff4444'; note.textContent='EMAIL_REQUIRED: input valid address'; }
       return;
     }
-    const subject = encodeURIComponent(`[ZZL 제휴 문의] ${company || '(회사명 없음)'} - ${name || '(이름 없음)'}`);
-    const body    = encodeURIComponent(`회사명: ${company}\n담당자: ${name}\n연락처: ${phone}\n이메일: ${email}\n\n제안 내용:\n${content}`);
-    window.location.href = `mailto:biz@zoozoo.kr?subject=${subject}&body=${body}`;
-
-    if (note) { note.style.display = 'block'; note.style.color = 'var(--forest)'; note.textContent = '이메일 앱이 열립니다. 발송 후 영업일 2~3일 내 답변드립니다.'; }
+    const subj = encodeURIComponent(`[ZZL PARTNERSHIP] ${company||'N/A'} - ${name||'N/A'}`);
+    const body = encodeURIComponent(`COMPANY: ${company}\nCONTACT: ${name}\nPHONE: ${phone}\nEMAIL: ${email}\n\nPROPOSAL:\n${content}`);
+    window.location.href = `mailto:biz@zoozoo.kr?subject=${subj}&body=${body}`;
+    if (note) { note.classList.remove('hidden'); note.style.color='#D4FF00'; note.textContent='EMAIL_CLIENT_OPENED — reply within 2-3 business days'; }
   });
 
 })();
