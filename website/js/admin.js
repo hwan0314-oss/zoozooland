@@ -84,6 +84,39 @@
     });
   }
 
+  /* ── 토큰 암호화/복호화 (Web Crypto AES-GCM) ── */
+  const CRYPTO_SALT = new TextEncoder().encode('zzl-zoozooland-admin-2026');
+
+  async function deriveKey(password) {
+    const mat = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: CRYPTO_SALT, iterations: 100000, hash: 'SHA-256' },
+      mat, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    );
+  }
+
+  async function encryptToken(token, password) {
+    const key = await deriveKey(password);
+    const iv  = crypto.getRandomValues(new Uint8Array(12));
+    const enc = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv }, key, new TextEncoder().encode(token)
+    );
+    const out = new Uint8Array(12 + enc.byteLength);
+    out.set(iv); out.set(new Uint8Array(enc), 12);
+    return btoa(String.fromCharCode(...out));
+  }
+
+  async function decryptToken(b64, password) {
+    const key  = await deriveKey(password);
+    const data = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: data.slice(0, 12) }, key, data.slice(12)
+    );
+    return new TextDecoder().decode(plain);
+  }
+
   /* ── base64 → UTF-8 문자열 (한글 깨짐 방지) ── */
   function b64utf8(str) {
     return new TextDecoder('utf-8').decode(
@@ -140,43 +173,97 @@
   const step1     = document.getElementById('step1');
   const step2     = document.getElementById('step2');
 
-  // 비밀번호 확인
-  function checkPin() {
+  // 비밀번호 확인 → auth.json에서 자동 복호화
+  async function checkPin() {
     const pin = pinInput?.value.trim();
-    if (pin === ADMIN_PIN) {
-      const saved = storage.getToken();
-      if (saved) {
-        // 저장된 연동코드 있으면 바로 입장
+    if (pin !== ADMIN_PIN) { pinError?.classList.add('show'); return; }
+
+    pinBtn.disabled = true;
+    pinBtn.textContent = '확인 중…';
+    pinError?.classList.remove('show');
+
+    try {
+      // 1. localStorage 우선
+      let token = storage.getToken();
+
+      // 2. 없으면 auth.json에서 복호화 시도
+      if (!token) {
+        const res = await fetch('data/auth.json?t=' + Date.now(), { cache: 'no-cache' });
+        if (res.ok) {
+          const { token: enc } = await res.json();
+          if (enc) {
+            token = await decryptToken(enc, pin);
+            storage.setToken(token);
+          }
+        }
+      }
+
+      if (token) {
         showAdmin('관리자');
       } else {
-        // 최초 기기 → 연동코드 입력 화면
+        // 아직 연동 코드 미설정 → 최초 설정 화면
         step1.style.display = 'none';
         step2.style.display = 'block';
       }
-    } else {
-      pinError?.classList.add('show');
+    } catch {
+      // 복호화 실패 (비밀번호 변경 등) → 연동 코드 재설정
+      storage.clear();
+      step1.style.display = 'none';
+      step2.style.display = 'block';
+    } finally {
+      pinBtn.disabled = false;
+      pinBtn.textContent = '입장';
     }
   }
 
   pinBtn?.addEventListener('click', checkPin);
   pinInput?.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
 
-  // 연동코드(GitHub 토큰) 확인 - 최초 1회
+  // 연동코드(GitHub 토큰) 최초 설정 → 암호화 후 auth.json 저장
   async function tryLogin(token) {
     loginBtn.disabled = true;
-    loginBtn.textContent = '확인 중…';
+    loginBtn.textContent = '저장 중…';
     loginError.classList.remove('show');
 
     try {
+      // 1. 토큰 유효성 확인
       const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' },
       });
       if (!res.ok) throw new Error('Unauthorized');
 
+      // 2. 현재 비밀번호로 토큰 암호화
+      const encrypted = await encryptToken(token, ADMIN_PIN);
+
+      // 3. auth.json에 저장 (GitHub API 직접 호출 - 아직 storage에 없으므로)
+      const authRes = await fetch(`${API}/website/data/auth.json`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      const authData = await authRes.json().catch(() => ({}));
+
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify({ token: encrypted }, null, 2))));
+      await fetch(`${API}/website/data/auth.json`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+        body: JSON.stringify({
+          message: '🔐 관리자 연동 코드 업데이트',
+          content,
+          branch: BRANCH,
+          ...(authData.sha ? { sha: authData.sha } : {})
+        })
+      });
+
+      // 4. localStorage 저장 및 진입
       storage.setToken(token);
       showAdmin('관리자');
     } catch {
       loginError.classList.add('show');
+      loginError.textContent = '❌ 코드 확인 실패. 다시 확인해주세요.';
     } finally {
       loginBtn.disabled = false;
       loginBtn.textContent = '설정 완료';
