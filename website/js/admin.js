@@ -207,14 +207,24 @@
   }
 
   logoutBtn?.addEventListener('click', () => {
-    storage.clear();
+    // 토큰은 유지 — 비밀번호 화면으로만 돌아감
     loginScreen.classList.remove('hidden');
     adminScreen.classList.remove('show');
-    // 비밀번호 화면으로 초기화
     if (step1) step1.style.display = 'block';
     if (step2) step2.style.display = 'none';
     if (pinInput) pinInput.value = '';
     if (tokenInput) tokenInput.value = '';
+  });
+
+  /* ── 연동 해제 (토큰 초기화 + 비밀번호 화면) ── */
+  document.getElementById('disconnectBtn')?.addEventListener('click', () => {
+    if (!confirm('이 기기의 연동을 해제하면 다음 로그인 시 연동 코드를 다시 입력해야 합니다. 계속할까요?')) return;
+    storage.clear();
+    loginScreen.classList.remove('hidden');
+    adminScreen.classList.remove('show');
+    if (step1) step1.style.display = 'block';
+    if (step2) step2.style.display = 'none';
+    if (pinInput) pinInput.value = '';
   });
 
   /* ── 항상 비밀번호 화면 표시 ── */
