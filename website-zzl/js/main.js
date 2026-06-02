@@ -2,6 +2,14 @@
 (() => {
   'use strict';
 
+  /* ── LightWidget 브라우저 캐시 방지 ── */
+  const lwIframe = document.querySelector('.lightwidget-widget');
+  if (lwIframe) {
+    const base = lwIframe.getAttribute('src').split('?')[0];
+    const ts = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+    lwIframe.setAttribute('src', `${base}?cb=${ts}`);
+  }
+
   /* ── 스무스 스크롤 ── */
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
