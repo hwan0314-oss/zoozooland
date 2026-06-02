@@ -1,3 +1,11 @@
 {
-  "notices": []
+  "notices": [
+    {
+      "id": "20260602_1780412651180",
+      "image": "images/notices/notice_20260602_1780412651180_kakaotalk_20260603_000354716.png",
+      "alt": "공지/이벤트",
+      "link": null,
+      "date": "2026-06-02"
+    }
+  ]
 }
