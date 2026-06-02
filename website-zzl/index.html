@@ -2,555 +2,546 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="ZZL — 쥬쥬랜드를 가장 힙하게, 쯜기다. 경기 고양에서 만나는 색다른 동물 경험.">
-  <meta property="og:title" content="ZZL | by ZooZoo Land">
-  <meta property="og:description" content="쥬쥬랜드를 가장 힙하게, 쯜기다(ZZL)">
-  <meta property="og:type" content="website">
-  <title>ZZL | by ZooZoo Land</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="description" content="ZZL — 쥬쥬랜드를 가장 힙하게, 쯜기다. 경기 고양 동물 테마파크.">
+  <meta property="og:title" content="ZZL | by ZooZooLand">
+  <title>ZZL — 쥬쥬랜드를 가장 힙하게, 쯜기다</title>
 
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=JetBrains+Mono:wght@300;500&family=Noto+Sans+KR:wght@300;500;900&display=swap" rel="stylesheet">
+
+  <!-- Swiper -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+
+  <!-- ZZL CSS -->
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
 
-  <!-- ── NAV ── -->
-  <nav class="nav" id="nav">
-    <div class="nav-inner">
-      <a href="#home" class="nav-logo">
-        <span class="logo-zzl">ZZL</span>
-        <span class="logo-sub">ㅈㅈㄹ · by ZooZoo Land</span>
+<body class="grid-lines">
+
+<!-- ═══════════════════════════════════════════
+  NAV
+═══════════════════════════════════════════ -->
+<nav class="fixed w-full z-50 mix-blend-difference px-6 py-4 flex justify-between items-center border-b border-white/10 backdrop-blur-sm" id="nav">
+  <a href="#hero" class="flex items-center gap-3">
+    <span class="text-xl font-black text-white tracking-tighter">ZZL</span>
+    <span class="hidden md:inline mono text-gray-500">/ SYS_VER_2026.4</span>
+  </a>
+  <div class="flex gap-6 mono text-[10px]">
+    <a href="#booking" class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">RESERVE</a>
+    <a href="#gallery" class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">ZZL-STAGRAM</a>
+    <a href="#guidemap" class="text-gray-400 hover:text-[#D4FF00] transition-colors">MAP</a>
+    <a href="#contact"  class="text-gray-400 hover:text-[#D4FF00] transition-colors">ACCESS</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+  HERO — ZZL-UNIT-01
+═══════════════════════════════════════════ -->
+<section id="hero" class="min-h-screen flex flex-col justify-center px-6 pt-20 pb-16">
+  <div class="section-label">ZZL-UNIT-01 / IDENTITY</div>
+
+  <!-- 모바일: 3줄 세로 -->
+  <div class="zzl-logo-stacked mb-10 md:hidden">
+    <span>Z</span>OO<br>
+    <span>Z</span>OO<br>
+    <span>L</span>AND
+  </div>
+
+  <!-- 데스크톱: 1줄 가로 -->
+  <div class="zzl-logo-large mb-10 hidden md:block">
+    <span>Z</span>OO<span>Z</span>OO<span>L</span>AND
+  </div>
+
+  <div class="max-w-5xl w-full flex flex-col md:flex-row justify-between items-end gap-12">
+    <div class="flex-1">
+      <div class="mono text-[#D4FF00] mb-4">[ IDENTITY_CORE ]</div>
+      <h1 class="text-4xl md:text-6xl lg:text-7xl font-black leading-none mb-6">
+        쥬쥬랜드를<br>
+        가장 힙하게,<br>
+        <span class="text-[#D4FF00]">쯜기다(ZZL)</span>
+      </h1>
+      <p class="text-gray-400 max-w-sm text-sm leading-relaxed">
+        동물과 교감하고, 자연을 느끼고, 일상에서 벗어나 당신만의 감각으로 쯜겨보세요. 이것은 단순한 테마파크를 넘어선 새로운 경험의 설계입니다.
+      </p>
+    </div>
+    <div class="flex flex-col gap-3 w-full md:w-auto md:min-w-[240px]">
+      <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
+         class="btn-zzl" target="_blank" rel="noopener">네이버 예약하기</a>
+      <a href="#guidemap"
+         class="block text-center px-8 py-4 border border-white/30 font-bold text-sm uppercase tracking-widest hover:bg-white hover:text-black transition">
+        쯜기는 법 보기 (MAP)
       </a>
-      <div class="nav-links" id="navLinks">
-        <a href="#gallery"  class="nav-item">갤러리</a>
-        <a href="#booking"  class="nav-item">예약/이용안내</a>
-        <a href="#notices"  class="nav-item">공지/이벤트</a>
-        <a href="#guidemap" class="nav-item nav-item--map">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-          가이드맵
-        </a>
-        <a href="#location" class="nav-item">오시는 길</a>
-        <a href="#contact"  class="nav-item">문의</a>
-      </div>
-      <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
-         class="btn btn--zzl-nav" target="_blank" rel="noopener">예약하기</a>
-      <button class="nav-toggle" id="navToggle" aria-label="메뉴" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
     </div>
-    <div class="nav-mobile" id="navMobile">
-      <a href="#gallery"  class="nav-m-item">갤러리</a>
-      <a href="#booking"  class="nav-m-item">예약/이용안내</a>
-      <a href="#notices"  class="nav-m-item">공지/이벤트</a>
-      <a href="#guidemap" class="nav-m-item">🗺 가이드맵</a>
-      <a href="#location" class="nav-m-item">오시는 길</a>
-      <a href="#contact"  class="nav-m-item">문의</a>
-      <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
-         class="nav-m-book" target="_blank" rel="noopener">📅 네이버 예약하기</a>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  ZZL-STAGRAM — ZZL-UNIT-02
+═══════════════════════════════════════════ -->
+<section id="gallery" class="py-24 px-6 overflow-hidden">
+  <div class="section-label">ZZL-UNIT-02 / ZZL-STAGRAM</div>
+  <div class="flex justify-between items-baseline mb-12 flex-wrap gap-4">
+    <div>
+      <h2 class="text-3xl md:text-4xl font-black mb-2">
+        <span class="text-[#D4FF00]">ZZL</span>-STAGRAM
+      </h2>
+      <p class="mono text-gray-500">REAL-TIME FIELD LOGS FROM @THEMEPARKZOOZOO</p>
     </div>
-  </nav>
-
-  <!-- ── HERO ── -->
-  <section class="hero" id="home">
-    <div class="hero-wm" aria-hidden="true">ZZL</div>
-    <div class="hero-grain" aria-hidden="true"></div>
-    <div class="hero-body">
-      <div class="hero-eyebrow">
-        <span class="hero-dot"></span>
-        경기 고양 · 동물 테마파크
-      </div>
-      <h1 class="hero-title">쥬쥬랜드를<br>가장 힙하게,<br><em>쯜기다</em><sup>ZZL</sup></h1>
-      <p class="hero-sub">동물과 교감하고, 자연을 느끼고,<br>일상에서 벗어나 쯜겨보세요.</p>
-      <div class="hero-cta">
-        <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
-           class="btn btn--zzl" target="_blank" rel="noopener">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          네이버 예약하기
-        </a>
-        <a href="#guidemap" class="btn btn--ghost-zzl">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-          가이드맵 보기
-        </a>
-      </div>
-    </div>
-    <div class="hero-scroll" aria-hidden="true">
-      <div class="hero-scroll-line"></div>
-      <span>SCROLL</span>
-    </div>
-  </section>
-
-  <!-- ── 갤러리 ── -->
-  <section class="sec sec--cream" id="gallery">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag sec-tag--dark">Gallery</span>
-        <h2 class="sec-title sec-title--dark">갤러리</h2>
-        <a href="https://www.instagram.com/themeparkzoozoo/"
-           class="sec-insta sec-insta--dark" target="_blank" rel="noopener">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          @themeparkzoozoo
-        </a>
-      </div>
-      <div class="gallery-wrap">
-        <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
-        <iframe src="https://cdn.lightwidget.com/widgets/32f54e0fcb97522380cb96c203bb1a40.html"
-          scrolling="no" allowtransparency="true" class="lightwidget-widget"
-          title="ZZL 인스타그램 피드"
-          style="width:100%;border:0;overflow:hidden;min-height:480px;"></iframe>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── 예약 / 이용안내 ── -->
-  <section class="sec sec--dark" id="booking">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag sec-tag--zzl">Reservation &amp; Guide</span>
-        <h2 class="sec-title sec-title--cream">예약 / 이용안내</h2>
-      </div>
-
-      <!-- 네이버 예매 상품 -->
-      <div class="products-section reveal-dark">
-        <div class="products-head products-head--dark">
-          <span class="products-label products-label--dark">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            네이버 예매 상품
-          </span>
-          <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
-             class="btn btn--outline-cream btn--sm" target="_blank" rel="noopener">
-            네이버에서 열기 ↗
-          </a>
-        </div>
-        <div class="products-grid" id="productsGrid">
-          <div class="products-empty products-empty--dark" id="productsEmpty">
-            <div class="products-empty-icon">🎟</div>
-            <p>현재 등록된 예매 상품이 없습니다</p>
-            <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
-               class="btn btn--zzl" target="_blank" rel="noopener">네이버에서 예매하기</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 이용안내 3카드 -->
-      <div class="info-grid info-grid--dark">
-
-        <div class="info-card info-card--dark reveal-dark">
-          <div class="info-icon-zzl">🥕</div>
-          <h3 class="info-title--cream">먹이체험</h3>
-          <div class="feed-list feed-list--dark">
-            <div class="feed-row">
-              <strong>채소 먹이</strong>
-              <span>당근 · 청경채 · 치커리 · 양배추 · 사료</span>
-              <em>양 · 라마 · 알파카 · 꽃사슴 · 유산양 · 보어염소<br>무플론 · 당나귀 · 토끼 <small>(토끼는 사료만)</small></em>
-            </div>
-            <div class="feed-row"><strong>잉어먹이 <small>(호수)</small></strong><em>잉어 · 거북 · 오리</em></div>
-            <div class="feed-row"><strong>우유 젖병</strong><em>양 · 염소</em></div>
-          </div>
-        </div>
-
-        <div class="info-card info-card--dark reveal-dark">
-          <div class="info-icon-zzl">🎭</div>
-          <h3 class="info-title--cream">프로그램</h3>
-          <div id="programsList">
-            <p style="color:var(--text-muted-dark);font-size:14px">로딩 중…</p>
-          </div>
-        </div>
-
-        <div class="info-card info-card--dark reveal-dark">
-          <div class="info-icon-zzl">📋</div>
-          <h3 class="info-title--cream">이용안내</h3>
-          <ul class="rules-list rules-list--dark">
-            <li>허가된 먹이만 동물에게 제공해주세요</li>
-            <li>동물을 놀라게 하는 행동은 삼가주세요</li>
-            <li>쓰레기는 지정된 장소에 버려주세요</li>
-            <li>사진 촬영 시 플래시 사용을 자제해주세요</li>
-            <li>반려동물 동반 시 사전 문의 바랍니다</li>
-            <li>안전 구역 밖에서의 흡연은 금지입니다</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ── 쯜긴 사람들의 리뷰 ── -->
-  <section class="sec sec--deepest" id="reviews">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag sec-tag--zzl">Reviews</span>
-        <h2 class="sec-title sec-title--cream">쯜긴 사람들의 리뷰</h2>
-      </div>
-      <div class="reviews-grid">
-
-        <div class="review-card reveal-dark">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"알파카 눈을 마주치는 순간 세상 모든 걱정이 사라졌어요. 힐링 그 자체, 진짜로요."</p>
-          <div class="review-foot">
-            <span class="review-name">이○○</span>
-            <span class="review-date">2026.04.12 방문</span>
-          </div>
-        </div>
-
-        <div class="review-card reveal-dark">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"아이들이 집에 오자마자 '또 가자'고 했어요. 먹이체험 경험이 특히 잊을 수 없었습니다."</p>
-          <div class="review-foot">
-            <span class="review-name">박○○</span>
-            <span class="review-date">2026.03.28 방문</span>
-          </div>
-        </div>
-
-        <div class="review-card reveal-dark">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"주말 공연 퀄리티가 생각보다 훨씬 좋아서 깜짝 놀랐어요. 로봇 공연·악어 설명회 강추합니다."</p>
-          <div class="review-foot">
-            <span class="review-name">최○○</span>
-            <span class="review-date">2026.05.10 방문</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ── 이용 안내 CRM ── -->
-  <section class="sec sec--cream" id="info">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag sec-tag--dark">Info &amp; CRM</span>
-        <h2 class="sec-title sec-title--dark">이용 안내</h2>
-      </div>
-
-      <div class="crm-grid">
-        <div class="crm-card reveal">
-          <div class="crm-icon">🕐</div>
-          <h3>운영시간</h3>
-          <p><strong>하절기</strong> 3~11월 · 10:00 – 19:00</p>
-          <p><strong>동절기</strong> 12~2월 · 10:00 – 18:00</p>
-          <p class="crm-note"><span class="crm-closed">매주 월요일 휴무</span> (공휴일 정상운영)</p>
-        </div>
-        <div class="crm-card reveal">
-          <div class="crm-icon">🎟</div>
-          <h3>요금</h3>
-          <p>입장권 · 네이버 플레이스 참조</p>
-          <p>먹이체험 · 현장 별도 구매</p>
-          <a href="https://map.naver.com/p/entry/place/1008136590"
-             class="crm-link" target="_blank" rel="noopener">네이버 플레이스 보기 →</a>
-        </div>
-        <div class="crm-card reveal">
-          <div class="crm-icon">🅿️</div>
-          <h3>주차</h3>
-          <p>무료 주차 운영</p>
-          <p class="crm-note">운영시간 내 이용 가능</p>
-          <p>경기 고양시 덕양구<br>원당로458번길 7-42</p>
-        </div>
-      </div>
-
-      <!-- CTA 배너 -->
-      <div class="crm-cta-wrap">
-        <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
-           class="crm-cta crm-cta--naver" target="_blank" rel="noopener">
-          <div class="crm-cta-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-          </div>
-          <div>
-            <strong>네이버 예약 · 알림동의하고 할인받기</strong>
-            <span>네이버 예약 시 알림동의하면 할인 혜택을 드립니다</span>
-          </div>
-          <div class="crm-cta-arrow">→</div>
-        </a>
-
-        <a href="https://pf.kakao.com/_xxxxxb" class="crm-cta crm-cta--kakao"
-           target="_blank" rel="noopener" id="kakaoChannelLink">
-          <div class="crm-cta-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </div>
-          <div>
-            <strong>카카오 채널 추가 · 현장 먹이쿠폰 받기</strong>
-            <span>채널 추가하고 현장 먹이체험 쿠폰 받아가세요</span>
-          </div>
-          <div class="crm-cta-arrow">→</div>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── 공지/이벤트 ── -->
-  <section class="sec sec--dark" id="notices">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag sec-tag--zzl">Notice &amp; Event</span>
-        <h2 class="sec-title sec-title--cream">공지 / 이벤트</h2>
-      </div>
-      <div class="swiper notices-swiper">
-        <div class="swiper-wrapper" id="noticesWrapper">
-          <div class="swiper-slide" id="noticePlaceholder">
-            <div class="notice-empty notice-empty--dark">
-              <div style="font-size:44px;margin-bottom:12px">📢</div>
-              <p>등록된 공지/이벤트가 없습니다</p>
-            </div>
-          </div>
-        </div>
-        <div class="swiper-pagination"></div>
-        <div class="swiper-button-prev"></div>
-        <div class="swiper-button-next"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── 가이드맵 ── -->
-  <section class="sec sec--cream" id="guidemap">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag sec-tag--dark">Guide Map</span>
-        <h2 class="sec-title sec-title--dark">가이드맵</h2>
-      </div>
-      <div class="gmap-wrap reveal">
-        <div class="gmap-toolbar">
-          <button class="btn btn--outline-dark btn--sm" id="btnMapZoom">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-            크게 보기
-          </button>
-          <a href="images/guidemap.jpg" download="ZZL_가이드맵.jpg"
-             class="btn btn--outline-dark btn--sm" id="dlGuideMap">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            다운로드
-          </a>
-        </div>
-        <div class="gmap-preview" id="gmapPreview">
-          <img src="images/guidemap.jpg" alt="ZZL 가이드맵" class="gmap-img" id="gmapImg" loading="lazy">
-          <div class="gmap-missing" id="gmapMissing" style="display:none">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-            <p>가이드맵 이미지 준비 중</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 가이드맵 모달 -->
-  <div class="map-modal" id="mapModal" aria-hidden="true" role="dialog" aria-label="가이드맵 전체보기" aria-modal="true">
-    <div class="map-modal-bg" id="mapModalBg"></div>
-    <div class="map-modal-body">
-      <div class="map-modal-head">
-        <span>가이드맵</span>
-        <button class="map-modal-close" id="mapModalClose" aria-label="닫기">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="map-modal-img-area" id="mapModalArea">
-        <img src="images/guidemap.jpg" alt="ZZL 가이드맵" class="map-modal-img" id="mapModalImg">
-      </div>
-      <div class="map-modal-foot">
-        <span class="map-modal-hint">핀치 줌 · 더블탭 확대</span>
-        <a href="images/guidemap.jpg" download="ZZL_가이드맵.jpg" class="btn btn--zzl btn--sm">다운로드</a>
-      </div>
+    <div class="flex items-center gap-6">
+      <div class="h-[1px] w-24 bg-white/10 hidden md:block"></div>
+      <a href="https://www.instagram.com/themeparkzoozoo/" target="_blank" rel="noopener"
+         class="tag-badge">LIVE_FEED →</a>
     </div>
   </div>
 
-  <!-- ── 오시는 길 ── -->
-  <section class="sec sec--dark" id="location">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag sec-tag--zzl">Location</span>
-        <h2 class="sec-title sec-title--cream">오시는 길</h2>
-      </div>
-      <div class="loc-grid">
-        <div class="loc-map-box reveal-dark">
-          <div id="kakaoMap" class="loc-map-iframe"></div>
-          <div class="loc-map-links loc-map-links--dark">
-            <a href="https://map.naver.com/p/entry/place/1008136590"
-               target="_blank" rel="noopener" class="btn btn--map-n">네이버 지도</a>
-            <a href="https://map.kakao.com/link/search/쥬쥬랜드"
-               target="_blank" rel="noopener" class="btn btn--map-k">카카오맵</a>
+  <!-- LightWidget Instagram 피드 -->
+  <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
+  <iframe src="https://cdn.lightwidget.com/widgets/32f54e0fcb97522380cb96c203bb1a40.html"
+    scrolling="no" allowtransparency="true" class="lightwidget-widget"
+    title="ZZL 인스타그램 피드"
+    style="width:100%;border:0;overflow:hidden;min-height:420px;"></iframe>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  RESERVE — ZZL-UNIT-03
+═══════════════════════════════════════════ -->
+<section id="booking" class="py-24 px-6 bg-[#0E0F0E]">
+  <div class="section-label">ZZL-UNIT-03 / ZZL-RESERVE</div>
+  <div class="mb-16">
+    <h2 class="text-4xl md:text-6xl font-black mb-4 tracking-tighter italic">
+      오늘, ZZL겨볼까?
+    </h2>
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-[1px] bg-[#D4FF00]"></div>
+      <p class="mono text-[#D4FF00] text-xs">MODULE: RESERVATION_PROTOCOL</p>
+    </div>
+  </div>
+
+  <!-- 예매 상품 그리드 -->
+  <div class="grid lg:grid-cols-3 gap-8 mb-12">
+    <!-- 상품 카드 영역 (JS 동적) -->
+    <div class="lg:col-span-1">
+      <div class="card-frame bg-black p-6 h-full flex flex-col" id="productSlot">
+        <!-- 상품 없을 때 기본 -->
+        <div id="productEmpty" class="flex flex-col h-full">
+          <div class="aspect-[4/5] bg-[#111] mb-6 overflow-hidden flex items-center justify-center">
+            <div class="mono text-[#D4FF00] text-center">
+              <div class="text-2xl font-black mb-2">ZZL</div>
+              <div class="text-[10px] opacity-60">NO_PRODUCT_LOADED</div>
+            </div>
           </div>
+          <div class="mono text-xs text-gray-500 mb-4">NET_TICKET_STATUS: PENDING</div>
+          <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
+             class="mt-auto block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition"
+             target="_blank" rel="noopener">BOOK VIA NAVER →</a>
         </div>
-        <div class="loc-info-box loc-info-box--dark reveal-dark">
-          <div class="loc-item loc-item--dark">
-            <span class="loc-ic" aria-hidden="true">📍</span>
-            <div>
-              <h4>주소</h4>
-              <p>경기 고양시 덕양구 원당로458번길 7-42</p>
-            </div>
-          </div>
-          <div class="loc-item loc-item--dark">
-            <span class="loc-ic" aria-hidden="true">📞</span>
-            <div>
-              <h4>전화</h4>
-              <a href="tel:031-962-4500">031-962-4500</a>
-            </div>
-          </div>
-          <div class="loc-item loc-item--dark">
-            <span class="loc-ic" aria-hidden="true">🕐</span>
-            <div>
-              <h4>운영시간</h4>
-              <p>
-                <strong>하절기</strong> 3~11월 &nbsp;10:00 – 19:00<br>
-                <strong>동절기</strong> 12~2월 &nbsp;10:00 – 18:00<br>
-                <span style="color:#ff6b6b;font-weight:700">매주 월요일 휴무</span><br>
-                <span style="font-size:12px;color:var(--text-muted-dark)">공휴일인 월요일은 정상운영</span>
-              </p>
-            </div>
-          </div>
-          <div class="loc-item loc-item--dark">
-            <span class="loc-ic" aria-hidden="true">🅿️</span>
-            <div>
-              <h4>주차</h4>
-              <p>무료 주차<br><span style="font-size:12px;color:var(--text-muted-dark)">운영시간 내 이용 가능</span></p>
-            </div>
+      </div>
+    </div>
+
+    <!-- 이용안내 카드들 -->
+    <div class="lg:col-span-2 grid md:grid-cols-2 gap-4">
+      <div class="p-8 border border-white/5 bg-[#151615]">
+        <div class="mono text-[#D4FF00] mb-6">01_EXPERIENCE</div>
+        <h4 class="text-xl font-bold mb-4">먹이체험 프로그램</h4>
+        <ul class="text-sm text-gray-400 space-y-4">
+          <li><span class="text-white">채소먹이:</span> 양, 라마, 알파카, 꽃사슴, 유산양, 보어염소, 무플론, 당나귀, 토끼</li>
+          <li><span class="text-white">잉어먹이:</span> 잉어, 거북, 오리 (호수)</li>
+          <li><span class="text-white">우유젖병:</span> 양, 염소 (베이비 유닛)</li>
+        </ul>
+      </div>
+
+      <div class="p-8 border border-white/5 bg-[#151615]">
+        <div class="mono text-[#D4FF00] mb-6">02_TIMETABLE</div>
+        <h4 class="text-xl font-bold mb-4">운영 프로그램</h4>
+        <div class="space-y-3" id="programsList">
+          <!-- JS 동적 로딩 -->
+          <div class="mono text-[10px] text-gray-600">LOADING_SCHEDULE...</div>
+        </div>
+      </div>
+
+      <div class="md:col-span-2 p-8 border border-white/5 bg-[#0A0B0A]">
+        <div class="mono text-[#D4FF00] mb-6">03_CODE_OF_CONDUCT</div>
+        <div class="grid md:grid-cols-3 gap-6 text-[10px] mono text-gray-500 uppercase leading-relaxed">
+          <div>- No flash photography<br>- Authorized feed only</div>
+          <div>- Zero waste policy<br>- Restricted smoking areas</div>
+          <div>- Pet inquiry required<br>- Safety distance maintenance</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  REVIEWS — ZZL-UNIT-04
+═══════════════════════════════════════════ -->
+<section class="py-24 px-0">
+  <div class="section-label">ZZL-UNIT-04 / ZZL-REVIEWS</div>
+  <div class="px-6 mb-12">
+    <h2 class="text-3xl md:text-4xl font-black">
+      <span class="text-[#D4FF00]">ZZL</span>겨본 사람만 알아요
+    </h2>
+  </div>
+
+  <div class="reviews-scroll px-6 no-scrollbar">
+    <div class="review-card border-l-4 border-[#D4FF00]">
+      <div class="text-[#D4FF00] mb-6">★★★★★</div>
+      <blockquote class="text-base md:text-lg font-medium leading-relaxed mb-8">
+        "알파카 눈을 마주치는 순간 세상 모든 걱정이 사라졌어요. 힐링 그 자체, 진짜로요."
+      </blockquote>
+      <div class="flex justify-between items-end">
+        <span class="mono text-xs">LEE_0412</span>
+        <span class="mono text-[8px] opacity-40">2026.04.12</span>
+      </div>
+    </div>
+
+    <div class="review-card border-l-4 border-white">
+      <div class="text-white mb-6">★★★★★</div>
+      <blockquote class="text-base md:text-lg font-medium leading-relaxed mb-8">
+        "아이들이 집에 오자마자 '또 가자'고 했어요. 먹이체험 경험이 특히 잊을 수 없었습니다."
+      </blockquote>
+      <div class="flex justify-between items-end">
+        <span class="mono text-xs">PARK_0328</span>
+        <span class="mono text-[8px] opacity-40">2026.03.28</span>
+      </div>
+    </div>
+
+    <div class="review-card border-l-4 border-[#D4FF00]">
+      <div class="text-[#D4FF00] mb-6">★★★★★</div>
+      <blockquote class="text-base md:text-lg font-medium leading-relaxed mb-8">
+        "주말 공연 퀄리티가 기대 이상이에요. 로봇 공연·악어 설명회 모두 강추합니다."
+      </blockquote>
+      <div class="flex justify-between items-end">
+        <span class="mono text-xs">CHOI_0510</span>
+        <span class="mono text-[8px] opacity-40">2026.05.10</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  CRM CTA — ZZL-UNIT-05
+═══════════════════════════════════════════ -->
+<section class="py-0 border-y border-white/10">
+  <div class="grid md:grid-cols-2">
+    <a href="https://map.naver.com/p/entry/place/1008136590?placePath=%2Freservation"
+       class="group p-12 border-b md:border-b-0 md:border-r border-white/10 hover:bg-[#004729] transition duration-500 block"
+       target="_blank" rel="noopener">
+      <div class="mono text-xs mb-4 text-gray-500">PLATFORM: NAVER</div>
+      <h3 class="text-2xl md:text-3xl font-black mb-3 group-hover:translate-x-2 transition">
+        네이버 예약하고<br>혜택 알림받기
+      </h3>
+      <div class="text-[#D4FF00] mono text-xs">BENEFIT_ALERT_ENABLED &gt;</div>
+    </a>
+    <a href="#" class="group p-12 hover:bg-[#FEE500] hover:text-black transition duration-500 block"
+       id="kakaoChannelLink">
+      <div class="mono text-xs mb-4 text-gray-500">PLATFORM: KAKAO</div>
+      <h3 class="text-2xl md:text-3xl font-black mb-3 group-hover:translate-x-2 transition">
+        카카오 채널 추가하고<br>먹이쿠폰 받기
+      </h3>
+      <div class="mono text-xs">DOWNLOAD_COUPON_01 &gt;</div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  NOTICES — ZZL-UNIT-06
+═══════════════════════════════════════════ -->
+<section class="py-24 px-6">
+  <div class="section-label">ZZL-UNIT-06 / ZZL-BROADCAST</div>
+  <div class="flex justify-between items-baseline mb-12 flex-wrap gap-4">
+    <div>
+      <h2 class="text-3xl md:text-4xl font-black mb-2">
+        <span class="text-[#D4FF00]">ZZL</span>_BROADCAST
+      </h2>
+      <p class="mono text-gray-500">SYSTEM_NOTICES &amp; LIVE_EVENTS</p>
+    </div>
+    <div class="tag-badge">LIVE</div>
+  </div>
+
+  <div class="swiper notices-swiper">
+    <div class="swiper-wrapper" id="noticesWrapper">
+      <div class="swiper-slide" id="noticePlaceholder">
+        <div class="border border-white/10 aspect-[16/6] flex items-center justify-center bg-[#0E0F0E]">
+          <div class="text-center">
+            <div class="mono text-[#D4FF00] text-sm font-black mb-2">BROADCAST_EMPTY</div>
+            <p class="mono text-[10px] text-gray-600">NO_ACTIVE_TRANSMISSIONS</p>
           </div>
         </div>
       </div>
     </div>
-  </section>
+    <div class="swiper-pagination"></div>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+  </div>
+</section>
 
-  <!-- ── 문의 / 제휴 ── -->
-  <section class="sec sec--cream" id="contact">
-    <div class="container">
-      <div class="sec-hd">
-        <span class="sec-tag sec-tag--dark">Contact</span>
-        <h2 class="sec-title sec-title--dark">문의 / 제휴</h2>
+<!-- ═══════════════════════════════════════════
+  GUIDE MAP — ZZL-UNIT-07
+═══════════════════════════════════════════ -->
+<section id="guidemap" class="py-24 px-6 bg-black">
+  <div class="section-label">ZZL-UNIT-07 / ZZL-MAP</div>
+  <div class="max-w-6xl mx-auto">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
+      <div>
+        <h2 class="text-4xl md:text-5xl font-black italic">
+          <span class="text-[#D4FF00]">ZZL</span>기는 법
+        </h2>
       </div>
-
-      <div class="contact-zzl-grid">
-
-        <!-- 단체문의 -->
-        <div class="contact-zzl-card reveal">
-          <div class="contact-zzl-top">
-            <span class="contact-zzl-icon">👥</span>
-            <div>
-              <h3>단체 문의</h3>
-              <p>20인 이상 단체 방문은 사전 문의 바랍니다.</p>
-            </div>
-          </div>
-          <div class="contact-zzl-links">
-            <a href="tel:031-962-4500" class="contact-zzl-link">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.48 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              031-962-4500
-            </a>
-            <a href="mailto:info@zoozoo.kr" class="contact-zzl-link" id="groupEmailLink">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              이메일 문의
-            </a>
-          </div>
-        </div>
-
-        <!-- 제휴 문의 폼 -->
-        <div class="contact-zzl-card reveal">
-          <div class="contact-zzl-top">
-            <span class="contact-zzl-icon">🤝</span>
-            <div>
-              <h3>마케팅 / 제휴 문의</h3>
-              <p>광고 · 협찬 · 콜라보 제안을 환영합니다.</p>
-            </div>
-          </div>
-          <form class="partner-form" id="partnerForm" novalidate>
-            <div class="partner-form-row">
-              <div class="partner-field">
-                <label>회사명 / 브랜드명</label>
-                <input type="text" id="fCompany" placeholder="(주)쯜기다" autocomplete="organization">
-              </div>
-              <div class="partner-field">
-                <label>담당자명</label>
-                <input type="text" id="fName" placeholder="홍길동" autocomplete="name">
-              </div>
-            </div>
-            <div class="partner-form-row">
-              <div class="partner-field">
-                <label>연락처</label>
-                <input type="tel" id="fPhone" placeholder="010-0000-0000" autocomplete="tel">
-              </div>
-              <div class="partner-field">
-                <label>이메일 *</label>
-                <input type="email" id="fEmail" placeholder="hello@zzl.kr" autocomplete="email" required>
-              </div>
-            </div>
-            <div class="partner-field">
-              <label>제안 내용</label>
-              <textarea id="fContent" rows="4" placeholder="제안하실 내용을 간략히 적어주세요."></textarea>
-            </div>
-            <button type="submit" class="btn btn--zzl" style="width:100%">제출하기</button>
-            <p class="partner-note" id="partnerNote" style="display:none"></p>
-          </form>
-        </div>
-
+      <div class="flex gap-3">
+        <button id="btnMapZoom"
+          class="btn-zzl mono text-[10px] px-4 py-3">FULLSCREEN</button>
+        <a href="images/guidemap.jpg" download="ZZL_가이드맵.jpg" id="dlGuideMap"
+           class="btn-zzl-fill mono text-[10px] px-4 py-3">DOWNLOAD PDF</a>
       </div>
     </div>
-  </section>
 
-  <!-- ── FOOTER ── -->
-  <footer class="footer footer--dark">
-    <div class="container">
-      <div class="footer-top">
-        <div class="footer-brand">
-          <div class="footer-zzl">ZZL</div>
-          <p class="footer-zzl-sub">ㅈㅈㄹ · by ZooZoo Land</p>
-          <p>📞 031-962-4500</p>
-          <p>🌐 zoozoo.kr</p>
-        </div>
-        <nav class="footer-nav" aria-label="푸터 네비게이션">
-          <a href="#gallery">갤러리</a>
-          <a href="#booking">예약/이용안내</a>
-          <a href="#notices">공지/이벤트</a>
-          <a href="#guidemap">가이드맵</a>
-          <a href="#location">오시는 길</a>
-          <a href="#contact">문의</a>
-        </nav>
-        <div class="footer-social">
-          <a href="https://www.instagram.com/themeparkzoozoo/" target="_blank" rel="noopener" aria-label="인스타그램">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          </a>
-          <a href="https://map.naver.com/p/entry/place/1008136590" target="_blank" rel="noopener" aria-label="네이버 플레이스">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          </a>
-        </div>
+    <div class="map-container border border-white/10 relative overflow-hidden cursor-pointer group"
+         id="gmapPreview" style="aspect-ratio:16/9">
+      <img src="images/guidemap.jpg" alt="ZZL 가이드맵" class="w-full h-full object-contain"
+           id="gmapImg" loading="lazy">
+      <!-- 이미지 없을 때 -->
+      <div id="gmapMissing" style="display:none"
+           class="absolute inset-0 flex flex-col items-center justify-center bg-[#111]">
+        <div class="mono text-[#D4FF00] text-xl font-black mb-3">ZZL_MAP_V2.0</div>
+        <p class="mono text-[10px] text-gray-600">MAP_FILE_NOT_LOADED</p>
       </div>
-      <div class="footer-bottom footer-bottom--dark">
-        <p>© <span id="footerYear"></span> ZZL · ZooZoo Land. All rights reserved.</p>
-        <div style="display:flex;gap:16px">
-          <a href="../admin/" class="footer-admin">관리자</a>
-          <a href="../" class="footer-admin" style="color:var(--zzl);opacity:0.6">← 기존 사이트</a>
+      <!-- hover 오버레이 -->
+      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-500
+                  flex items-center justify-center pointer-events-none">
+        <div class="mono text-[#D4FF00] text-xs opacity-0 group-hover:opacity-60 transition">
+          CLICK TO FULLSCREEN
         </div>
       </div>
     </div>
-  </footer>
+  </div>
+</section>
 
-  <!-- 가이드맵 플로팅 버튼 -->
-  <a href="#guidemap" class="float-btn float-btn--zzl" id="floatBtn" title="가이드맵 보기">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-    <span>가이드맵</span>
-  </a>
+<!-- 가이드맵 모달 -->
+<div class="map-modal" id="mapModal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="map-modal-body">
+    <div class="map-modal-head">
+      <span>ZZL_MAP_PROTOCOL / INTERACTIVE_VIEW</span>
+      <button class="map-modal-close" id="mapModalClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="map-modal-img-area" id="mapModalArea">
+      <img src="images/guidemap.jpg" alt="ZZL 가이드맵" class="map-modal-img" id="mapModalImg">
+    </div>
+    <div class="map-modal-foot">
+      <span>PINCH_ZOOM · DOUBLE_TAP_EXPAND</span>
+      <a href="images/guidemap.jpg" download="ZZL_가이드맵.jpg"
+         class="btn-zzl-fill mono text-[9px] px-4 py-2">DOWNLOAD</a>
+    </div>
+  </div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script src="js/main.js"></script>
+<!-- ═══════════════════════════════════════════
+  LOCATION — ZZL-UNIT-08
+═══════════════════════════════════════════ -->
+<section id="contact" class="py-24 px-6">
+  <div class="section-label">ZZL-UNIT-08 / ZZL-ACCESS</div>
+  <div class="grid lg:grid-cols-2 gap-12">
 
-  <script>
-    (function initKakaoMap() {
-      var APP_KEY = '055fac047582f3d122a979a3b1b0dfd4';
-      var script = document.createElement('script');
-      script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + APP_KEY + '&libraries=services&autoload=false';
-      script.onload = function () {
-        kakao.maps.load(function () {
-          var container = document.getElementById('kakaoMap');
-          var map = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(37.655, 126.882), level: 4 });
-          var places = new kakao.maps.services.Places();
-          places.keywordSearch('쥬쥬랜드 고양', function (data, status) {
-            if (status !== kakao.maps.services.Status.OK) return;
-            var coords = new kakao.maps.LatLng(data[0].y, data[0].x);
-            map.setCenter(coords);
-            var marker = new kakao.maps.Marker({ map: map, position: coords });
-            var iw = new kakao.maps.InfoWindow({
-              content: '<div style="padding:8px 12px;font-size:13px;font-weight:700;color:#0F1F0F;white-space:nowrap;">🦁 ZZL · ZooZoo Land</div>'
-            });
-            iw.open(map, marker);
-          });
+    <!-- 정보 -->
+    <div>
+      <h2 class="text-3xl md:text-4xl font-black mb-12">
+        <span class="text-[#D4FF00]">ZZL</span>기로 오는 길
+      </h2>
+      <div class="space-y-10">
+        <div class="grid grid-cols-2 gap-6 mono">
+          <div>
+            <label class="text-gray-600 block mb-2 text-[10px]">ADDRESS</label>
+            <p class="text-sm">경기 고양시 덕양구<br>원당로458번길 7-42</p>
+          </div>
+          <div>
+            <label class="text-gray-600 block mb-2 text-[10px]">CONTACT</label>
+            <p class="text-sm">
+              <a href="tel:031-962-4500" class="hover:text-[#D4FF00] transition">031-962-4500</a><br>
+              zoozoo.kr
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4 mono">
+          <div class="flex justify-between border-b border-white/5 pb-4">
+            <span class="text-xs">SUMMER (03-11)</span>
+            <span class="text-xs">10:00 – 19:00</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-4">
+            <span class="text-xs">WINTER (12-02)</span>
+            <span class="text-xs">10:00 – 18:00</span>
+          </div>
+          <div class="flex justify-between text-[#D4FF00]">
+            <span class="text-xs font-black">MONDAY</span>
+            <span class="text-xs font-black">SYSTEM_OFF (CLOSED)</span>
+          </div>
+          <div class="text-gray-600 text-[10px] pt-1">* 공휴일인 월요일은 정상운영</div>
+        </div>
+
+        <div class="flex gap-3">
+          <a href="https://map.naver.com/p/entry/place/1008136590" target="_blank" rel="noopener"
+             class="flex-1 py-4 bg-[#2DB400] text-center font-black text-xs mono hover:opacity-90 transition">NAVER MAP</a>
+          <a href="https://map.kakao.com/link/search/쥬쥬랜드" target="_blank" rel="noopener"
+             class="flex-1 py-4 bg-[#FEE500] text-black text-center font-black text-xs mono hover:opacity-90 transition">KAKAO MAP</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 카카오맵 -->
+    <div class="kakao-map-wrap" style="min-height:400px">
+      <div id="kakaoMap" style="width:100%;height:400px;"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  CONTACT / PARTNER — ZZL-UNIT-09
+═══════════════════════════════════════════ -->
+<section class="py-24 px-6 bg-[#0E0F0E]">
+  <div class="section-label">ZZL-UNIT-09 / ZZL-PARTNERSHIP</div>
+  <div class="grid lg:grid-cols-2 gap-12">
+
+    <!-- 단체 문의 -->
+    <div class="card-frame bg-black p-8 md:p-12">
+      <div class="mono text-[#D4FF00] mb-8">MODULE: GROUP_ACCESS</div>
+      <h3 class="text-3xl font-black mb-4">같이 ZZL겨요</h3>
+      <p class="text-gray-400 text-sm mb-10 leading-relaxed">
+        20인 이상 단체 방문은 사전 문의 바랍니다.
+      </p>
+      <div class="space-y-3">
+        <a href="tel:031-962-4500"
+           class="block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition">
+          CALL: 031-962-4500
+        </a>
+        <a href="mailto:info@zoozoo.kr"
+           class="block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition"
+           id="groupEmailLink">
+          EMAIL_INQUIRY →
+        </a>
+      </div>
+    </div>
+
+    <!-- 제휴 폼 -->
+    <div class="card-frame bg-black p-8 md:p-12">
+      <div class="mono text-[#D4FF00] mb-8">MODULE: PARTNERSHIP_PROTOCOL</div>
+      <h3 class="text-3xl font-black mb-4">마케팅 / 제휴</h3>
+      <p class="text-gray-400 text-sm mb-10 leading-relaxed">
+        광고 · 협찬 · 콜라보 제안을 환영합니다.
+      </p>
+      <form id="partnerForm" class="space-y-4" novalidate>
+        <div class="grid grid-cols-2 gap-4">
+          <input type="text" id="fCompany" class="partner-input" placeholder="COMPANY_NAME">
+          <input type="text" id="fName"    class="partner-input" placeholder="CONTACT_PERSON">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <input type="tel"   id="fPhone" class="partner-input" placeholder="PHONE_NUMBER">
+          <input type="email" id="fEmail" class="partner-input" placeholder="EMAIL_ADDRESS *">
+        </div>
+        <textarea id="fContent" rows="4" class="partner-input" placeholder="PROPOSAL_CONTENT..."></textarea>
+        <button type="submit"
+                class="w-full py-4 bg-[#D4FF00] text-black font-black mono text-xs uppercase hover:bg-white transition">
+          SUBMIT_PROPOSAL →
+        </button>
+        <p id="partnerNote" class="mono text-[10px] text-center hidden"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  FOOTER
+═══════════════════════════════════════════ -->
+<footer class="py-20 px-6 bg-black border-t-2 border-[#D4FF00]">
+  <div class="grid md:grid-cols-3 gap-12 mb-20">
+    <div>
+      <div class="text-4xl font-black mb-4">ZZL</div>
+      <div class="mono text-[10px] text-gray-500 leading-relaxed">
+        ㅈㅈㄹ · BY ZOOZOOLAND<br>
+        KYUNGGI-DO GOYANG-SI DEOKYANG-GU<br>
+        WONDANG-RO 458-7-42<br>
+        031-962-4500
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-8 mono text-[10px] uppercase">
+      <div class="space-y-4">
+        <a href="#gallery"  class="block text-gray-500 hover:text-[#D4FF00] transition">ZZL-STAGRAM</a>
+        <a href="#booking"  class="block text-gray-500 hover:text-[#D4FF00] transition">Reservation</a>
+        <a href="#guidemap" class="block text-gray-500 hover:text-[#D4FF00] transition">ZZL-MAP</a>
+      </div>
+      <div class="space-y-4">
+        <a href="https://www.instagram.com/themeparkzoozoo/" target="_blank" rel="noopener"
+           class="block text-gray-500 hover:text-[#D4FF00] transition">Instagram</a>
+        <a href="https://map.naver.com/p/entry/place/1008136590" target="_blank" rel="noopener"
+           class="block text-gray-500 hover:text-[#D4FF00] transition">Naver Place</a>
+        <a href="../admin/" class="block text-gray-600 hover:text-[#D4FF00] transition">Admin</a>
+      </div>
+    </div>
+    <div class="flex justify-end items-end">
+      <div class="text-right">
+        <div class="mono text-xs mb-2 text-gray-600">AUTHENTIC_EXPERIENCE</div>
+        <div class="text-2xl font-black">쯜기다(ZZL)</div>
+        <a href="../" class="mono text-[9px] text-gray-600 hover:text-[#D4FF00] transition mt-2 block">
+          ← PREV_SITE
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mono text-[8px] opacity-40">
+    <div>© <span id="footerYear"></span> ZZL · ZOOZOO LAND. ALL RIGHTS RESERVED.</div>
+    <div class="flex gap-6">
+      <span>SYSTEM_STATUS: STABLE</span>
+      <span>VER_9.4.2</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ── 플로팅 가이드맵 버튼 ── -->
+<a href="#guidemap" class="floating-map-btn" id="floatBtn" title="ZZL기는 법">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5"
+       stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+    <line x1="9" y1="3" x2="9" y2="18"/>
+    <line x1="15" y1="6" x2="15" y2="21"/>
+  </svg>
+</a>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="js/main.js"></script>
+
+<!-- 카카오맵 -->
+<script>
+(function() {
+  var script = document.createElement('script');
+  script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=055fac047582f3d122a979a3b1b0dfd4&libraries=services&autoload=false';
+  script.onload = function() {
+    kakao.maps.load(function() {
+      var container = document.getElementById('kakaoMap');
+      var map = new kakao.maps.Map(container, {
+        center: new kakao.maps.LatLng(37.655, 126.882),
+        level: 4
+      });
+      var places = new kakao.maps.services.Places();
+      places.keywordSearch('쥬쥬랜드 고양', function(data, status) {
+        if (status !== kakao.maps.services.Status.OK) return;
+        var coords = new kakao.maps.LatLng(data[0].y, data[0].x);
+        map.setCenter(coords);
+        var marker = new kakao.maps.Marker({ map: map, position: coords });
+        var iw = new kakao.maps.InfoWindow({
+          content: '<div style="padding:7px 11px;font-size:12px;font-weight:700;color:#0A0B0A;white-space:nowrap;background:#D4FF00;">🦁 ZZL · ZooZooLand</div>'
         });
-      };
-      document.body.appendChild(script);
-    })();
-  </script>
+        iw.open(map, marker);
+      });
+    });
+  };
+  document.body.appendChild(script);
+})();
+</script>
+
 </body>
 </html>
