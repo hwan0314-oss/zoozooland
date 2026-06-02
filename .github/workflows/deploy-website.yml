@@ -41,6 +41,9 @@ jobs:
           cp -r website/data  deploy/data
           cp -r website/images deploy/images
 
+          # 3. zoozoo.kr 커스텀 도메인
+          echo "zoozoo.kr" > deploy/CNAME
+
           # 3. 관리자 패널 (website/admin/ + website/js/admin.js)
           cp -r website/admin deploy/admin
           cp website/js/admin.js deploy/js/admin.js

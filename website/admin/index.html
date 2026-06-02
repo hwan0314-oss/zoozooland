@@ -640,6 +640,76 @@
       </div>
     </div>
 
+    <!-- 먹이체험 관리 -->
+    <div class="admin-card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#FFF3E0">🥕</div>
+        <div class="card-head-text">
+          <h2>먹이체험 관리</h2>
+          <p>먹이 종류와 체험 가능 동물 목록을 관리합니다</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="notice-list" id="feedingAdminList">
+          <div class="notice-list-empty" id="feedingAdminEmpty">등록된 먹이체험 없음</div>
+        </div>
+        <details style="margin-top:8px">
+          <summary style="cursor:pointer;font-size:14px;font-weight:700;color:var(--g700);padding:10px 0;user-select:none">＋ 먹이 추가</summary>
+          <div style="padding-top:14px">
+            <div class="form-grid">
+              <div class="form-col full">
+                <label class="form-label">먹이 종류 *</label>
+                <input class="form-input" id="feedType" type="text" placeholder="채소 먹이">
+              </div>
+              <div class="form-col full">
+                <label class="form-label">먹이 품목 (선택)</label>
+                <input class="form-input" id="feedItems" type="text" placeholder="당근 · 청경채 · 치커리">
+              </div>
+              <div class="form-col full">
+                <label class="form-label">체험 가능 동물 *</label>
+                <input class="form-input" id="feedAnimals" type="text" placeholder="양 · 라마 · 알파카">
+              </div>
+            </div>
+            <button class="btn-upload-notice" id="btnAddFeeding" style="margin-top:8px">추가</button>
+            <div class="result-msg" id="feedingResult"></div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- 이용수칙 관리 -->
+    <div class="admin-card">
+      <div class="card-head">
+        <div class="card-head-icon" style="background:#FCE4EC">📋</div>
+        <div class="card-head-text">
+          <h2>이용수칙 관리</h2>
+          <p>03_CODE_OF_CONDUCT 항목을 한·영 병기로 관리합니다</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="notice-list" id="conductAdminList">
+          <div class="notice-list-empty" id="conductAdminEmpty">등록된 수칙 없음</div>
+        </div>
+        <details style="margin-top:8px">
+          <summary style="cursor:pointer;font-size:14px;font-weight:700;color:var(--g700);padding:10px 0;user-select:none">＋ 수칙 추가</summary>
+          <div style="padding-top:14px">
+            <div class="form-grid">
+              <div class="form-col">
+                <label class="form-label">영문 *</label>
+                <input class="form-input" id="conductEn" type="text" placeholder="No flash photography">
+              </div>
+              <div class="form-col">
+                <label class="form-label">한국어 *</label>
+                <input class="form-input" id="conductKo" type="text" placeholder="플래시 촬영 금지">
+              </div>
+            </div>
+            <button class="btn-upload-notice" id="btnAddConduct" style="margin-top:8px">추가</button>
+            <div class="result-msg" id="conductResult"></div>
+          </div>
+        </details>
+      </div>
+    </div>
+
     <!-- 프로그램 관리 -->
     <div class="admin-card">
       <div class="card-head">

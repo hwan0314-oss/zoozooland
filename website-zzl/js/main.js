@@ -92,6 +92,14 @@
   async function loadPrograms() {
     const c = document.getElementById('programsList');
     if (!c) return;
+
+    const dayLabel = t => `<div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.25);margin-bottom:8px;">${t}</div>`;
+    const row = (name, time) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;gap:12px;">
+        <span style="font-size:13px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.88);">${name}</span>
+        <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#D4FF00;font-weight:700;white-space:nowrap;flex-shrink:0;">${time}</span>
+      </div>`;
+
     try {
       const res = await fetch('data/programs.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error();
@@ -99,33 +107,59 @@
       let html = '';
 
       if (weekday.length) {
-        html += '<div class="mono text-[9px] text-gray-600 mb-2 uppercase">WEEKDAY (TUE-FRI)</div>';
-        weekday.forEach(p => {
-          html += `<div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-[10px] mono">${p.name.toUpperCase()}</span>
-            <span class="text-[10px] text-[#D4FF00] font-bold">${p.time} / ${p.location}</span>
-          </div>`;
-        });
+        html += dayLabel('WEEKDAY (TUE-FRI)');
+        weekday.forEach(p => { html += row(p.name, p.time); });
       }
       if (weekend.length) {
-        if (weekday.length) html += '<div class="h-3"></div>';
-        html += '<div class="mono text-[9px] text-gray-600 mb-2 uppercase">WEEKEND / HOLIDAY</div>';
-        weekend.forEach(p => {
-          html += `<div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-[10px] mono">${p.name.toUpperCase()}</span>
-            <span class="text-[10px] text-[#D4FF00] font-bold">${p.time}</span>
-          </div>`;
-        });
+        if (weekday.length) html += '<div style="height:12px"></div>';
+        html += dayLabel('WEEKEND &amp; HOLIDAY');
+        weekend.forEach(p => { html += row(p.name, p.time); });
       }
-      if (!weekday.length && !weekend.length) {
-        html = '<div class="mono text-[10px] text-gray-600">NO_PROGRAMS_REGISTERED</div>';
-      }
+      if (!html) html = '<div style="font-size:10px;font-family:\'JetBrains Mono\',monospace;color:rgba(255,255,255,0.2);">NO_PROGRAMS_REGISTERED</div>';
       c.innerHTML = html;
     } catch {
-      c.innerHTML = '<div class="mono text-[10px] text-gray-600">SCHEDULE_UNAVAILABLE</div>';
+      c.innerHTML = '<div style="font-size:10px;font-family:\'JetBrains Mono\',monospace;color:rgba(255,255,255,0.2);">SCHEDULE_UNAVAILABLE</div>';
     }
   }
   loadPrograms();
+
+  /* ── info.json (먹이체험 + 이용수칙) 로딩 ── */
+  async function loadInfo() {
+    try {
+      const res = await fetch('data/info.json', { cache: 'no-cache' });
+      if (!res.ok) return;
+      const { feeding=[], conduct=[] } = await res.json();
+
+      // 먹이체험
+      const fl = document.getElementById('feedingList');
+      if (fl && feeding.length) {
+        fl.innerHTML = feeding.map(f => `
+          <li>
+            <span class="text-white font-semibold" style="font-family:'Noto Sans KR',sans-serif">${f.type}:</span>
+            <span style="font-family:'Noto Sans KR',sans-serif">
+              ${f.feed ? ` ${f.feed} /` : ''} ${f.animals}
+            </span>
+          </li>`).join('');
+      }
+
+      // 이용수칙 (한영 병기)
+      const cl = document.getElementById('conductList');
+      if (cl && conduct.length) {
+        // 3열 배치용 그룹핑
+        const cols = [[], [], []];
+        conduct.forEach((r, i) => cols[i % 3].push(r));
+        cl.innerHTML = cols.map(col => `
+          <div class="space-y-4">
+            ${col.map(r => `
+              <div>
+                <div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;">- ${r.en}</div>
+                <div style="font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;">　${r.ko}</div>
+              </div>`).join('')}
+          </div>`).join('');
+      }
+    } catch {}
+  }
+  loadInfo();
 
   /* ── 설정(이메일) ── */
   async function loadSettings() {
