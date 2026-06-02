@@ -84,37 +84,27 @@
     });
   }
 
-  /* ── 토큰 암호화/복호화 (Web Crypto AES-GCM) ── */
-  const CRYPTO_SALT = new TextEncoder().encode('zzl-zoozooland-admin-2026');
-
-  async function deriveKey(password) {
-    const mat = await crypto.subtle.importKey(
-      'raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: CRYPTO_SALT, iterations: 100000, hash: 'SHA-256' },
-      mat, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
-    );
+  /* ── 토큰 인코딩/디코딩 (XOR + base64, HTTP/HTTPS 모두 작동) ── */
+  function encryptToken(token, password) {
+    // 비밀번호를 키로 XOR 인코딩 후 base64 변환
+    const key = password + 'zzl2026';
+    let result = '';
+    for (let i = 0; i < token.length; i++) {
+      result += String.fromCharCode(token.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return btoa(unescape(encodeURIComponent(result)));
   }
 
-  async function encryptToken(token, password) {
-    const key = await deriveKey(password);
-    const iv  = crypto.getRandomValues(new Uint8Array(12));
-    const enc = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv }, key, new TextEncoder().encode(token)
-    );
-    const out = new Uint8Array(12 + enc.byteLength);
-    out.set(iv); out.set(new Uint8Array(enc), 12);
-    return btoa(String.fromCharCode(...out));
-  }
-
-  async function decryptToken(b64, password) {
-    const key  = await deriveKey(password);
-    const data = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: data.slice(0, 12) }, key, data.slice(12)
-    );
-    return new TextDecoder().decode(plain);
+  function decryptToken(b64, password) {
+    try {
+      const key = password + 'zzl2026';
+      const str = decodeURIComponent(escape(atob(b64)));
+      let result = '';
+      for (let i = 0; i < str.length; i++) {
+        result += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return result;
+    } catch { return null; }
   }
 
   /* ── base64 → UTF-8 문자열 (한글 깨짐 방지) ── */
@@ -192,8 +182,8 @@
         if (res.ok) {
           const { token: enc } = await res.json();
           if (enc) {
-            token = await decryptToken(enc, pin);
-            storage.setToken(token);
+            token = decryptToken(enc, pin);  // 동기 함수
+            if (token) storage.setToken(token);
           }
         }
       }
@@ -201,12 +191,10 @@
       if (token) {
         showAdmin('관리자');
       } else {
-        // 아직 연동 코드 미설정 → 최초 설정 화면
         step1.style.display = 'none';
         step2.style.display = 'block';
       }
     } catch {
-      // 복호화 실패 (비밀번호 변경 등) → 연동 코드 재설정
       storage.clear();
       step1.style.display = 'none';
       step2.style.display = 'block';
@@ -232,8 +220,8 @@
       });
       if (!res.ok) throw new Error('Unauthorized');
 
-      // 2. 현재 비밀번호로 토큰 암호화
-      const encrypted = await encryptToken(token, ADMIN_PIN);
+      // 2. 현재 비밀번호로 토큰 인코딩
+      const encrypted = encryptToken(token, ADMIN_PIN);  // 동기 함수
 
       // 3. auth.json에 저장 (GitHub API 직접 호출 - 아직 storage에 없으므로)
       const authRes = await fetch(`${API}/website/data/auth.json`, {
@@ -325,7 +313,7 @@
     btn.textContent = '저장 중…';
 
     try {
-      const encrypted = await encryptToken(token, ADMIN_PIN);
+      const encrypted = encryptToken(token, ADMIN_PIN);  // 동기 함수
       const authRes = await fetch(`${API}/website/data/auth.json`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
       });
