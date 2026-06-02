@@ -528,29 +528,46 @@
 </head>
 <body>
 
-<!-- ── 로그인 화면 ── -->
+<!-- ── 로그인 화면 (1단계: 비밀번호) ── -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">쥬쥬랜드</div>
     <div class="login-sub">관리자 페이지</div>
 
-    <label class="login-label" for="tokenInput">GitHub Personal Access Token</label>
-    <input
-      type="password"
-      id="tokenInput"
-      class="login-input"
-      placeholder="ghp_xxxxxxxxxxxx"
-      autocomplete="current-password"
-    >
-
-    <div class="login-note">
-      토큰에는 <strong>Contents 쓰기 권한</strong>이 필요합니다.<br>
-      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">→ GitHub에서 토큰 발급</a>하기<br>
-      (Fine-grained token → zoozooland → Contents: Read &amp; Write)
+    <!-- 1단계: 비밀번호 -->
+    <div id="step1">
+      <label class="login-label" for="pinInput">비밀번호</label>
+      <input
+        type="password"
+        id="pinInput"
+        class="login-input"
+        placeholder="관리자 비밀번호 입력"
+        autocomplete="current-password"
+      >
+      <p style="font-size:12px;color:var(--n500);margin-bottom:24px">
+        비밀번호는 담당자에게 문의하세요
+      </p>
+      <button class="login-btn" id="pinBtn">입장</button>
+      <p class="login-error" id="pinError">비밀번호가 올바르지 않습니다.</p>
     </div>
 
-    <button class="login-btn" id="loginBtn">로그인</button>
-    <p class="login-error" id="loginError">토큰 확인 실패. 권한을 다시 확인해주세요.</p>
+    <!-- 2단계: 연동 코드 (최초 1회 / 새 기기) -->
+    <div id="step2" style="display:none">
+      <div class="login-note" style="margin-bottom:20px">
+        이 기기에서 <strong>최초 1회</strong>만 필요합니다.<br>
+        관리자에게 받은 <strong>연동 코드</strong>를 입력해주세요.
+      </div>
+      <label class="login-label" for="tokenInput">연동 코드</label>
+      <input
+        type="password"
+        id="tokenInput"
+        class="login-input"
+        placeholder="연동 코드 입력"
+        autocomplete="off"
+      >
+      <button class="login-btn" id="loginBtn">설정 완료</button>
+      <p class="login-error" id="loginError">코드 확인 실패. 다시 확인해주세요.</p>
+    </div>
   </div>
 </div>
 

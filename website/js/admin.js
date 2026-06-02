@@ -125,7 +125,43 @@
     setTimeout(() => el.classList.remove('show'), 6000);
   }
 
-  /* ── Login ── */
+  /* ══════════════════════════════════════
+     비밀번호 + 연동코드 2단계 로그인
+  ══════════════════════════════════════ */
+
+  // ── 관리자 비밀번호 (직원 공유용) ──────────────────
+  // 변경 시 이 값만 수정하세요
+  const ADMIN_PIN = 'zoozoo2026';
+  // ─────────────────────────────────────────────────
+
+  const pinInput  = document.getElementById('pinInput');
+  const pinBtn    = document.getElementById('pinBtn');
+  const pinError  = document.getElementById('pinError');
+  const step1     = document.getElementById('step1');
+  const step2     = document.getElementById('step2');
+
+  // 비밀번호 확인
+  function checkPin() {
+    const pin = pinInput?.value.trim();
+    if (pin === ADMIN_PIN) {
+      const saved = storage.getToken();
+      if (saved) {
+        // 저장된 연동코드 있으면 바로 입장
+        showAdmin('관리자');
+      } else {
+        // 최초 기기 → 연동코드 입력 화면
+        step1.style.display = 'none';
+        step2.style.display = 'block';
+      }
+    } else {
+      pinError?.classList.add('show');
+    }
+  }
+
+  pinBtn?.addEventListener('click', checkPin);
+  pinInput?.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+
+  // 연동코드(GitHub 토큰) 확인 - 최초 1회
   async function tryLogin(token) {
     loginBtn.disabled = true;
     loginBtn.textContent = '확인 중…';
@@ -133,35 +169,29 @@
 
     try {
       const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github+json',
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' },
       });
       if (!res.ok) throw new Error('Unauthorized');
 
-      const user = await fetch('https://api.github.com/user', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      }).then(r => r.json());
-
       storage.setToken(token);
-      showAdmin(user.login || '관리자');
+      showAdmin('관리자');
     } catch {
       loginError.classList.add('show');
     } finally {
       loginBtn.disabled = false;
-      loginBtn.textContent = '로그인';
+      loginBtn.textContent = '설정 완료';
     }
   }
 
   loginBtn?.addEventListener('click', () => {
-    const t = tokenInput.value.trim();
+    const t = tokenInput?.value.trim();
     if (t) tryLogin(t);
   });
-
   tokenInput?.addEventListener('keydown', e => {
     if (e.key === 'Enter') loginBtn?.click();
   });
+
+  /* ── 자동 로그인 (비밀번호 없이 토큰만 있는 구버전 호환) ── */
 
   /* ── Show/Hide screens ── */
   function showAdmin(username) {
@@ -180,14 +210,15 @@
     storage.clear();
     loginScreen.classList.remove('hidden');
     adminScreen.classList.remove('show');
-    tokenInput.value = '';
+    // 비밀번호 화면으로 초기화
+    if (step1) step1.style.display = 'block';
+    if (step2) step2.style.display = 'none';
+    if (pinInput) pinInput.value = '';
+    if (tokenInput) tokenInput.value = '';
   });
 
-  /* ── Auto-login from session ── */
-  const savedToken = storage.getToken();
-  if (savedToken) {
-    showAdmin('관리자');
-  }
+  /* ── 항상 비밀번호 화면 표시 ── */
+  loginScreen.classList.remove('hidden');
 
   /* ══════════════════════════════════════
      가이드맵 업데이트
