@@ -131,7 +131,7 @@
 
   // ── 관리자 비밀번호 (직원 공유용) ──────────────────
   // 변경 시 이 값만 수정하세요
-  const ADMIN_PIN = 'zoozoo2026';
+  const ADMIN_PIN = 'zoozoo4500';
   // ─────────────────────────────────────────────────
 
   const pinInput  = document.getElementById('pinInput');
