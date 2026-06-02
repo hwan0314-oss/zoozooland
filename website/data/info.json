@@ -17,11 +17,11 @@
     }
   ],
   "conduct": [
-    { "en": "No flash photography", "ko": "플래시 촬영 금지" },
+    { "en": "No kickboards / scooters", "ko": "킥보드 반입 금지" },
     { "en": "Authorized feed only", "ko": "허가된 먹이만 제공" },
     { "en": "Zero waste policy", "ko": "쓰레기 지정 장소에" },
     { "en": "Restricted smoking areas", "ko": "흡연 구역 외 금지" },
-    { "en": "Pet inquiry required", "ko": "반려동물 사전 문의" },
+    { "en": "No pets allowed", "ko": "반려동물 출입 불가" },
     { "en": "Safety distance maintenance", "ko": "안전 거리 유지" }
   ]
 }
