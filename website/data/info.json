@@ -1,0 +1,27 @@
+{
+  "feeding": [
+    {
+      "type": "채소 먹이",
+      "feed": "당근 · 청경채 · 치커리 · 양배추 · 사료",
+      "animals": "양 · 라마 · 알파카 · 꽃사슴 · 유산양 · 보어염소 · 무플론 · 당나귀 · 토끼 (사료만)"
+    },
+    {
+      "type": "잉어먹이 (호수)",
+      "feed": "",
+      "animals": "잉어 · 거북 · 오리"
+    },
+    {
+      "type": "우유 젖병",
+      "feed": "",
+      "animals": "양 · 염소"
+    }
+  ],
+  "conduct": [
+    { "en": "No flash photography", "ko": "플래시 촬영 금지" },
+    { "en": "Authorized feed only", "ko": "허가된 먹이만 제공" },
+    { "en": "Zero waste policy", "ko": "쓰레기 지정 장소에" },
+    { "en": "Restricted smoking areas", "ko": "흡연 구역 외 금지" },
+    { "en": "Pet inquiry required", "ko": "반려동물 사전 문의" },
+    { "en": "Safety distance maintenance", "ko": "안전 거리 유지" }
+  ]
+}

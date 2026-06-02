@@ -149,10 +149,8 @@
       <div class="p-8 border border-white/5 bg-[#151615]">
         <div class="mono text-[#D4FF00] mb-6">01_EXPERIENCE</div>
         <h4 class="text-xl font-bold mb-4">먹이체험 프로그램</h4>
-        <ul class="text-sm text-gray-400 space-y-4">
-          <li><span class="text-white">채소먹이:</span> 양, 라마, 알파카, 꽃사슴, 유산양, 보어염소, 무플론, 당나귀, 토끼</li>
-          <li><span class="text-white">잉어먹이:</span> 잉어, 거북, 오리 (호수)</li>
-          <li><span class="text-white">우유젖병:</span> 양, 염소 (베이비 유닛)</li>
+        <ul class="text-sm text-gray-400 space-y-4" id="feedingList">
+          <li class="mono text-[10px] text-gray-600">LOADING_FEED_DATA...</li>
         </ul>
       </div>
 
@@ -160,17 +158,14 @@
         <div class="mono text-[#D4FF00] mb-6">02_TIMETABLE</div>
         <h4 class="text-xl font-bold mb-4">운영 프로그램</h4>
         <div class="space-y-3" id="programsList">
-          <!-- JS 동적 로딩 -->
           <div class="mono text-[10px] text-gray-600">LOADING_SCHEDULE...</div>
         </div>
       </div>
 
       <div class="md:col-span-2 p-8 border border-white/5 bg-[#0A0B0A]">
         <div class="mono text-[#D4FF00] mb-6">03_CODE_OF_CONDUCT</div>
-        <div class="grid md:grid-cols-3 gap-6 text-[10px] mono text-gray-500 uppercase leading-relaxed">
-          <div>- No flash photography<br>- Authorized feed only</div>
-          <div>- Zero waste policy<br>- Restricted smoking areas</div>
-          <div>- Pet inquiry required<br>- Safety distance maintenance</div>
+        <div class="grid md:grid-cols-3 gap-4" id="conductList">
+          <div class="mono text-[10px] text-gray-600">LOADING_CONDUCT...</div>
         </div>
       </div>
     </div>
@@ -299,14 +294,14 @@
       </h3>
       <div class="text-[#D4FF00] mono text-xs">BENEFIT_ALERT_ENABLED &gt;</div>
     </a>
-    <a href="#" class="group p-12 hover:bg-[#FEE500] hover:text-black transition duration-500 block"
-       id="kakaoChannelLink">
+    <div class="p-12 relative cursor-not-allowed" style="opacity:0.35">
+      <div class="absolute top-4 right-4 mono text-[9px] border border-white/20 px-2 py-1 text-gray-500">COMING_SOON</div>
       <div class="mono text-xs mb-4 text-gray-500">PLATFORM: KAKAO</div>
-      <h3 class="text-2xl md:text-3xl font-black mb-3 group-hover:translate-x-2 transition">
+      <h3 class="text-2xl md:text-3xl font-black mb-3">
         카카오 채널 추가하고<br>먹이쿠폰 받기
       </h3>
-      <div class="mono text-xs">DOWNLOAD_COUPON_01 &gt;</div>
-    </a>
+      <div class="mono text-xs text-gray-600">SERVICE_PREPARING...</div>
+    </div>
   </div>
 </section>
 
@@ -417,7 +412,7 @@
         <div class="grid grid-cols-2 gap-6 mono">
           <div>
             <label class="text-gray-600 block mb-2 text-[10px]">ADDRESS</label>
-            <p class="text-sm">경기 고양시 덕양구<br>원당로458번길 7-42</p>
+            <p class="text-sm break-keep" style="font-family:'Noto Sans KR',sans-serif">경기 고양시 덕양구<br>원당로458번길 7-42</p>
           </div>
           <div>
             <label class="text-gray-600 block mb-2 text-[10px]">CONTACT</label>

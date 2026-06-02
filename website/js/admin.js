@@ -173,6 +173,7 @@
     loadProducts();
     loadAdminPrograms();
     loadAdminSettings();
+    loadAdminInfo();
   }
 
   logoutBtn?.addEventListener('click', () => {
@@ -397,6 +398,115 @@
   });
 
   setupDragDrop(noticeUploadZone, noticeFileInput, uploadNoticeImage);
+
+  /* ══════════════════════════════════════
+     먹이체험 + 이용수칙 관리 (info.json)
+  ══════════════════════════════════════ */
+  let infoData = { feeding: [], conduct: [] };
+
+  async function loadAdminInfo() {
+    try {
+      const { ok, data } = await ghFetch('website/data/info.json');
+      if (ok && data.content) infoData = JSON.parse(b64utf8(data.content));
+    } catch { infoData = { feeding: [], conduct: [] }; }
+    renderFeedingList();
+    renderConductList();
+  }
+
+  async function saveInfo(msg) {
+    const sha = await getFileSHA('website/data/info.json');
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(infoData, null, 2))));
+    return putFile('website/data/info.json', b64, msg, sha);
+  }
+
+  // ── 먹이체험 ──
+  function renderFeedingList() {
+    const list = document.getElementById('feedingAdminList');
+    const empty = document.getElementById('feedingAdminEmpty');
+    if (!list) return;
+    Array.from(list.children).filter(el => el.classList.contains('notice-item')).forEach(el => el.remove());
+    if (!infoData.feeding.length) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    infoData.feeding.forEach((f, idx) => {
+      const item = document.createElement('div');
+      item.className = 'notice-item';
+      item.innerHTML = `
+        <div class="product-item-info">
+          <div class="product-item-name">${f.type}</div>
+          <div class="product-item-price">${f.animals}</div>
+        </div>
+        <div class="notice-item-actions">
+          <button class="btn-del" data-idx="${idx}">삭제</button>
+        </div>`;
+      list.insertBefore(item, empty);
+    });
+    list.querySelectorAll('.btn-del').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('삭제하시겠습니까?')) return;
+        infoData.feeding.splice(+btn.dataset.idx, 1);
+        const { ok } = await saveInfo('🥕 먹이체험 삭제');
+        if (ok) { renderFeedingList(); showResult(document.getElementById('feedingResult'), true, '삭제되었습니다.'); }
+      });
+    });
+  }
+
+  document.getElementById('btnAddFeeding')?.addEventListener('click', async () => {
+    const type    = document.getElementById('feedType')?.value.trim();
+    const feed    = document.getElementById('feedItems')?.value.trim();
+    const animals = document.getElementById('feedAnimals')?.value.trim();
+    const res     = document.getElementById('feedingResult');
+    if (!type || !animals) { showResult(res, false, '종류와 동물은 필수입니다.'); return; }
+    infoData.feeding.push({ type, feed, animals });
+    const { ok } = await saveInfo('🥕 먹이체험 추가');
+    if (!ok) { infoData.feeding.pop(); showResult(res, false, '저장 실패'); return; }
+    renderFeedingList();
+    showResult(res, true, '추가되었습니다. 1~3분 후 반영됩니다.');
+    ['feedType','feedItems','feedAnimals'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  });
+
+  // ── 이용수칙 ──
+  function renderConductList() {
+    const list = document.getElementById('conductAdminList');
+    const empty = document.getElementById('conductAdminEmpty');
+    if (!list) return;
+    Array.from(list.children).filter(el => el.classList.contains('notice-item')).forEach(el => el.remove());
+    if (!infoData.conduct.length) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    infoData.conduct.forEach((r, idx) => {
+      const item = document.createElement('div');
+      item.className = 'notice-item';
+      item.innerHTML = `
+        <div class="product-item-info">
+          <div class="product-item-name">${r.ko}</div>
+          <div class="product-item-price">${r.en}</div>
+        </div>
+        <div class="notice-item-actions">
+          <button class="btn-del" data-idx="${idx}">삭제</button>
+        </div>`;
+      list.insertBefore(item, empty);
+    });
+    list.querySelectorAll('.btn-del').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('삭제하시겠습니까?')) return;
+        infoData.conduct.splice(+btn.dataset.idx, 1);
+        const { ok } = await saveInfo('📋 이용수칙 삭제');
+        if (ok) { renderConductList(); showResult(document.getElementById('conductResult'), true, '삭제되었습니다.'); }
+      });
+    });
+  }
+
+  document.getElementById('btnAddConduct')?.addEventListener('click', async () => {
+    const en  = document.getElementById('conductEn')?.value.trim();
+    const ko  = document.getElementById('conductKo')?.value.trim();
+    const res = document.getElementById('conductResult');
+    if (!en || !ko) { showResult(res, false, '영문과 한국어 모두 입력해주세요.'); return; }
+    infoData.conduct.push({ en, ko });
+    const { ok } = await saveInfo('📋 이용수칙 추가');
+    if (!ok) { infoData.conduct.pop(); showResult(res, false, '저장 실패'); return; }
+    renderConductList();
+    showResult(res, true, '추가되었습니다. 1~3분 후 반영됩니다.');
+    ['conductEn','conductKo'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  });
 
   /* ══════════════════════════════════════
      프로그램 관리
