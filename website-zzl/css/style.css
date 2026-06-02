@@ -192,24 +192,27 @@ section {
 }
 .photo-cell:hover .photo-log { opacity: 1; }
 
-/* ── 리뷰 카드 (수평 스크롤) ── */
-.reviews-scroll {
-  display: flex;
-  overflow-x: auto;
-  gap: 1.5rem;
-  padding-bottom: 3rem;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+/* ── 리뷰 슬라이더 ── */
+.reviews-outer {
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
 }
+.reviews-outer:active { cursor: grabbing; }
+
+.reviews-track {
+  display: flex;
+  gap: 1.5rem;
+  transition: transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+.reviews-track.no-transition { transition: none; }
+
 .review-card {
-  scroll-snap-align: center;
-  min-width: 320px;
+  flex-shrink: 0;
   background: #111;
   padding: 2.5rem;
-  flex-shrink: 0;
-}
-@media (min-width: 768px) {
-  .review-card { min-width: 400px; }
+  width: min(calc(100vw - 3rem), 400px);
 }
 
 /* ── 지도 컨테이너 ── */
