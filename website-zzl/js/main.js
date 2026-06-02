@@ -237,6 +237,90 @@
     if (document.getElementById('noticePlaceholder')) initSwiper(false);
   });
 
+  /* ── 리뷰 자동 슬라이더 (탁탁 방식) ── */
+  function initReviewSlider() {
+    const outer = document.getElementById('reviewsOuter');
+    const track = document.getElementById('reviewsTrack');
+    const dotsWrap = document.getElementById('reviewDots');
+    if (!outer || !track) return;
+
+    const cards = Array.from(track.querySelectorAll('.review-card'));
+    const TOTAL = cards.length;
+    if (!TOTAL) return;
+
+    const INTERVAL = 4500;
+    let idx = 0;
+    let timer;
+    let touchStartX = 0;
+
+    // 카드 너비 계산 (gap 24px 포함)
+    function cardW() {
+      return cards[0].offsetWidth + 24;
+    }
+
+    // 슬라이드 이동
+    function goTo(i, instant = false) {
+      idx = ((i % TOTAL) + TOTAL) % TOTAL;
+      if (instant) track.classList.add('no-transition');
+      track.style.transform = `translateX(-${idx * cardW()}px)`;
+      if (instant) requestAnimationFrame(() => {
+        requestAnimationFrame(() => track.classList.remove('no-transition'));
+      });
+      updateDots();
+    }
+
+    // 인디케이터 점
+    function buildDots() {
+      if (!dotsWrap) return;
+      dotsWrap.innerHTML = '';
+      for (let i = 0; i < TOTAL; i++) {
+        const dot = document.createElement('div');
+        dot.style.cssText = `
+          width:6px;height:6px;border:1px solid rgba(212,255,0,0.4);
+          border-radius:0;transition:all 0.25s;cursor:pointer;flex-shrink:0;
+        `;
+        dot.addEventListener('click', () => { goTo(i); resetTimer(); });
+        dotsWrap.appendChild(dot);
+      }
+      updateDots();
+    }
+    function updateDots() {
+      if (!dotsWrap) return;
+      dotsWrap.querySelectorAll('div').forEach((d, i) => {
+        d.style.background   = i === idx ? '#D4FF00' : 'transparent';
+        d.style.borderColor  = i === idx ? '#D4FF00' : 'rgba(212,255,0,0.3)';
+        d.style.width        = i === idx ? '20px'    : '6px';
+      });
+    }
+
+    function advance()    { goTo(idx + 1); }
+    function startTimer() { timer = setInterval(advance, INTERVAL); }
+    function stopTimer()  { clearInterval(timer); }
+    function resetTimer() { stopTimer(); startTimer(); }
+
+    buildDots();
+    startTimer();
+
+    // 호버 일시정지
+    outer.addEventListener('mouseenter', stopTimer);
+    outer.addEventListener('mouseleave', startTimer);
+
+    // 터치 스와이프
+    outer.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      stopTimer();
+    }, { passive: true });
+    outer.addEventListener('touchend', e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 40) goTo(diff > 0 ? idx + 1 : idx - 1);
+      setTimeout(startTimer, 2500);
+    }, { passive: true });
+
+    // 리사이즈 시 위치 보정
+    window.addEventListener('resize', () => goTo(idx, true));
+  }
+  initReviewSlider();
+
   /* ── 제휴 폼 ── */
   document.getElementById('partnerForm')?.addEventListener('submit', e => {
     e.preventDefault();

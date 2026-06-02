@@ -1,4 +1,4 @@
-name: 🌐 Deploy Website (zoozoo.kr)
+name: 🌐 Deploy ZZL (zoozoo.kr)
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     paths:
       - 'website/**'
       - 'website-zzl/**'
+      - '.github/workflows/deploy-website.yml'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +20,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to GitHub Pages
+    name: Deploy ZZL to GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -29,13 +30,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare combined deployment
+      - name: Prepare deployment
         run: |
-          mkdir -p deploy/zzl
-          cp -r website/. deploy/
-          cp -r website-zzl/. deploy/zzl/
-          cp -r website/data deploy/zzl/data
-          cp -r website/images deploy/zzl/images
+          mkdir -p deploy/js
+
+          # 1. ZZL이 메인 사이트 (루트)
+          cp -r website-zzl/. deploy/
+
+          # 2. 공유 데이터 & 이미지 (website/에서 관리)
+          cp -r website/data  deploy/data
+          cp -r website/images deploy/images
+
+          # 3. 관리자 패널 (website/admin/ + website/js/admin.js)
+          cp -r website/admin deploy/admin
+          cp website/js/admin.js deploy/js/admin.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
