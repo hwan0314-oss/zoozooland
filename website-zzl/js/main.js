@@ -145,6 +145,16 @@
       const res = await fetch('data/products.json', { cache: 'no-cache' });
       if (!res.ok) return;
       const { products=[] } = await res.json();
+
+      // 첫 번째 상품의 booking_url로 예약 버튼 전체 업데이트
+      if (products.length && products[0].booking_url) {
+        const url = products[0].booking_url;
+        ['bookingBtnHero', 'bookingBtnEmpty', 'bookingBtnCrm'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.href = url;
+        });
+      }
+
       if (!products.length) return;
 
       const slot  = document.getElementById('productSlot');
