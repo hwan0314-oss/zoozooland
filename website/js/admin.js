@@ -188,7 +188,7 @@
 
       // 2. 없으면 auth.json에서 복호화 시도
       if (!token) {
-        const res = await fetch('data/auth.json?t=' + Date.now(), { cache: 'no-cache' });
+        const res = await fetch('../data/auth.json?t=' + Date.now(), { cache: 'no-cache' });
         if (res.ok) {
           const { token: enc } = await res.json();
           if (enc) {
