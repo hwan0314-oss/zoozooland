@@ -127,6 +127,8 @@ def generate_caption(image_bytes: bytes) -> str:
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+    if not msg:  # 채널 포스트 무시
+        return
     status_msg = await msg.reply_text("사진 분석 중... ⏳")
 
     photo_file = await (await context.bot.get_file(msg.photo[-1].file_id)).download_as_bytearray()
@@ -211,6 +213,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not context.user_data:
+        return
     editing_key = context.user_data.get("editing")
     if not editing_key:
         return
