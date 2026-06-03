@@ -4,6 +4,9 @@ import tempfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent / ".env")
+
 import anthropic
 from instagrapi import Client
 from instagrapi.exceptions import LoginRequired, ChallengeRequired
@@ -53,6 +56,13 @@ BRAND_PROMPT = """\
 _ig_client: Client | None = None
 
 
+def challenge_code_handler(username, choice):
+    print(f"\n⚠️  Instagram 인증 필요! 계정: {username}")
+    print(f"인증 방법: {'SMS' if choice == 1 else '이메일'}")
+    print("Instagram 앱 또는 이메일에서 받은 6자리 코드를 입력하세요:")
+    return input("인증 코드: ").strip()
+
+
 def get_ig_client() -> Client:
     global _ig_client
     if _ig_client is not None:
@@ -60,6 +70,7 @@ def get_ig_client() -> Client:
 
     cl = Client()
     cl.delay_range = [2, 5]
+    cl.challenge_code_handler = challenge_code_handler
 
     if SESSION_FILE.exists():
         cl.load_settings(str(SESSION_FILE))
