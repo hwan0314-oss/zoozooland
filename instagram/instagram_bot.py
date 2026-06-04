@@ -793,6 +793,10 @@ def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.job_queue.run_daily(scheduled_post_job, time=dtime(22, 30, 0), name="daily_post")
     app.add_handler(CommandHandler("queue", handle_queue_command))
+    app.add_handler(MessageHandler(  # 채널에서 /queue 처리
+        filters.UpdateType.CHANNEL_POST & filters.Regex(r"^/queue"),
+        handle_queue_command,
+    ))
     app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_photo))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
