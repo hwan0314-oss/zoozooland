@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import io
 import json
 import os
 import uuid
@@ -13,7 +12,6 @@ load_dotenv(Path(__file__).parent / ".env")
 import anthropic
 from instagrapi import Client
 from instagrapi.exceptions import LoginRequired, ChallengeRequired
-from PIL import Image, ImageDraw, ImageFont
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     Application,
@@ -37,12 +35,7 @@ QUEUE_FILE      = Path(__file__).parent / "queue.json"
 QUEUE_MEDIA_DIR = Path(__file__).parent / "queue_media"
 QUEUE_MEDIA_DIR.mkdir(exist_ok=True)
 
-KST          = timezone(timedelta(hours=9))
-BRAND_GREEN  = (68, 177, 52)
-DARK_BG      = (18, 18, 18)
-WHITE        = (255, 255, 255)
-NANUM_BOLD   = "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf"
-NANUM_REG    = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+KST = timezone(timedelta(hours=9))
 
 _pending_groups: dict = {}
 
@@ -84,8 +77,7 @@ BRAND_PROMPT = """\
 3. [공감] 독자가 "이거 내 얘기잖아" 느끼는 구간
 4. [명언] 대구 구조의 여운 있는 한 줄 (저장·공유 유발)
 5. [행동 조언] 독자에게 건네는 따뜻한 한 줄 행동 유도
-6. [ZZL 연결] 쥬쥬랜드 방문 유도 1~2줄
-7. [해시태그] #ZZL #쥬쥬랜드 #ZZLstagram #동물이말하는우리얘기 + 동물명 + 관련 감성 태그
+6. [해시태그] #ZZL #쥬쥬랜드 #ZZLstagram #동물이말하는우리얘기 + 동물명 + 관련 감성 태그
 
 ## 시점 & 금지사항
 - 시점: ZZL이 동물을 관찰하다 발견한 인간 이야기 (브랜드 관찰자)
@@ -252,98 +244,109 @@ def post_carousel(image_paths: list, caption: str) -> str:
     return str(_ig_call(lambda: get_ig_client().album_upload(image_paths, caption)).pk)
 
 
-# ─── Image Processing ─────────────────────────────────────────────────────────
+# ─── Card Image Rendering (Playwright) ────────────────────────────────────────
 
-def _load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
-    try:
-        return ImageFont.truetype(path, size)
-    except Exception:
-        return ImageFont.load_default()
+def _build_card_html(image_b64: str, main_copy: str, sub_copy: str) -> str:
+    # HTML 특수문자 이스케이프
+    def esc(s):
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+    main_html = esc(main_copy).replace("\n", "<br>")
+    sub_html  = esc(sub_copy)
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,600&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+* {{ margin: 0; padding: 0; box-sizing: border-box; }}
+body {{ width: 1080px; height: 1080px; overflow: hidden; background: #121212; }}
+.card {{
+  width: 1080px; height: 1080px;
+  position: relative;
+  background-image: url('data:image/jpeg;base64,{image_b64}');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 60px;
+}}
+.scrim {{
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%; height: 52%;
+  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
+  pointer-events: none;
+}}
+.zzl-mark {{
+  position: absolute;
+  top: 44px; left: 60px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.22);
+  z-index: 10;
+}}
+.text-block {{
+  position: relative;
+  z-index: 10;
+  border-left: 3px solid #44B134;
+  padding-left: 22px;
+}}
+.main-copy {{
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-size: 66px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  margin-bottom: 16px;
+}}
+.sub-copy {{
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 32px;
+  color: #44B134;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="scrim"></div>
+  <span class="zzl-mark">ZZL</span>
+  <div class="text-block">
+    <div class="main-copy">{main_html}</div>
+    <div class="sub-copy">{sub_html}</div>
+  </div>
+</div>
+</body>
+</html>"""
 
 
-def _fit_image(img: Image.Image, w: int, h: int) -> Image.Image:
-    """이미지를 w×h로 크롭 (중앙 기준, 세로 이미지는 위쪽 1/3 지점)."""
-    src_w, src_h = img.size
-    if src_w / src_h > w / h:
-        nw, nh = int(src_w * h / src_h), h
-    else:
-        nw, nh = w, int(src_h * w / src_w)
-    img = img.resize((nw, nh), Image.LANCZOS)
-    left = (nw - w) // 2
-    top  = max(0, min((nh - h) // 3, nh - h))
-    return img.crop((left, top, left + w, top + h))
+async def render_card_image(image_bytes: bytes, main_copy: str, sub_copy: str) -> bytes:
+    """Playwright로 HTML 카드를 렌더링해서 JPEG bytes 반환."""
+    from playwright.async_api import async_playwright
 
+    b64 = base64.b64encode(image_bytes).decode()
+    html = _build_card_html(b64, main_copy, sub_copy)
 
-def _wrap_text(text: str, font, max_w: int, draw: ImageDraw.Draw) -> list:
-    if "\n" in text:
-        return [l for l in text.split("\n") if l.strip()]
-    words, lines, cur = text.split(), [], []
-    for w in words:
-        test = " ".join(cur + [w])
-        if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
-            cur.append(w)
-        else:
-            if cur:
-                lines.append(" ".join(cur))
-            cur = [w]
-    if cur:
-        lines.append(" ".join(cur))
-    return lines or [text]
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(
+            args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
+        )
+        page = await browser.new_page(viewport={"width": 1080, "height": 1080})
+        await page.set_content(html, wait_until="networkidle", timeout=30000)
+        screenshot = await page.screenshot(type="jpeg", quality=92, full_page=False)
+        await browser.close()
 
-
-def add_copy_to_image(image_bytes: bytes, main_copy: str, sub_copy: str) -> bytes:
-    """
-    사진 하단에 다크 텍스트 공간을 추가하고 메인/서브 카피 삽입.
-    최종 이미지: 1080×1080 (4:3 사진 + 하단 텍스트 영역)
-    """
-    CANVAS_W = 1080
-    PHOTO_H  = 810   # 사진 영역
-    GRAD_H   = 100   # 사진↔텍스트 경계 그라디언트
-    MARGIN   = 56
-
-    original = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    photo    = _fit_image(original, CANVAS_W, PHOTO_H)
-
-    # 사진 하단 그라디언트 (다크 배경으로 자연스럽게 전환)
-    photo_rgba = photo.convert("RGBA")
-    grad_overlay = Image.new("RGBA", (CANVAS_W, PHOTO_H), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(grad_overlay)
-    for y in range(PHOTO_H - GRAD_H, PHOTO_H):
-        a = int(255 * (y - (PHOTO_H - GRAD_H)) / GRAD_H)
-        gd.line([(0, y), (CANVAS_W, y)], fill=(*DARK_BG, a))
-    photo_blended = Image.alpha_composite(photo_rgba, grad_overlay).convert("RGB")
-
-    # 전체 캔버스 (1080×1080)
-    canvas = Image.new("RGB", (CANVAS_W, CANVAS_W), DARK_BG)
-    canvas.paste(photo_blended, (0, 0))
-
-    draw = ImageDraw.Draw(canvas)
-
-    # 폰트
-    main_font = _load_font(NANUM_BOLD, 58)
-    sub_font  = _load_font(NANUM_REG, 34)
-    zzl_font  = _load_font(NANUM_REG, 20)
-
-    # ZZL 마크 (사진 좌상단, 연하게)
-    draw.text((MARGIN, MARGIN), "ZZL", font=zzl_font, fill=(160, 160, 160))
-
-    # 텍스트 영역
-    y = PHOTO_H + 32
-    draw.line([(MARGIN, y), (MARGIN + 36, y)], fill=BRAND_GREEN, width=2)
-    y += 18
-
-    max_w = CANVAS_W - MARGIN * 2
-    for line in _wrap_text(main_copy, main_font, max_w, draw)[:2]:
-        draw.text((MARGIN, y), line, font=main_font, fill=WHITE)
-        y += 66
-
-    y += 8
-    for line in _wrap_text(sub_copy, sub_font, max_w, draw)[:1]:
-        draw.text((MARGIN, y), line, font=sub_font, fill=BRAND_GREEN)
-
-    buf = io.BytesIO()
-    canvas.save(buf, format="JPEG", quality=92)
-    return buf.getvalue()
+    return screenshot
 
 
 # ─── Claude API ────────────────────────────────────────────────────────────────
@@ -428,7 +431,6 @@ async def scheduled_post_job(context: ContextTypes.DEFAULT_TYPE):
                 pk = post_carousel(paths, item["caption"])
             else:
                 continue
-
             day_ko = ["월","화","수","목","금","토","일"][datetime.strptime(today, "%Y-%m-%d").weekday()]
             await context.bot.send_message(
                 chat_id=APPROVAL_CHAT_ID,
@@ -443,23 +445,15 @@ async def scheduled_post_job(context: ContextTypes.DEFAULT_TYPE):
 # ─── Approval Keyboard ────────────────────────────────────────────────────────
 
 def _approval_keyboard(post_key: str, is_multi: bool) -> InlineKeyboardMarkup:
-    if is_multi:
-        rows = [
-            [InlineKeyboardButton("✅ 카루셀 승인", callback_data=f"approve_carousel_{post_key}")],
-            [
-                InlineKeyboardButton("✏️ 수정", callback_data=f"edit_{post_key}"),
-                InlineKeyboardButton("❌ 거절", callback_data=f"reject_{post_key}"),
-            ],
-        ]
-    else:
-        rows = [
-            [InlineKeyboardButton("✅ 승인 → 큐 추가", callback_data=f"approve_photo_{post_key}")],
-            [
-                InlineKeyboardButton("✏️ 수정", callback_data=f"edit_{post_key}"),
-                InlineKeyboardButton("❌ 거절", callback_data=f"reject_{post_key}"),
-            ],
-        ]
-    return InlineKeyboardMarkup(rows)
+    label = "✅ 카루셀 승인" if is_multi else "✅ 승인 → 큐 추가"
+    action = f"approve_carousel_{post_key}" if is_multi else f"approve_photo_{post_key}"
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(label, callback_data=action)],
+        [
+            InlineKeyboardButton("✏️ 수정", callback_data=f"edit_{post_key}"),
+            InlineKeyboardButton("❌ 거절", callback_data=f"reject_{post_key}"),
+        ],
+    ])
 
 
 # ─── Single Photo Processing ──────────────────────────────────────────────────
@@ -474,9 +468,9 @@ async def _process_single(msg, image_bytes: bytes, context: ContextTypes.DEFAULT
     await status_msg.edit_text("카드 이미지 제작 중... 🎨")
 
     try:
-        card_image = add_copy_to_image(image_bytes, content["main_copy"], content["sub_copy"])
+        card_image = await render_card_image(image_bytes, content["main_copy"], content["sub_copy"])
     except Exception as e:
-        print(f"카드 이미지 생성 실패: {e}")
+        print(f"카드 렌더링 실패: {e}")
         card_image = image_bytes
 
     await status_msg.delete()
@@ -507,7 +501,6 @@ async def _process_single(msg, image_bytes: bytes, context: ContextTypes.DEFAULT
         chat_id=APPROVAL_CHAT_ID, photo=card_image,
         caption=preview[:1024], parse_mode="Markdown", reply_markup=keyboard,
     )
-
     if msg.chat_id != APPROVAL_CHAT_ID:
         await msg.reply_text("담당자에게 승인 요청을 보냈습니다. ✉️")
 
@@ -532,15 +525,15 @@ async def _process_group(gid: str, context: ContextTypes.DEFAULT_TYPE):
 
     await status_msg.edit_text(f"카드 이미지 제작 중... 🎨 ({n}장)")
 
-    # 첫 번째 사진에만 카피 삽입, 나머지는 그대로
     card_images = []
     for i, photo in enumerate(photos):
         try:
             if i == 0:
-                card_images.append(add_copy_to_image(photo, content["main_copy"], content["sub_copy"]))
+                card_images.append(await render_card_image(photo, content["main_copy"], content["sub_copy"]))
             else:
                 card_images.append(photo)
-        except Exception:
+        except Exception as e:
+            print(f"카드 렌더링 실패 ({i}): {e}")
             card_images.append(photo)
 
     await status_msg.delete()
@@ -572,7 +565,6 @@ async def _process_group(gid: str, context: ContextTypes.DEFAULT_TYPE):
         chat_id=APPROVAL_CHAT_ID, photo=card_images[0],
         caption=preview[:1024], parse_mode="Markdown", reply_markup=keyboard,
     )
-
     if msg.chat_id != APPROVAL_CHAT_ID:
         await msg.reply_text(f"사진 {n}장 승인 요청을 보냈습니다. ✉️")
 
@@ -593,7 +585,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             asyncio.create_task(_process_group(gid, context))
         _pending_groups[gid]["photos"].append(photo_bytes)
     else:
-        status_msg = await msg.reply_text("사진 분석 중... ⏳ (15~30초 소요)")
+        status_msg = await msg.reply_text("사진 분석 중... ⏳ (20~40초 소요)")
         await _process_single(msg, photo_bytes, context, status_msg)
 
 
@@ -602,16 +594,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
 
-    # 큐 취소 확인
     if data.startswith("qconfirm_"):
         cancel_queue_item(data[9:])
-        await query.edit_message_text("🗑 취소됐습니다. 이후 콘텐츠 날짜가 앞당겨졌습니다.")
+        await query.edit_message_text("🗑 취소됐습니다. 이후 날짜가 앞당겨졌습니다.")
         return
     if data.startswith("qno_"):
         await query.edit_message_text("취소하지 않습니다.")
         return
-
-    # 큐 수정
     if data.startswith("qedit_"):
         item_id = data[6:]
         item = next((i for i in load_queue() if i["id"] == item_id), None)
@@ -621,8 +610,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.bot_data[f"qedit_{query.from_user.id}"] = {"queue_id": item_id, "raw": item["raw_output"]}
         await query.message.reply_text(f"📝 현재 캡션:\n{item['caption']}\n\n어떤 부분을 수정할까요?")
         return
-
-    # 큐 취소 버튼
     if data.startswith("qcancel_"):
         item_id = data[8:]
         keyboard = InlineKeyboardMarkup([[
@@ -632,7 +619,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("정말 취소할까요?", reply_markup=keyboard)
         return
 
-    # 승인
     if data.startswith("approve_"):
         rest = data[8:]
         post_type, post_key = rest.split("_", 1)
@@ -640,26 +626,22 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not post:
             await query.edit_message_caption("⚠️ 세션 만료.")
             return
-
         await query.edit_message_caption("큐에 추가 중... ⏳")
         try:
             item_id = str(uuid.uuid4())[:8]
-
             if post_type == "photo":
                 media_path = save_media_to_queue(post["card_image"], item_id, "photo")
                 scheduled = add_to_queue(item_id, "photo", media_path, post["caption"],
                                          post["main_copy"], post["sub_copy"], post["raw_output"])
             elif post_type == "carousel":
-                paths = []
-                for i, img in enumerate(post["card_images"]):
-                    paths.append(save_media_to_queue(img, item_id, f"carousel_{i}"))
+                paths = [save_media_to_queue(img, item_id, f"carousel_{i}")
+                         for i, img in enumerate(post["card_images"])]
                 scheduled = add_to_queue(item_id, "carousel", paths[0], post["caption"],
                                          post["main_copy"], post["sub_copy"], post["raw_output"],
                                          extra_media=paths[1:])
             else:
                 await query.edit_message_caption("❌ 지원하지 않는 타입입니다.")
                 return
-
             day_ko = ["월","화","수","목","금","토","일"][datetime.strptime(scheduled, "%Y-%m-%d").weekday()]
             await query.edit_message_caption(
                 f"✅ 큐에 추가됐습니다!\n\n"
@@ -672,23 +654,21 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.bot_data.pop(post_key, None)
         return
 
-    # 수정
     if data.startswith("edit_"):
         post_key = data[5:]
         post = context.bot_data.get(post_key)
         if not post:
             await query.edit_message_caption("⚠️ 세션 만료.")
             return
-        uid = query.from_user.id
         img = post.get("original_image") or (post.get("original_images", [None])[0])
-        context.bot_data[f"edit_{uid}"] = {"post_key": post_key, "raw": post["raw_output"], "image_bytes": img}
+        context.bot_data[f"edit_{query.from_user.id}"] = {
+            "post_key": post_key, "raw": post["raw_output"], "image_bytes": img,
+        }
         await query.message.reply_text("어떤 부분을 수정할까요?")
         return
 
-    # 거절
     if data.startswith("reject_"):
-        post_key = data[7:]
-        context.bot_data.pop(post_key, None)
+        context.bot_data.pop(data[7:], None)
         await query.edit_message_caption("❌ 거절됐습니다.")
         return
 
@@ -699,7 +679,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     uid = msg.from_user.id
 
-    # 큐 수정 모드
     qedit = context.bot_data.get(f"qedit_{uid}")
     if qedit:
         context.bot_data.pop(f"qedit_{uid}")
@@ -717,13 +696,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             save_queue(queue)
             await msg.reply_text(
                 f"✅ 수정 완료. 예약일 {item['scheduled_date']} 유지.\n\n"
-                f"📌 메인: {new['main_copy']}\n💬 서브: {new['sub_copy']}\n\n📝 {new['caption']}"
+                f"📌 {new['main_copy']}\n💬 {new['sub_copy']}\n\n{new['caption']}"
             )
         except Exception as e:
             await msg.reply_text(f"❌ 수정 실패: {e}")
         return
 
-    # 승인 전 수정 모드
     edit_state = context.bot_data.get(f"edit_{uid}")
     if not edit_state:
         return
@@ -733,25 +711,19 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not post:
         await msg.reply_text("⚠️ 세션 만료.")
         return
-
     await msg.reply_text("수정 중... ⏳")
     try:
         new = regenerate_with_edit(edit_state["image_bytes"], edit_state["raw"], msg.text)
-
         try:
-            card_image = add_copy_to_image(edit_state["image_bytes"], new["main_copy"], new["sub_copy"])
+            card_image = await render_card_image(edit_state["image_bytes"], new["main_copy"], new["sub_copy"])
         except Exception:
             card_image = edit_state["image_bytes"]
-
         post.update({"card_image": card_image, "caption": new["caption"],
                      "main_copy": new["main_copy"], "sub_copy": new["sub_copy"], "raw_output": new["raw"]})
         if "card_images" in post:
             post["card_images"][0] = card_image
-
         is_multi = post.get("type") == "multi"
-        keyboard = _approval_keyboard(post_key, is_multi)
         first_img = post["card_images"][0] if is_multi else post["card_image"]
-
         await context.bot.send_photo(
             chat_id=APPROVAL_CHAT_ID, photo=first_img,
             caption=(
@@ -760,7 +732,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"💬 서브: _{new['sub_copy']}_\n\n"
                 f"📝 캡션:\n{new['caption'][:400]}..."
             ),
-            parse_mode="Markdown", reply_markup=keyboard,
+            parse_mode="Markdown",
+            reply_markup=_approval_keyboard(post_key, is_multi),
         )
     except Exception as e:
         await msg.reply_text(f"❌ 수정 실패: {e}")
@@ -774,7 +747,6 @@ async def handle_queue_command(update: Update, context: ContextTypes.DEFAULT_TYP
     if not queue:
         await msg.reply_text("📋 예약된 콘텐츠가 없습니다.")
         return
-
     DAYS = ["월","화","수","목","금","토","일"]
     lines = ["📋 *예약 현황*\n─────────────"]
     rows = []
@@ -787,11 +759,7 @@ async def handle_queue_command(update: Update, context: ContextTypes.DEFAULT_TYP
             InlineKeyboardButton("취소", callback_data=f"qcancel_{item['id']}"),
         ])
     lines.append(f"─────────────\n총 {len(queue)}개 예약됨")
-
-    await msg.reply_text(
-        "\n".join(lines), parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup(rows),
-    )
+    await msg.reply_text("\n".join(lines), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(rows))
 
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
@@ -807,7 +775,6 @@ def main():
 
     app = Application.builder().token(BOT_TOKEN).build()
     app.job_queue.run_daily(scheduled_post_job, time=dtime(22, 30, 0), name="daily_post")
-
     app.add_handler(CommandHandler("queue", handle_queue_command))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(handle_callback))
