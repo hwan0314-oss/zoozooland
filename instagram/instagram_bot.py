@@ -484,14 +484,14 @@ async def _process_single(msg, image_bytes: bytes, context: ContextTypes.DEFAULT
         "main_copy": content["main_copy"],
         "sub_copy": content["sub_copy"],
         "raw_output": content["raw"],
-        "submitter": (msg.from_user.full_name if msg.from_user else "채널"),
+        "submitter": (msg.from_user.full_name if msg.from_user else '채널'),
         "ts": datetime.now(KST).strftime("%Y-%m-%d %H:%M"),
     }
 
     keyboard = _approval_keyboard(post_key, False)
     preview = (
         f"📸 *콘텐츠 미리보기*\n"
-        f"제출: {(msg.from_user.full_name if msg.from_user else "채널")} | {datetime.now(KST).strftime('%H:%M')}\n\n"
+        f"제출: {(msg.from_user.full_name if msg.from_user else '채널')} | {datetime.now(KST).strftime('%H:%M')}\n\n"
         f"📌 메인: *{content['main_copy']}*\n"
         f"💬 서브: _{content['sub_copy']}_"
     )
@@ -552,14 +552,14 @@ async def _process_group(gid: str, context: ContextTypes.DEFAULT_TYPE):
         "sub_copy": content["sub_copy"],
         "slide_order": content["slide_order"],
         "raw_output": content["raw"],
-        "submitter": (msg.from_user.full_name if msg.from_user else "채널"),
+        "submitter": (msg.from_user.full_name if msg.from_user else '채널'),
         "ts": datetime.now(KST).strftime("%Y-%m-%d %H:%M"),
     }
 
     keyboard = _approval_keyboard(post_key, True)
     preview = (
         f"🖼 *카루셀 미리보기* ({n}장)\n"
-        f"제출: {(msg.from_user.full_name if msg.from_user else "채널")} | {datetime.now(KST).strftime('%H:%M')}\n\n"
+        f"제출: {(msg.from_user.full_name if msg.from_user else '채널')} | {datetime.now(KST).strftime('%H:%M')}\n\n"
         f"📋 순서: {content['slide_order']}\n\n"
         f"📌 메인: *{content['main_copy']}*\n"
         f"💬 서브: _{content['sub_copy']}_"
