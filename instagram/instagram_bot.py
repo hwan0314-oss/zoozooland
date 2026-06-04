@@ -492,14 +492,18 @@ async def _process_single(msg, image_bytes: bytes, context: ContextTypes.DEFAULT
     preview = (
         f"📸 *콘텐츠 미리보기*\n"
         f"제출: {msg.from_user.full_name} | {datetime.now(KST).strftime('%H:%M')}\n\n"
-        f"🔍 {content['analysis']}\n\n"
         f"📌 메인: *{content['main_copy']}*\n"
-        f"💬 서브: _{content['sub_copy']}_\n\n"
-        f"📝 캡션:\n{content['caption'][:300]}..."
+        f"💬 서브: _{content['sub_copy']}_"
     )
     await context.bot.send_photo(
         chat_id=APPROVAL_CHAT_ID, photo=card_image,
         caption=preview[:1024], parse_mode="Markdown", reply_markup=keyboard,
+    )
+    # 전체 캡션 별도 메시지로 전송
+    await context.bot.send_message(
+        chat_id=APPROVAL_CHAT_ID,
+        text=f"📝 *캡션 전문*\n\n{content['caption']}",
+        parse_mode="Markdown",
     )
     if msg.chat_id != APPROVAL_CHAT_ID:
         await msg.reply_text("담당자에게 승인 요청을 보냈습니다. ✉️")
@@ -558,12 +562,16 @@ async def _process_group(gid: str, context: ContextTypes.DEFAULT_TYPE):
         f"제출: {msg.from_user.full_name} | {datetime.now(KST).strftime('%H:%M')}\n\n"
         f"📋 순서: {content['slide_order']}\n\n"
         f"📌 메인: *{content['main_copy']}*\n"
-        f"💬 서브: _{content['sub_copy']}_\n\n"
-        f"📝 캡션:\n{content['caption'][:300]}..."
+        f"💬 서브: _{content['sub_copy']}_"
     )
     await context.bot.send_photo(
         chat_id=APPROVAL_CHAT_ID, photo=card_images[0],
         caption=preview[:1024], parse_mode="Markdown", reply_markup=keyboard,
+    )
+    await context.bot.send_message(
+        chat_id=APPROVAL_CHAT_ID,
+        text=f"📝 *캡션 전문*\n\n{content['caption']}",
+        parse_mode="Markdown",
     )
     if msg.chat_id != APPROVAL_CHAT_ID:
         await msg.reply_text(f"사진 {n}장 승인 요청을 보냈습니다. ✉️")
