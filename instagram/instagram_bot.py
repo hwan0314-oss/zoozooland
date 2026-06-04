@@ -624,7 +624,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not item:
             await query.edit_message_text("⚠️ 콘텐츠를 찾을 수 없습니다.")
             return
-        context.bot_data[f"qedit_{query.from_user.id}"] = {"queue_id": item_id, "raw": item["raw_output"]}
+        qedit_data = {"queue_id": item_id, "raw": item["raw_output"]}
+        context.bot_data[f"qedit_{query.from_user.id}"] = qedit_data
+        context.bot_data[f"qedit_{query.message.chat_id}"] = qedit_data  # 채널 익명 포스팅 대응
         await query.message.reply_text(f"📝 현재 캡션:\n{item['caption']}\n\n어떤 부분을 수정할까요?")
         return
     if data.startswith("qcancel_"):
@@ -678,9 +680,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_caption("⚠️ 세션 만료.")
             return
         img = post.get("original_image") or (post.get("original_images", [None])[0])
-        context.bot_data[f"edit_{query.from_user.id}"] = {
-            "post_key": post_key, "raw": post["raw_output"], "image_bytes": img,
-        }
+        edit_data = {"post_key": post_key, "raw": post["raw_output"], "image_bytes": img}
+        context.bot_data[f"edit_{query.from_user.id}"] = edit_data
+        context.bot_data[f"edit_{query.message.chat_id}"] = edit_data  # 채널 익명 포스팅 대응
         await query.message.reply_text("어떤 부분을 수정할까요?")
         return
 
