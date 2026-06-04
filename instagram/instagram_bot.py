@@ -583,7 +583,16 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.effective_message
     if not msg:
         return
-    photo_bytes = bytes(await (await context.bot.get_file(msg.photo[-1].file_id)).download_as_bytearray())
+
+    # 일반 사진 또는 이미지 파일(document) 모두 처리
+    if msg.photo:
+        file = await context.bot.get_file(msg.photo[-1].file_id)
+    elif msg.document and (msg.document.mime_type or "").startswith("image/"):
+        file = await context.bot.get_file(msg.document.file_id)
+    else:
+        return
+
+    photo_bytes = bytes(await file.download_as_bytearray())
 
     gid = msg.media_group_id
     if gid:
@@ -784,7 +793,7 @@ def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.job_queue.run_daily(scheduled_post_job, time=dtime(22, 30, 0), name="daily_post")
     app.add_handler(CommandHandler("queue", handle_queue_command))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, handle_photo))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
