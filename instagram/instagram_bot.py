@@ -484,14 +484,14 @@ async def _process_single(msg, image_bytes: bytes, context: ContextTypes.DEFAULT
         "main_copy": content["main_copy"],
         "sub_copy": content["sub_copy"],
         "raw_output": content["raw"],
-        "submitter": msg.from_user.full_name,
+        "submitter": (msg.from_user.full_name if msg.from_user else "채널"),
         "ts": datetime.now(KST).strftime("%Y-%m-%d %H:%M"),
     }
 
     keyboard = _approval_keyboard(post_key, False)
     preview = (
         f"📸 *콘텐츠 미리보기*\n"
-        f"제출: {msg.from_user.full_name} | {datetime.now(KST).strftime('%H:%M')}\n\n"
+        f"제출: {(msg.from_user.full_name if msg.from_user else "채널")} | {datetime.now(KST).strftime('%H:%M')}\n\n"
         f"📌 메인: *{content['main_copy']}*\n"
         f"💬 서브: _{content['sub_copy']}_"
     )
@@ -552,14 +552,14 @@ async def _process_group(gid: str, context: ContextTypes.DEFAULT_TYPE):
         "sub_copy": content["sub_copy"],
         "slide_order": content["slide_order"],
         "raw_output": content["raw"],
-        "submitter": msg.from_user.full_name,
+        "submitter": (msg.from_user.full_name if msg.from_user else "채널"),
         "ts": datetime.now(KST).strftime("%Y-%m-%d %H:%M"),
     }
 
     keyboard = _approval_keyboard(post_key, True)
     preview = (
         f"🖼 *카루셀 미리보기* ({n}장)\n"
-        f"제출: {msg.from_user.full_name} | {datetime.now(KST).strftime('%H:%M')}\n\n"
+        f"제출: {(msg.from_user.full_name if msg.from_user else "채널")} | {datetime.now(KST).strftime('%H:%M')}\n\n"
         f"📋 순서: {content['slide_order']}\n\n"
         f"📌 메인: *{content['main_copy']}*\n"
         f"💬 서브: _{content['sub_copy']}_"
@@ -580,7 +580,7 @@ async def _process_group(gid: str, context: ContextTypes.DEFAULT_TYPE):
 # ─── Telegram Handlers ─────────────────────────────────────────────────────────
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message
+    msg = update.effective_message
     if not msg:
         return
     photo_bytes = bytes(await (await context.bot.get_file(msg.photo[-1].file_id)).download_as_bytearray())
@@ -682,10 +682,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message
-    if not msg or not msg.from_user:
+    msg = update.effective_message
+    if not msg:
         return
-    uid = msg.from_user.id
+    uid = msg.from_user.id if msg.from_user else msg.chat_id
 
     qedit = context.bot_data.get(f"qedit_{uid}")
     if qedit:
@@ -748,7 +748,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_queue_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message or update.channel_post
+    msg = update.effective_message or update.channel_post
     if not msg:
         return
     queue = sorted(load_queue(), key=lambda x: x["scheduled_date"])
