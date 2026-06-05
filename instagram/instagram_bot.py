@@ -142,10 +142,22 @@ def save_queue(queue: list):
         json.dump(queue, f, ensure_ascii=False, indent=2)
 
 
+def get_post_time(date_str: str) -> str:
+    """날짜 기준 포스팅 시간 반환 (평일 12:00 / 주말 21:00)."""
+    d = datetime.strptime(date_str, "%Y-%m-%d")
+    return "12:00" if d.weekday() < 5 else "21:00"
+
+
+def _today_post_hour() -> tuple[int, int]:
+    """오늘 포스팅 시각 (hour, minute) KST."""
+    return (12, 0) if datetime.now(KST).weekday() < 5 else (21, 0)
+
+
 def get_next_available_date() -> str:
     now = datetime.now(KST)
     today = now.date()
-    candidate = today if (now.hour < 7 or (now.hour == 7 and now.minute < 30)) else today + timedelta(days=1)
+    ph, pm = _today_post_hour()
+    candidate = today if (now.hour < ph or (now.hour == ph and now.minute < pm)) else today + timedelta(days=1)
     scheduled = {i["scheduled_date"] for i in load_queue()}
     while candidate.isoformat() in scheduled:
         candidate += timedelta(days=1)
@@ -415,7 +427,7 @@ def regenerate_with_edit(image_bytes: bytes, original_raw: str, edit_request: st
     return _parse_content(resp.content[0].text.strip())
 
 
-# ─── Scheduled Posting (07:30 KST = 22:30 UTC) ────────────────────────────────
+# ─── Scheduled Posting (평일 12:00 KST=03:00 UTC / 주말 21:00 KST=12:00 UTC) ──
 
 async def scheduled_post_job(context: ContextTypes.DEFAULT_TYPE):
     today = datetime.now(KST).date().isoformat()
@@ -432,9 +444,10 @@ async def scheduled_post_job(context: ContextTypes.DEFAULT_TYPE):
             else:
                 continue
             day_ko = ["월","화","수","목","금","토","일"][datetime.strptime(today, "%Y-%m-%d").weekday()]
+            post_time = get_post_time(today)
             await context.bot.send_message(
                 chat_id=APPROVAL_CHAT_ID,
-                text=f"✅ 예약 포스팅 완료!\n📅 {today[:7].replace('-','/')}/{today[8:]} ({day_ko}) 07:30\n📌 {item['main_copy']}\nPost ID: {pk}",
+                text=f"✅ 예약 포스팅 완료!\n📅 {today[:7].replace('-','/')}/{today[8:]} ({day_ko}) {post_time}\n📌 {item['main_copy']}\nPost ID: {pk}",
             )
             save_queue([i for i in load_queue() if i["id"] != item["id"]])
         except Exception as e:
@@ -664,7 +677,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             day_ko = ["월","화","수","목","금","토","일"][datetime.strptime(scheduled, "%Y-%m-%d").weekday()]
             await query.edit_message_caption(
                 f"✅ 큐에 추가됐습니다!\n\n"
-                f"📅 {scheduled[:7].replace('-','/')}/{scheduled[8:]} ({day_ko}) 07:30\n"
+                f"📅 {scheduled[:7].replace('-','/')}/{scheduled[8:]} ({day_ko}) {get_post_time(scheduled)}\n"
                 f"📌 {post['main_copy']}"
             )
         except Exception as e:
@@ -772,7 +785,7 @@ async def handle_queue_command(update: Update, context: ContextTypes.DEFAULT_TYP
     for i, item in enumerate(queue, 1):
         d = datetime.strptime(item["scheduled_date"], "%Y-%m-%d")
         main = item["main_copy"][:25] + ("..." if len(item["main_copy"]) > 25 else "")
-        lines.append(f"{i}️⃣ {d.month}/{d.day} ({DAYS[d.weekday()]}) 07:30\n   \"{main}\"")
+        lines.append(f"{i}️⃣ {d.month}/{d.day} ({DAYS[d.weekday()]}) {get_post_time(item['scheduled_date'])}\n   \"{main}\"")
         rows.append([
             InlineKeyboardButton("수정", callback_data=f"qedit_{item['id']}"),
             InlineKeyboardButton("취소", callback_data=f"qcancel_{item['id']}"),
@@ -793,7 +806,10 @@ def main():
         return
 
     app = Application.builder().token(BOT_TOKEN).build()
-    app.job_queue.run_daily(scheduled_post_job, time=dtime(22, 30, 0), name="daily_post")
+    # 평일 12:00 KST = 03:00 UTC
+    app.job_queue.run_daily(scheduled_post_job, time=dtime(3, 0, 0), days=(0,1,2,3,4), name="weekday_post")
+    # 주말 21:00 KST = 12:00 UTC
+    app.job_queue.run_daily(scheduled_post_job, time=dtime(12, 0, 0), days=(5,6), name="weekend_post")
     app.add_handler(CommandHandler("queue", handle_queue_command))
     app.add_handler(MessageHandler(  # 채널에서 /queue 처리
         filters.UpdateType.CHANNEL_POST & filters.Regex(r"^/queue"),
