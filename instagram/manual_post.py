@@ -1,14 +1,15 @@
-"""큐에서 오늘 항목 수동 포스팅 후 삭제."""
-import json, os
+"""오늘 날짜 큐 항목 수동 포스팅."""
+import json, os, time, requests
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
-from instagrapi import Client
-
-QUEUE_FILE  = Path(__file__).parent / "queue.json"
-SESSION_FILE = Path(__file__).parent / "ig_session.json"
-TODAY = "2026-06-05"
+QUEUE_FILE       = Path(__file__).parent / "queue.json"
+IG_ACCESS_TOKEN  = os.environ["INSTAGRAM_ACCESS_TOKEN"]
+IG_ACCOUNT_ID    = os.environ["INSTAGRAM_ACCOUNT_ID"]
+IMGBB_API_KEY    = os.environ["IMGBB_API_KEY"]
+IG_API           = "https://graph.facebook.com/v21.0"
+TODAY            = "2026-06-05"
 
 with open(QUEUE_FILE) as f:
     queue = json.load(f)
@@ -16,26 +17,60 @@ with open(QUEUE_FILE) as f:
 item = next((i for i in queue if i["scheduled_date"] == TODAY), None)
 if not item:
     print(f"오늘({TODAY}) 큐 항목 없음")
-else:
-    print(f"포스팅 시도: {item['main_copy']}")
-    cl = Client()
-    cl.delay_range = [2, 5]
-    cl.load_settings(str(SESSION_FILE))
+    exit(0)
 
-    # 세션 유효성 확인 (재로그인 없이)
-    try:
-        cl.get_timeline_feed()
-        print("세션 유효 확인")
-    except Exception as e:
-        print(f"세션 오류: {e}")
+print(f"포스팅 시도: {item['main_copy']}")
+
+# imgbb 업로드
+img_bytes = Path(item["media_path"]).read_bytes()
+r_img = requests.post(
+    "https://api.imgbb.com/1/upload",
+    data={"key": IMGBB_API_KEY, "expiration": 600},
+    files={"image": ("photo.jpg", img_bytes, "image/jpeg")},
+    timeout=30,
+)
+r_img.raise_for_status()
+image_url = r_img.json()["data"]["url"]
+print(f"이미지 업로드 완료: {image_url[:50]}...")
+
+# 컨테이너 생성
+r1 = requests.post(
+    f"{IG_API}/{IG_ACCOUNT_ID}/media",
+    data={"image_url": image_url, "caption": item["caption"], "access_token": IG_ACCESS_TOKEN},
+    timeout=30,
+)
+r1.raise_for_status()
+creation_id = r1.json()["id"]
+print(f"컨테이너 생성: {creation_id}")
+
+# 처리 대기
+for _ in range(15):
+    time.sleep(4)
+    status_r = requests.get(
+        f"{IG_API}/{creation_id}",
+        params={"fields": "status_code", "access_token": IG_ACCESS_TOKEN},
+        timeout=15,
+    )
+    status = status_r.json().get("status_code", "")
+    print(f"상태: {status}")
+    if status == "FINISHED":
+        break
+    if status == "ERROR":
+        print(f"처리 실패: {status_r.json()}")
         exit(1)
 
-    try:
-        media = cl.photo_upload(item["media_path"], item["caption"])
-        print(f"✅ 성공! Post ID: {media.pk}")
-        queue = [i for i in queue if i["id"] != item["id"]]
-        with open(QUEUE_FILE, "w") as f:
-            json.dump(queue, f, ensure_ascii=False, indent=2)
-        print("큐에서 제거 완료")
-    except Exception as e:
-        print(f"❌ 업로드 실패: {e}")
+# 게시
+r2 = requests.post(
+    f"{IG_API}/{IG_ACCOUNT_ID}/media_publish",
+    data={"creation_id": creation_id, "access_token": IG_ACCESS_TOKEN},
+    timeout=30,
+)
+r2.raise_for_status()
+post_id = r2.json()["id"]
+print(f"✅ 포스팅 완료! Post ID: {post_id}")
+
+# 큐에서 제거
+queue = [i for i in queue if i["id"] != item["id"]]
+with open(QUEUE_FILE, "w") as f:
+    json.dump(queue, f, ensure_ascii=False, indent=2)
+print("큐에서 제거 완료")
