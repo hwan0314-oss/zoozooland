@@ -228,11 +228,21 @@ def get_ig_client() -> Client:
     global _ig_client
     if _ig_client is not None:
         return _ig_client
+
     cl = Client()
     cl.delay_range = [2, 5]
     cl.challenge_code_handler = challenge_code_handler
+
     if SESSION_FILE.exists():
         cl.load_settings(str(SESSION_FILE))
+        # 세션이 유효하면 재로그인 없이 사용 (재로그인 시 Instagram 보안 차단됨)
+        try:
+            cl.get_timeline_feed()
+            _ig_client = cl
+            return cl
+        except Exception:
+            pass  # 세션 만료 → 아래에서 재로그인
+
     cl.login(IG_USERNAME, IG_PASSWORD)
     cl.dump_settings(str(SESSION_FILE))
     _ig_client = cl
