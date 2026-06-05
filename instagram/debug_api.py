@@ -1,29 +1,30 @@
 import os, requests
-from dotenv import load_dotenv
 from pathlib import Path
-load_dotenv(Path(__file__).parent / ".env")
 
-# 새 토큰으로 테스트
-token = "EAGDt4rXqZAxEBRoAs3WiHNhCXr5vdNvSsgyZBkzBcSEqRo7hXP4XR4uxYQyOgYu2QjTeoghheys8QHtIinQVoxEjl7AYoJPrTFTNLevc2ZBaqByIftNEUKlY4uVu7dLvQhyYkWQ2KK6R77qi0MUGlI6kVrIMaNixjGHFB11vzoaaAB4BbaQ7hZAGwcj4MB79KMR8ly1hVzIXl6NYTSRrDda5cfjvSxKk3pw8BflUW7ulVn6mTZAkHo1qvtPC6stYvhvg37V3AvAB9"
+# .env 직접 읽기 (BOM 없이)
+with open(Path(__file__).parent / ".env", encoding="utf-8-sig") as f:
+    for line in f:
+        line = line.strip()
+        if "=" in line and not line.startswith("#"):
+            k, v = line.split("=", 1)
+            os.environ[k.strip()] = v.strip()
 
-PAGE_ID = "1184428141413290"  # zoozooland-instagram 페이지 ID
+token = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "MISSING")
+ig_id = os.environ.get("INSTAGRAM_ACCOUNT_ID", "MISSING")
+print(f"Token prefix: {token[:40]}")
+print(f"IG ID: {ig_id}")
 
-# 1. me/accounts 확인
-print("=== me/accounts ===")
-r = requests.get("https://graph.facebook.com/v21.0/me/accounts", params={"access_token": token, "fields": "id,name,access_token"})
-print(r.json())
+# Instagram 계정 확인
+r0 = requests.get(
+    f"https://graph.facebook.com/v21.0/{ig_id}",
+    params={"fields": "id,username", "access_token": token}
+)
+print(f"Instagram 계정: {r0.json()}")
 
-# 2. 페이지 직접 조회
-print("\n=== 페이지 직접 조회 ===")
-r2 = requests.get(f"https://graph.facebook.com/v21.0/{PAGE_ID}", params={"fields": "id,name,access_token", "access_token": token})
-print(r2.json())
-
-# 3. Business 조회
-print("\n=== me/businesses ===")
-r3 = requests.get("https://graph.facebook.com/v21.0/me/businesses", params={"access_token": token})
-print(r3.json())
-
-# 4. 토큰 권한 확인
-print("\n=== 토큰 권한 ===")
-r4 = requests.get("https://graph.facebook.com/v21.0/me/permissions", params={"access_token": token})
-print(r4.json())
+# 미디어 생성 테스트
+r = requests.post(
+    f"https://graph.facebook.com/v21.0/{ig_id}/media",
+    data={"image_url": "https://i.ibb.co/cXgfvv0n/photo.jpg", "caption": "test", "access_token": token},
+    timeout=30,
+)
+print(f"미디어 생성: {r.status_code} {r.json()}")
