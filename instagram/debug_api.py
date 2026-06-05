@@ -3,39 +3,27 @@ from dotenv import load_dotenv
 from pathlib import Path
 load_dotenv(Path(__file__).parent / ".env")
 
-token = os.environ["INSTAGRAM_ACCESS_TOKEN"]
+# 새 토큰으로 테스트
+token = "EAGDt4rXqZAxEBRoAs3WiHNhCXr5vdNvSsgyZBkzBcSEqRo7hXP4XR4uxYQyOgYu2QjTeoghheys8QHtIinQVoxEjl7AYoJPrTFTNLevc2ZBaqByIftNEUKlY4uVu7dLvQhyYkWQ2KK6R77qi0MUGlI6kVrIMaNixjGHFB11vzoaaAB4BbaQ7hZAGwcj4MB79KMR8ly1hVzIXl6NYTSRrDda5cfjvSxKk3pw8BflUW7ulVn6mTZAkHo1qvtPC6stYvhvg37V3AvAB9"
 
-# 1. 접근 가능한 Facebook 페이지 목록
-print("=== Facebook 페이지 목록 ===")
-r = requests.get(
-    "https://graph.facebook.com/v21.0/me/accounts",
-    params={"access_token": token}
-)
-data = r.json()
-print(data)
+PAGE_ID = "1184428141413290"  # zoozooland-instagram 페이지 ID
 
-# 2. 각 페이지의 Instagram 계정 확인
-print("\n=== 페이지별 Instagram 계정 ===")
-for page in data.get("data", []):
-    page_id = page["id"]
-    page_token = page["access_token"]
-    r2 = requests.get(
-        f"https://graph.facebook.com/v21.0/{page_id}",
-        params={"fields": "instagram_business_account", "access_token": page_token}
-    )
-    ig_info = r2.json()
-    print(f"페이지 {page['name']} ({page_id}): {ig_info}")
+# 1. me/accounts 확인
+print("=== me/accounts ===")
+r = requests.get("https://graph.facebook.com/v21.0/me/accounts", params={"access_token": token, "fields": "id,name,access_token"})
+print(r.json())
 
-    if ig_info.get("instagram_business_account"):
-        ig_id = ig_info["instagram_business_account"]["id"]
-        print(f"\n✅ Instagram 계정 ID: {ig_id}")
-        print(f"✅ Page Access Token: {page_token[:50]}...")
+# 2. 페이지 직접 조회
+print("\n=== 페이지 직접 조회 ===")
+r2 = requests.get(f"https://graph.facebook.com/v21.0/{PAGE_ID}", params={"fields": "id,name,access_token", "access_token": token})
+print(r2.json())
 
-        # 이 Page Token으로 미디어 생성 테스트
-        print("\n=== 미디어 생성 테스트 (Page Token) ===")
-        r3 = requests.post(
-            f"https://graph.facebook.com/v21.0/{ig_id}/media",
-            data={"image_url": "https://i.ibb.co/Sw7ySqPx/photo.jpg", "caption": "test", "access_token": page_token},
-            timeout=30,
-        )
-        print(r3.status_code, r3.json())
+# 3. Business 조회
+print("\n=== me/businesses ===")
+r3 = requests.get("https://graph.facebook.com/v21.0/me/businesses", params={"access_token": token})
+print(r3.json())
+
+# 4. 토큰 권한 확인
+print("\n=== 토큰 권한 ===")
+r4 = requests.get("https://graph.facebook.com/v21.0/me/permissions", params={"access_token": token})
+print(r4.json())
