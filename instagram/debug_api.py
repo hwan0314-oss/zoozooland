@@ -1,30 +1,21 @@
 import requests
 
-TOKEN = "EAGDt4rXqZAxEBRj5KTTIubWHNR8xNoRwMndrCNEVX5Dl4ZA8Isv0VbU0JJftUtBCIZA6MtuI1yZBReD7WQV8PS1kSHJU7w4nqwoBEXBLIrYtOSGyRKGVR63AVLUJ0oYGxPuevwWZCO7Oj1feYMUu2lSnZCnQ7ZAls7ibqiwqqbfrbQQ6VQGiKdGZBIpzutIfbQ9CsRPAUE9Qadfsen7Kx31Y2EaSraYTZCsNCOwZDZD"
+TOKEN = "EAGDt4rXqZAxEBRoMNBiZBGFdGiLy4rArOofh3nYZCuz3cbZB5HBdp5bZCfj3aA1IO8v15GFSwJnF043gyViKmgvsPATYYcjr5bZApQE7z66XZA8oGrxJE2v4Cj6nOoamTQwBCwmHrvSLhTlR5OnyFG4ZAhVYjR3u1p6cv0nDrS4eM7NNGbrqEfBVZBIVvFouxkG7yksugyQ4lMhvS0PwNJRAqIJQekRSiYygswdLwye4gzHS3mzLkZBF4jidwTJdU0dnVDOfoYoGNRgbIZD"
 IG_ID = "17841444570925602"
+PAGE_ID = "1184428141413290"
 
 # 1. 토큰 확인
 r0 = requests.get("https://graph.facebook.com/v21.0/me", params={"fields": "id,name", "access_token": TOKEN})
-print("토큰 유저:", r0.json())
+print("유저:", r0.json())
 
-# 2. 직접 미디어 생성 시도
-r1 = requests.post(
+# 2. 페이지 instagram_business_account 확인
+r1 = requests.get(f"https://graph.facebook.com/v21.0/{PAGE_ID}", params={"fields": "instagram_business_account", "access_token": TOKEN})
+print("instagram_business_account:", r1.json())
+
+# 3. 직접 미디어 생성
+r2 = requests.post(
     f"https://graph.facebook.com/v21.0/{IG_ID}/media",
     data={"image_url": "https://i.ibb.co/cXgfvv0n/photo.jpg", "caption": "test", "access_token": TOKEN},
     timeout=30,
 )
-print("미디어 생성:", r1.json())
-
-# 3. 페이지 토큰으로 시도
-r2 = requests.get(f"https://graph.facebook.com/v21.0/1184428141413290", params={"fields": "access_token", "access_token": TOKEN})
-page_data = r2.json()
-print("페이지 토큰:", page_data)
-
-if "access_token" in page_data:
-    page_token = page_data["access_token"]
-    r3 = requests.post(
-        f"https://graph.facebook.com/v21.0/{IG_ID}/media",
-        data={"image_url": "https://i.ibb.co/cXgfvv0n/photo.jpg", "caption": "test", "access_token": page_token},
-        timeout=30,
-    )
-    print("페이지 토큰으로 미디어 생성:", r3.json())
+print("미디어 생성:", r2.json())
