@@ -6,3 +6,5 @@ package-lock.json
 # OS
 .DS_Store
 Thumbs.db
+instagram/.env.new
+instagram/.env

@@ -9,9 +9,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
+import time
+import requests
 import anthropic
-from instagrapi import Client
-from instagrapi.exceptions import LoginRequired, ChallengeRequired
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     Application,
@@ -24,13 +24,14 @@ from telegram.ext import (
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 
-BOT_TOKEN         = os.environ["TELEGRAM_BOT_TOKEN"]
-ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
-IG_USERNAME       = os.environ["INSTAGRAM_USERNAME"]
-IG_PASSWORD       = os.environ["INSTAGRAM_PASSWORD"]
-APPROVAL_CHAT_ID  = int(os.environ.get("APPROVAL_CHAT_ID", "-1003990713280"))
+BOT_TOKEN            = os.environ["TELEGRAM_BOT_TOKEN"]
+ANTHROPIC_API_KEY    = os.environ["ANTHROPIC_API_KEY"]
+APPROVAL_CHAT_ID     = int(os.environ.get("APPROVAL_CHAT_ID", "-1003990713280"))
+IG_ACCESS_TOKEN      = os.environ["INSTAGRAM_ACCESS_TOKEN"]
+IG_ACCOUNT_ID        = os.environ["INSTAGRAM_ACCOUNT_ID"]
+IMGBB_API_KEY        = os.environ["IMGBB_API_KEY"]
+IG_API               = "https://graph.facebook.com/v21.0"
 
-SESSION_FILE    = Path(__file__).parent / "ig_session.json"
 QUEUE_FILE      = Path(__file__).parent / "queue.json"
 QUEUE_MEDIA_DIR = Path(__file__).parent / "queue_media"
 QUEUE_MEDIA_DIR.mkdir(exist_ok=True)
@@ -213,57 +214,90 @@ def save_media_to_queue(image_bytes: bytes, item_id: str, suffix: str = "photo")
     return str(path)
 
 
-# ─── Instagram Client ──────────────────────────────────────────────────────────
+# ─── Instagram Graph API ──────────────────────────────────────────────────────
 
-_ig_client: Client | None = None
-
-
-def challenge_code_handler(username, choice):
-    method = "SMS" if choice == 1 else "이메일"
-    print(f"\n⚠️  Instagram 인증 필요! 계정: {username}, 방법: {method}")
-    return input("인증 코드: ").strip()
-
-
-def get_ig_client() -> Client:
-    global _ig_client
-    if _ig_client is not None:
-        return _ig_client
-
-    cl = Client()
-    cl.delay_range = [2, 5]
-    cl.challenge_code_handler = challenge_code_handler
-
-    if SESSION_FILE.exists():
-        cl.load_settings(str(SESSION_FILE))
-        # 세션이 유효하면 재로그인 없이 사용 (재로그인 시 Instagram 보안 차단됨)
-        try:
-            cl.get_timeline_feed()
-            _ig_client = cl
-            return cl
-        except Exception:
-            pass  # 세션 만료 → 아래에서 재로그인
-
-    cl.login(IG_USERNAME, IG_PASSWORD)
-    cl.dump_settings(str(SESSION_FILE))
-    _ig_client = cl
-    return cl
+def _upload_imgbb(image_bytes: bytes) -> str:
+    """imgbb에 이미지 업로드 후 공개 URL 반환."""
+    r = requests.post(
+        "https://api.imgbb.com/1/upload",
+        data={"key": IMGBB_API_KEY, "expiration": 600},
+        files={"image": ("photo.jpg", image_bytes, "image/jpeg")},
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()["data"]["url"]
 
 
-def _ig_call(func):
-    try:
-        return func()
-    except (LoginRequired, ChallengeRequired):
-        global _ig_client
-        _ig_client = None
-        return func()
+def _wait_for_container(creation_id: str) -> None:
+    """미디어 컨테이너 처리 완료 대기."""
+    for _ in range(15):
+        time.sleep(4)
+        r = requests.get(
+            f"{IG_API}/{creation_id}",
+            params={"fields": "status_code", "access_token": IG_ACCESS_TOKEN},
+            timeout=15,
+        )
+        status = r.json().get("status_code", "")
+        if status == "FINISHED":
+            return
+        if status == "ERROR":
+            raise RuntimeError(f"Instagram 컨테이너 처리 실패: {r.json()}")
+    raise RuntimeError("Instagram 컨테이너 처리 타임아웃")
 
 
-def post_photo(image_path: str, caption: str) -> str:
-    return str(_ig_call(lambda: get_ig_client().photo_upload(image_path, caption)).pk)
+def post_photo(image_bytes: bytes, caption: str) -> str:
+    """사진 포스팅. Post ID 반환."""
+    image_url = _upload_imgbb(image_bytes)
+    r1 = requests.post(
+        f"{IG_API}/{IG_ACCOUNT_ID}/media",
+        data={"image_url": image_url, "caption": caption, "access_token": IG_ACCESS_TOKEN},
+        timeout=30,
+    )
+    r1.raise_for_status()
+    creation_id = r1.json()["id"]
+    _wait_for_container(creation_id)
+    r2 = requests.post(
+        f"{IG_API}/{IG_ACCOUNT_ID}/media_publish",
+        data={"creation_id": creation_id, "access_token": IG_ACCESS_TOKEN},
+        timeout=30,
+    )
+    r2.raise_for_status()
+    return r2.json()["id"]
 
 
-def post_carousel(image_paths: list, caption: str) -> str:
-    return str(_ig_call(lambda: get_ig_client().album_upload(image_paths, caption)).pk)
+def post_carousel(image_bytes_list: list, caption: str) -> str:
+    """카루셀 포스팅. Post ID 반환."""
+    child_ids = []
+    for img_bytes in image_bytes_list:
+        url = _upload_imgbb(img_bytes)
+        r = requests.post(
+            f"{IG_API}/{IG_ACCOUNT_ID}/media",
+            data={"image_url": url, "is_carousel_item": "true", "access_token": IG_ACCESS_TOKEN},
+            timeout=30,
+        )
+        r.raise_for_status()
+        child_ids.append(r.json()["id"])
+
+    r1 = requests.post(
+        f"{IG_API}/{IG_ACCOUNT_ID}/media",
+        data={
+            "media_type": "CAROUSEL",
+            "children": ",".join(child_ids),
+            "caption": caption,
+            "access_token": IG_ACCESS_TOKEN,
+        },
+        timeout=30,
+    )
+    r1.raise_for_status()
+    creation_id = r1.json()["id"]
+    _wait_for_container(creation_id)
+    r2 = requests.post(
+        f"{IG_API}/{IG_ACCOUNT_ID}/media_publish",
+        data={"creation_id": creation_id, "access_token": IG_ACCESS_TOKEN},
+        timeout=30,
+    )
+    r2.raise_for_status()
+    return r2.json()["id"]
 
 
 # ─── Card Image Rendering (Playwright) ────────────────────────────────────────
@@ -447,10 +481,10 @@ async def scheduled_post_job(context: ContextTypes.DEFAULT_TYPE):
             continue
         try:
             if item["post_type"] == "photo":
-                pk = post_photo(item["media_path"], item["caption"])
+                pk = post_photo(Path(item["media_path"]).read_bytes(), item["caption"])
             elif item["post_type"] == "carousel":
                 paths = [item["media_path"]] + item.get("extra_media", [])
-                pk = post_carousel(paths, item["caption"])
+                pk = post_carousel([Path(p).read_bytes() for p in paths], item["caption"])
             else:
                 continue
             day_ko = ["월","화","수","목","금","토","일"][datetime.strptime(today, "%Y-%m-%d").weekday()]
@@ -807,14 +841,7 @@ async def handle_queue_command(update: Update, context: ContextTypes.DEFAULT_TYP
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
 def main():
-    print("Instagram 로그인 중...")
-    try:
-        get_ig_client()
-        print(f"로그인 완료: @{IG_USERNAME}")
-    except Exception as e:
-        print(f"로그인 실패: {e}")
-        return
-
+    print(f"ZZL Instagram Bot 시작 (Graph API, 계정: {IG_ACCOUNT_ID})")
     app = Application.builder().token(BOT_TOKEN).build()
     # 평일 12:00 KST = 03:00 UTC
     app.job_queue.run_daily(scheduled_post_job, time=dtime(3, 0, 0), days=(0,1,2,3,4), name="weekday_post")
