@@ -1,7 +1,5 @@
-"""OKPOS SHOP_CD 집중 확인 + 매장 목록 API 탐색"""
-import json, os, re, requests, urllib3
-from datetime import date
-from collections import defaultdict
+"""OKPOS menu.jsp 매장/분석 메뉴 항목 및 네비게이션 URL 추출"""
+import os, re, requests, urllib3
 
 urllib3.disable_warnings()
 BASE_URL = "https://kis.okpos.co.kr"
@@ -47,151 +45,83 @@ def do_login():
 
 
 def main():
-    today = date.today().strftime("%Y-%m-%d")
-    sess  = do_login()
+    sess = do_login()
 
-    # ── 1. menu.jsp 인코딩 확인 + '매장' 검색 ────────────────────────────
-    print("\n=== menu.jsp 인코딩 확인 ===")
+    # ── 1. menu.jsp 전체 텍스트 수신 ────────────────────────────────────
     r_menu = sess.get(BASE_URL + "/login/menu.jsp",
                       headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
-    print(f"  HTTP 인코딩: {r_menu.encoding}")
-    print(f"  Content-Type: {r_menu.headers.get('Content-Type')}")
+    text = r_menu.content.decode("utf-8", errors="ignore")
+    lines = text.splitlines()
+    print(f"menu.jsp: {len(text):,}자, {len(lines):,}줄")
 
-    # EUC-KR 시도
-    for enc in [r_menu.encoding or "utf-8", "euc-kr", "utf-8"]:
-        try:
-            text = r_menu.content.decode(enc, errors="ignore")
-            cnt = text.count("매장")
-            print(f"  [{enc}] '매장' 출현 횟수: {cnt}")
-            if cnt > 0:
-                idx = text.find("매장")
-                print(f"  컨텍스트: ...{text[max(0,idx-80):idx+120]}...")
-                break
-        except Exception as e:
-            print(f"  [{enc}] 디코딩 오류: {e}")
+    # ── 2. '매장' '분석' 포함 줄 + 전후 5줄 컨텍스트 ────────────────────
+    print("\n=== '매장' 또는 '분석' 포함 라인 컨텍스트 ===")
+    printed = set()
+    keywords = ["매장", "분석", "stat"]
+    for i, line in enumerate(lines):
+        if any(k in line for k in keywords):
+            block = range(max(0, i-3), min(len(lines), i+5))
+            if i not in printed:
+                print(f"\n--- L{i+1}: {line.strip()[:120]} ---")
+                for j in block:
+                    printed.add(j)
+                    print(f"  {lines[j].rstrip()[:180]}")
 
-    # ── 2. prod010.jsp 에서 SHOP 관련 AJAX 패턴 ─────────────────────────
-    print("\n=== prod010.jsp SHOP 관련 패턴 ===")
-    r010 = sess.get(BASE_URL + "/sale/sale/prod010.jsp",
-                    headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
-    for enc in [r010.encoding or "utf-8", "euc-kr"]:
-        try:
-            t010 = r010.content.decode(enc, errors="ignore")
-            # SHOP 관련 라인
-            for line in t010.split('\n'):
-                if any(k in line for k in ['SHOP', 'shop', '매장', 'ss_SHOP']):
-                    print(f"  {line.strip()[:200]}")
-            break
-        except:
-            pass
+    # ── 3. 모든 onclick 핸들러 ───────────────────────────────────────────
+    print("\n=== onclick 핸들러 전체 ===")
+    for m in re.finditer(r'onclick\s*=\s*["\']([^"\']{5,})["\']', text, re.IGNORECASE):
+        fn = m.group(1).strip()
+        print(f"  {fn[:200]}")
 
-    # ── 3. 상품별 API: SHOP_CD 실제 값 확인 ──────────────────────────────
-    print("\n=== 상품별 API SHOP_CD 실제 값 ===")
-    n, v = extract_token(r010.text)
-    r011 = sess.post(BASE_URL + "/sale/sale/prod011.jsp", data={n: v},
-                     headers={"Referer": BASE_URL + "/sale/sale/prod010.jsp"}, verify=False, timeout=30)
-    n2, v2 = extract_token(r011.text)
+    # ── 4. menu.jsp가 로드하는 스크립트 파일 ─────────────────────────────
+    print("\n=== 로드된 외부 스크립트 ===")
+    for m in re.finditer(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', text, re.IGNORECASE):
+        src = m.group(1)
+        print(f"  {src}")
+        # 매장/매출분석 관련 스크립트면 내용도 확인
+        if any(k in src.lower() for k in ["menu", "nav", "cswm"]):
+            r = sess.get(BASE_URL + src if src.startswith("/") else src,
+                         headers={"Referer": BASE_URL + "/login/menu.jsp"}, verify=False, timeout=15)
+            content = r.content.decode("utf-8", errors="ignore")
+            print(f"    크기={len(content):,}자")
+            # 네비게이션 URL 패턴 찾기
+            for nav in re.findall(r'["\'](?:/[a-zA-Z0-9/_\-]+\.jsp)["\']', content):
+                if nav not in ['"/login/menu.jsp"', "'/login/menu.jsp'"]:
+                    print(f"    JSP: {nav}")
 
-    payload = {
-        n2: v2,
-        "S_CONTROLLER": "sale.sale.prod011", "S_METHOD": "search",
-        "SHEETSEQ": "1",
-        "S_SAVENAME": "LCLS_NM|MCLS_NM|PROD_NM|SALE_QTY|DCM_SALE_AMT|SHOP_CD|SHOP_NM",
-        "S_ORDERBY": "",
-        "ss_PROD_FG": "N", "date1_1": today, "date1_2": today, "date_period1": "366",
-        "ss_PROD_CD": "", "ss_PROD_NM": "", "ss_LCLS_CD": "", "ss_MCLS_CD": "", "ss_SCLS_CD": "",
-        "ss_CLS_TEXT": "전체", "ss_BAR_CD": "", "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
-        "ss_SHOP_INFO": "[]", "ss_VENDOR_CD": "", "ss_VENDOR_NM": "전체", "ss_VENDOR_INFO": "[]",
-        "ss_chk": "0", "ss_PAGE_SIZE": "300", "ss_PAGE_NO1": "1",
-    }
-    r = sess.post(BASE_URL + "/sale/sale/ddd.htmlSheetAction", data=payload,
-                  headers={"Referer": BASE_URL + "/sale/sale/prod011.jsp"},
-                  verify=False, timeout=60)
-    rows = r.json().get("Data", [])
-    print(f"총 {len(rows)}행 | 키: {list(rows[0].keys()) if rows else 'N/A'}")
-
-    # 첫 5개 행 전체 출력 (SHOP_CD 값 확인)
-    print("\n첫 5개 행 (전체 필드):")
-    for row in rows[:5]:
-        print(f"  {json.dumps(row, ensure_ascii=False)}")
-
-    # SHOP_CD/SHOP_NM 분포
-    shop_dist = defaultdict(lambda: {"cnt": 0, "amt": 0})
-    for row in rows:
-        cd = row.get("SHOP_CD") or ""
-        nm = row.get("SHOP_NM") or ""
-        key = f"CD={cd!r} NM={nm!r}"
-        shop_dist[key]["cnt"] += 1
-        shop_dist[key]["amt"] += int(row.get("DCM_SALE_AMT") or 0)
-
-    print(f"\nSHOP_CD 분포 ({len(shop_dist)}종):")
-    for key, v in sorted(shop_dist.items(), key=lambda x: -x[1]["amt"]):
-        print(f"  {key}  건수={v['cnt']:3d}  매출={v['amt']:>12,}원")
-
-    # ── 4. shop_group_type_tree.jsp 접근 (udfMainFrm.js에서 발견) ──────
-    print("\n=== shop_group_type_tree.jsp 접근 시도 ===")
-    paths = [
-        "/common/jsp/shop_group_type_tree.jsp",
-        "/common/jsp/shopList.jsp",
-        "/common/jsp/shop_list.jsp",
+    # ── 5. JSP 경로 후보 직접 시도 (Referer 포함) ───────────────────────
+    print("\n=== JSP 경로 직접 시도 (Referer 포함) ===")
+    candidates = [
+        "/sale/stat/shop010.jsp",
+        "/sale/stat/shopStat010.jsp",
+        "/sale/stat/saleShop010.jsp",
+        "/sale/sale/shopSale010.jsp",
+        "/sale/sale/saleShop010.jsp",
+        "/sale/month/shop010.jsp",
+        "/sale/month/shopMonth010.jsp",
+        "/stat/shop010.jsp",
+        "/stat/sale/shop010.jsp",
+        "/sale/stat/stat010.jsp",
+        "/sale/sale/stat010.jsp",
+        "/sale/sale/shopInfo010.jsp",
+        "/info/shop/shop010.jsp",
+        "/basic/shop/shop010.jsp",
     ]
-    for path in paths:
+    for path in candidates:
         r = sess.get(BASE_URL + path,
-                     headers={"Referer": BASE_URL + "/sale/sale/prod010.jsp"}, verify=False, timeout=10)
-        print(f"  [{r.status_code} {len(r.text)}] {path}")
-        if r.status_code == 200:
-            # SHOP 관련 데이터 찾기
-            for enc in [r.encoding or "utf-8", "euc-kr"]:
-                try:
-                    t = r.content.decode(enc, errors="ignore")
-                    shops = re.findall(r'SHOP_CD[^"\']*["\']([^"\']+)["\']', t)
-                    if shops:
-                        print(f"    SHOP_CD 발견: {shops[:10]}")
-                    # JSON 데이터 찾기
-                    jsons = re.findall(r'\{[^{}]{10,200}\}', t)
-                    for j in jsons[:3]:
-                        if any(k in j for k in ['SHOP', 'shop', '매장']):
-                            print(f"    JSON: {j[:200]}")
-                    break
-                except:
-                    pass
-
-    # ── 5. 매장 목록 전용 컨트롤러 시도 ────────────────────────────────
-    print("\n=== 매장 목록 컨트롤러 탐색 ===")
-    controllers = [
-        "common.shop.shopList011",
-        "basic.shop.shopList011",
-        "sale.sale.shopList011",
-        "login.shopInfo011",
-        "common.common.shopList011",
-        "sale.stat.shopStat011",
-        "sale.sale.shopStat011",
-        "sale.sale.saleShop011",
-    ]
-    for ctrl in controllers:
-        payload2 = {
-            n2: v2,
-            "S_CONTROLLER": ctrl, "S_METHOD": "search",
-            "SHEETSEQ": "1", "S_SAVENAME": "", "S_ORDERBY": "",
-            "date1_1": today, "date1_2": today,
-            "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
-            "ss_PAGE_SIZE": "50", "ss_PAGE_NO1": "1",
-        }
-        try:
-            r = sess.post(BASE_URL + "/sale/sale/ddd.htmlSheetAction", data=payload2,
-                          verify=False, timeout=10)
-            d = r.json()
-            code = d.get("Result", {}).get("Code", 0)
-            msg  = d.get("Result", {}).get("Message", "")[:40]
-            rws  = len(d.get("Data", []))
-            sym  = "✅" if rws > 0 else ("⚠️" if code >= 0 else "❌")
-            print(f"  {sym} {ctrl}: code={code} rows={rws} msg={msg}")
-            if rws > 0:
-                print(f"    Keys: {list(d['Data'][0].keys())}")
-                for row in d['Data'][:3]:
-                    print(f"    {json.dumps(row, ensure_ascii=False)[:150]}")
-        except Exception as e:
-            print(f"  [ERR] {ctrl}: {e}")
+                     headers={"Referer": BASE_URL + "/login/menu.jsp"}, verify=False, timeout=10)
+        status = r.status_code
+        size = len(r.text)
+        sym = "✅" if status == 200 else ("⚠️" if status == 302 else "❌")
+        print(f"  {sym} [{status} {size:5}] {path}")
+        if status == 200 and size > 500:
+            # 유의미한 페이지면 제목과 form action 출력
+            title = re.search(r'<title[^>]*>([^<]+)</title>', r.text, re.IGNORECASE)
+            forms = re.findall(r'action\s*=\s*["\']([^"\']+)["\']', r.text)
+            if title:
+                print(f"    title: {title.group(1).strip()}")
+            for f in forms:
+                print(f"    form action: {f}")
 
 
 if __name__ == "__main__":
