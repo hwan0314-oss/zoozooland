@@ -6,12 +6,16 @@ on:
 jobs:
   report:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write  # dashboard/report_data.json 자동 커밋에 필요
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
