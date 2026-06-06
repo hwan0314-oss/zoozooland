@@ -13,8 +13,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 urllib3.disable_warnings()
 
-BASE_URL  = "https://kis.okpos.co.kr"
-API_URL   = BASE_URL + "/sale/sale/ddd.htmlSheetAction"
+BASE_URL      = "https://kis.okpos.co.kr"
+API_URL       = BASE_URL + "/sale/sale/ddd.htmlSheetAction"
+API_SHOP_URL  = BASE_URL + "/sale/shopsale/ddd.htmlSheetAction"
 
 USER_ID   = os.environ["KIS_ID"]
 USER_PW   = os.environ["KIS_PW"]
@@ -47,19 +48,15 @@ WMO_WEATHER = {
     95: "뇌우", 96: "뇌우", 99: "뇌우",
 }
 
-# OKPOS MCLS_NM 기준 점포 목록 (매장별매출분석과 동일 기준)
-# 탐색 결과: 매장별매출분석 JSP는 JavaScript 메뉴로만 접근 가능(HTTP 직접 불가)
-#            상품별 API의 MCLS_NM 집계로 동일 데이터 확인됨
+# OKPOS 매장별매출분석 API (dayranking010) SHOP_NM 기준 점포 목록
+# 매표소(입장)와 먹이판매는 별도 항목으로 집계하므로 제외
 STORE_KEYS = [
-    ("레스토랑",     "레스토랑"),
-    ("카페테리아",   "카페테리아"),
-    ("레스토랑신규", "레스토랑(신)"),
-    ("열린매대",     "열린매대"),      # 먹이판매+음료+간식 복합 (2026-06 확인)
-    ("무인점포",     "무인점포"),
-    ("드론체험",     "드론체험"),
-    ("베이커리",     "베이커리"),
-    ("로봇박물관",   "로봇박물관"),   # 2026-06 확인
-    ("매점",         "매점"),          # 2026-06 확인
+    ("쥬쥬레스토랑", "쥬쥬레스토랑"),
+    ("공방카페",     "공방카페"),
+    ("파충류관",     "파충류관"),
+    ("열린매대",     "열린매대"),
+    ("팝업스토어",   "팝업스토어"),
+    ("무인매장",     "무인매장"),
 ]
 
 S_SAVENAME = (
@@ -175,6 +172,51 @@ def get_api_token(sess):
         raise RuntimeError("No token in prod011")
     print(f"prod011 token: {tok11n[:8]}...")
     return tok11n, tok11v
+
+
+def get_shop_token(sess):
+    r = sess.get(
+        BASE_URL + "/sale/shopsale/dayranking010.jsp",
+        headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30,
+    )
+    n, v = extract_token(r.text)
+    if not n:
+        raise RuntimeError(f"No token in dayranking010.jsp. HTML: {r.text[:200]}")
+    return n, v
+
+
+def fetch_shop_sales(sess, date_from, date_to):
+    """매장별매출분석 API → {SHOP_NM: {"amt": DCM_SALE_AMT, "cnt": TOT_SALE_CNT}}"""
+    n, v = get_shop_token(sess)
+    payload = {
+        n: v,
+        "S_CONTROLLER": "sale.shopsale.dayranking010",
+        "S_METHOD": "search",
+        "SHEETSEQ": "1", "S_SAVENAME": "", "S_ORDERBY": "",
+        "date1_1": date_from, "date1_2": date_to,
+        "date_period1": "366",
+        "ss_SHOP_TYPE_FG": "", "ss_SHOP_GROUP_CD": "",
+        "ss_TYPE_UD": "U", "ss_SEL_CNT": "500",
+        "EX_CST": "false",
+    }
+    r = sess.post(
+        API_SHOP_URL, data=payload,
+        headers={"Referer": BASE_URL + "/sale/shopsale/dayranking010.jsp"},
+        verify=False, timeout=60,
+    )
+    print(f"Shop API [{date_from}~{date_to}]: {r.status_code} len={len(r.text)}")
+    data = r.json()
+    if "Result" in data and data["Result"].get("Code", 0) < 0:
+        raise RuntimeError(f"Shop API error: {data['Result']['Message']}")
+    shops = {}
+    for row in data.get("Data", []):
+        nm = row.get("SHOP_NM", "")
+        shops[nm] = {
+            "amt": int(row.get("DCM_SALE_AMT") or 0),
+            "cnt": int(row.get("TOT_SALE_CNT") or 0),
+        }
+    print(f"  Shops: {[(k, v['amt']) for k, v in shops.items()]}")
+    return shops
 
 
 # ─── Sales data fetching ──────────────────────────────────────────────────────
@@ -490,10 +532,12 @@ def _get_weather_openmeteo_archive(fmt):
 
 def _section_data(curr, prev):
     """(label, val_str, yoy_str) 리스트. None 은 구분선."""
-    cats_c = curr["cats"];  cats_p = prev["cats"]
-    fa     = curr["food"]["amt"]; pfa = prev["food"]["amt"]
-    adm_c  = curr["admission"]; adm_p = prev["admission"]
-    rev_c  = curr["admission_rev"]; rev_p = prev["admission_rev"]
+    shops_c = curr.get("shops", {})
+    shops_p = prev.get("shops", {})
+    fa      = shops_c.get("먹이판매", {}).get("amt", 0)
+    pfa     = shops_p.get("먹이판매", {}).get("amt", 0)
+    adm_c   = curr["admission"]; adm_p = prev["admission"]
+    rev_c   = curr["admission_rev"]; rev_p = prev["admission_rev"]
 
     # 입장객 수 (명)
     ind_c = adm_c["individual"]; ind_p = adm_p["individual"]
@@ -512,14 +556,14 @@ def _section_data(curr, prev):
     tc, tp = 0, 0
     store_rows = []
     for k, lbl in STORE_KEYS:
-        ca = cats_c.get(k, {}).get("amt", 0)
-        pa = cats_p.get(k, {}).get("amt", 0)
+        ca = shops_c.get(k, {}).get("amt", 0)
+        pa = shops_p.get(k, {}).get("amt", 0)
         tc += ca; tp += pa
         store_rows.append((f"  {lbl}", f"{fmt_num(ca)}원", fyoy(yoy(ca, pa))))
 
-    # 전체매출: 온라인티켓 ₩0(외부정산) 이미 제외된 OKPOS 실집계
-    all_c = sum(v["amt"] for v in cats_c.values())
-    all_p = sum(v["amt"] for v in cats_p.values())
+    # 전체매출: 매장별매출분석 API의 모든 매장 합계
+    all_c = sum(v["amt"] for v in shops_c.values())
+    all_p = sum(v["amt"] for v in shops_p.values())
 
     return [
         # ── 입장객 수 ──
@@ -771,9 +815,9 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
     """대시보드 index.html 이 fetch('report_data.json') 으로 읽는 JSON을 반환."""
     WEEKDAY_KO_L = ["월", "화", "수", "목", "금", "토", "일"]
 
-    cats_dc = dc["cats"]; cats_dp = dp["cats"]
-    cats_mc = mc["cats"]; cats_mp = mp["cats"]
-    cats_yc = yc["cats"]; cats_yp = yp["cats"]
+    shops_dc = dc.get("shops", {}); shops_dp = dp.get("shops", {})
+    shops_mc = mc.get("shops", {}); shops_mp = mp.get("shops", {})
+    shops_yc = yc.get("shops", {}); shops_yp = yp.get("shops", {})
 
     # 입장객 수
     def adm_rows():
@@ -827,9 +871,9 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
 
     # 먹이
     def food_row():
-        dv=dc["food"]["amt"]; dpv=dp["food"]["amt"]
-        mv=mc["food"]["amt"]; mpv=mp["food"]["amt"]
-        yv=yc["food"]["amt"]; ypv=yp["food"]["amt"]
+        dv=shops_dc.get("먹이판매",{}).get("amt",0); dpv=shops_dp.get("먹이판매",{}).get("amt",0)
+        mv=shops_mc.get("먹이판매",{}).get("amt",0); mpv=shops_mp.get("먹이판매",{}).get("amt",0)
+        yv=shops_yc.get("먹이판매",{}).get("amt",0); ypv=shops_yp.get("먹이판매",{}).get("amt",0)
         return _build_dashboard_row(
             "먹이판매",
             _fv(dv,"원"), fyoy(yoy(dv,dpv)),
@@ -842,9 +886,9 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
         rows = []
         tc = tp = tm_c = tm_p = ty_c = ty_p = 0
         for k, lbl in STORE_KEYS:
-            dv  = cats_dc.get(k,{}).get("amt",0); dpv = cats_dp.get(k,{}).get("amt",0)
-            mv  = cats_mc.get(k,{}).get("amt",0); mpv = cats_mp.get(k,{}).get("amt",0)
-            yv  = cats_yc.get(k,{}).get("amt",0); ypv = cats_yp.get(k,{}).get("amt",0)
+            dv  = shops_dc.get(k,{}).get("amt",0); dpv = shops_dp.get(k,{}).get("amt",0)
+            mv  = shops_mc.get(k,{}).get("amt",0); mpv = shops_mp.get(k,{}).get("amt",0)
+            yv  = shops_yc.get(k,{}).get("amt",0); ypv = shops_yp.get(k,{}).get("amt",0)
             tc += dv; tp += dpv; tm_c += mv; tm_p += mpv; ty_c += yv; ty_p += ypv
             rows.append(_build_dashboard_row(
                 lbl,
@@ -861,10 +905,10 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
         ))
         return rows
 
-    # 전체매출 (온라인티켓 ₩0이므로 OKPOS 실집계만 포함)
-    all_dc=sum(v["amt"] for v in cats_dc.values()); all_dp=sum(v["amt"] for v in cats_dp.values())
-    all_mc=sum(v["amt"] for v in cats_mc.values()); all_mp=sum(v["amt"] for v in cats_mp.values())
-    all_yc=sum(v["amt"] for v in cats_yc.values()); all_yp=sum(v["amt"] for v in cats_yp.values())
+    # 전체매출 (매장별매출분석 API 모든 매장 합계)
+    all_dc=sum(v["amt"] for v in shops_dc.values()); all_dp=sum(v["amt"] for v in shops_dp.values())
+    all_mc=sum(v["amt"] for v in shops_mc.values()); all_mp=sum(v["amt"] for v in shops_mp.values())
+    all_yc=sum(v["amt"] for v in shops_yc.values()); all_yp=sum(v["amt"] for v in shops_yp.values())
     total_row = _build_dashboard_row(
         "전체매출",
         _fv(all_dc,"원"), fyoy(yoy(all_dc,all_dp)),
@@ -933,12 +977,22 @@ async def main():
     mc = fetch_sales(sess, tn, tv, fmt_d(ms), fmt_d(today))
     yc = fetch_sales_chunked(sess, fmt_d(ys), fmt_d(today))
 
+    print("=== Current year shop ===")
+    dc["shops"] = fetch_shop_sales(sess, fmt_d(today), fmt_d(today))
+    mc["shops"] = fetch_shop_sales(sess, fmt_d(ms),    fmt_d(today))
+    yc["shops"] = fetch_shop_sales(sess, fmt_d(ys),    fmt_d(today))
+
     print("=== Previous year ===")
     tn, tv = get_api_token(sess)
     dp = fetch_sales(sess, tn, tv, fmt_d(ptd), fmt_d(ptd))
     tn, tv = get_api_token(sess)
     mp = fetch_sales(sess, tn, tv, fmt_d(pms), fmt_d(ptd))
     yp = fetch_sales_chunked(sess, fmt_d(pys), fmt_d(ptd))
+
+    print("=== Previous year shop ===")
+    dp["shops"] = fetch_shop_sales(sess, fmt_d(ptd),  fmt_d(ptd))
+    mp["shops"] = fetch_shop_sales(sess, fmt_d(pms),  fmt_d(ptd))
+    yp["shops"] = fetch_shop_sales(sess, fmt_d(pys),  fmt_d(ptd))
 
     print("Fetching weather...")
     weather_today = get_weather(today)
