@@ -604,12 +604,63 @@ def _yoy_color(s):
 
 
 def create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, yc, yp):
-    fnt_r = _load_font(FONT_REGULAR, 14)
-    fnt_b = _load_font(FONT_BOLD,    14)
-    fnt_s = _load_font(FONT_REGULAR, 12)   # yoy values, sub-items
-    fnt_t = _load_font(FONT_BOLD,    17)   # title
+    # ── Colors (Tailwind equivalents) ──────────────────────────────────────
+    CS900    = (15, 23, 42)
+    CS800    = (30, 41, 59)
+    CS700    = (51, 65, 85)
+    CWHITE   = (255, 255, 255)
+    CGR50    = (249, 250, 251)
+    CGR100   = (243, 244, 246)
+    CGR200   = (229, 231, 235)
+    CGR400   = (156, 163, 175)
+    CGR500   = (107, 114, 128)
+    CGR700   = (55, 65, 81)
+    CINDIG   = (79, 70, 229)
+    CINDIG1  = (224, 231, 255)
+    CINDIG50 = (238, 242, 255)
+    CBLUE50  = (239, 246, 255)
+    CBLUE100 = (219, 234, 254)
+    CBLUE700 = (29, 78, 216)
+    CVIOL50  = (245, 243, 255)
+    CVIOL100 = (237, 233, 254)
+    CVIOL700 = (109, 40, 217)
+    CEMLD    = (5, 150, 105)
+    CEMLD_BG = (209, 250, 229)
+    CROSE    = (225, 29, 72)
+    CROSE_BG = (255, 228, 230)
 
-    # ── Build combined 7-column rows ──────────────────────────────────────
+    # ── Fonts ──────────────────────────────────────────────────────────────
+    fnt_hd = _load_font(FONT_BOLD,    20)
+    fnt_hs = _load_font(FONT_REGULAR, 11)
+    fnt_kv = _load_font(FONT_BOLD,    21)
+    fnt_kl = _load_font(FONT_REGULAR, 10)
+    fnt_dv = _load_font(FONT_BOLD,    13)
+    fnt_ds = _load_font(FONT_REGULAR, 11)
+    fnt_th = _load_font(FONT_BOLD,    13)
+    fnt_ch = _load_font(FONT_BOLD,    11)
+    fnt_br = _load_font(FONT_BOLD,    13)
+    fnt_nr = _load_font(FONT_REGULAR, 13)
+    fnt_y  = _load_font(FONT_BOLD,    10)
+    fnt_ft = _load_font(FONT_REGULAR, 10)
+
+    # ── Layout ─────────────────────────────────────────────────────────────
+    TOTAL_W  = 920
+    LPAD     = 20            # left/right margin for table
+    TABLE_W  = TOTAL_W - LPAD * 2   # 880
+    HDR_H    = 72
+    INFO_H   = 160
+    SECHDR_H = 38
+    PHDR_H   = 30
+    CHDR_H   = 26
+    ROW_H    = 32
+    SEP_H    = 6
+    FOOT_H   = 28
+
+    # col widths sum = TABLE_W = 880
+    col_w = [165, 143, 97, 143, 97, 143, 92]
+    cx = [LPAD + sum(col_w[:i]) for i in range(7)]
+
+    # ── Build combined rows ─────────────────────────────────────────────────
     d_rows = _section_data(dc, dp)
     m_rows = _section_data(mc, mp)
     y_rows = _section_data(yc, yp)
@@ -619,168 +670,245 @@ def create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, 
         if dr is None:
             combined.append(None)
         else:
-            # (label, d_val, d_yoy, m_val, m_yoy, y_val, y_yoy)
             combined.append((dr[0], dr[1], dr[2], mr[1], mr[2], yr[1], yr[2]))
-
-    # ── Measure text for column widths ────────────────────────────────────
-    _tmp = Image.new("RGB", (1, 1))
-    _td  = ImageDraw.Draw(_tmp)
-
-    def _tw(text, font):
-        b = _td.textbbox((0, 0), text, font=font)
-        return b[2] - b[0]
-
-    PAD = 16   # horizontal padding per cell (both sides combined)
-    HDR = ["구분", "금액/수량", "전년비", "금액/수량", "전년비", "금액/수량", "전년비"]
-    CFNT = [fnt_r, fnt_r, fnt_s, fnt_r, fnt_s, fnt_r, fnt_s]
-
-    col_w = [_tw(h, fnt_b) + PAD for h in HDR]
-    for row in combined:
-        if row is None:
-            continue
-        for i, (cell, f) in enumerate(zip(row, CFNT)):
-            col_w[i] = max(col_w[i], _tw(str(cell), f) + PAD)
-
-    # Make sure period name fits its 2-column span
-    for i, name in enumerate(["일별", "월누계", "연누계"]):
-        needed = _tw(name, fnt_b) + PAD
-        pair_w = col_w[1 + i*2] + col_w[2 + i*2]
-        if needed > pair_w:
-            diff = needed - pair_w
-            col_w[1 + i*2] += (diff + 1) // 2
-            col_w[2 + i*2] += diff // 2
-
-    total_w = sum(col_w)
-    cx = [sum(col_w[:i]) for i in range(7)]   # left-x of each column
-
-    # ── Row heights ───────────────────────────────────────────────────────
-    def _th(text, font):
-        return _td.textbbox((0, 0), text, font=font)[3]
-
-    VPAD    = 10
-    base_h  = max(_th("가나Ag", fnt_r), _th("가나Ag", fnt_s))
-    RH      = base_h + VPAD * 2   # data row height
-    TITLE_H = 44
-    SUB_H   = 28                   # 날짜+날씨 서브타이틀
-    P_H     = base_h + VPAD       # period header row
-    C_H     = base_h + VPAD       # column header row
-    SEP_H   = 4
 
     n_data = sum(1 for r in combined if r is not None)
     n_sep  = sum(1 for r in combined if r is None)
-    img_h  = TITLE_H + SUB_H + P_H + C_H + n_data * RH + n_sep * SEP_H + 2
+    total_h = HDR_H + INFO_H + SECHDR_H + PHDR_H + CHDR_H + n_data * ROW_H + n_sep * SEP_H + FOOT_H
 
-    img  = Image.new("RGB", (total_w, img_h), C_ROW_ODD)
+    img  = Image.new("RGB", (TOTAL_W, total_h), CWHITE)
     draw = ImageDraw.Draw(img)
 
-    # ── Drawing helpers ───────────────────────────────────────────────────
-    def fill(x, y, w, h, c):
-        draw.rectangle([x, y, x + w - 1, y + h - 1], fill=c)
+    # ── Helpers ─────────────────────────────────────────────────────────────
+    def rrect(x, y, w, h, r, fill_c, outline_c=None, ow=1):
+        try:
+            kw = {"radius": r, "fill": fill_c}
+            if outline_c:
+                kw["outline"] = outline_c
+                kw["width"] = ow
+            draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], **kw)
+        except (AttributeError, TypeError):
+            draw.rectangle([x, y, x + w - 1, y + h - 1], fill=fill_c)
 
-    def cell_text(x, y, w, h, s, font, color, align="center"):
-        b   = draw.textbbox((0, 0), s, font=font)
-        tw_ = b[2] - b[0];  th_ = b[3] - b[1]
-        ty  = y + (h - th_) // 2
-        if   align == "right": tx = x + w - tw_ - PAD // 2
-        elif align == "left":  tx = x + PAD // 2
-        else:                  tx = x + (w - tw_) // 2
-        draw.text((tx, ty), s, font=font, fill=color)
+    def _bb(text, font):
+        return draw.textbbox((0, 0), text, font=font)
 
-    def hline(y, color=C_BORDER):
-        draw.line([(0, y), (total_w - 1, y)], fill=color)
+    def tc(text, font, fill, rx, ry, rw, rh):
+        b = _bb(text, font)
+        tw, th = b[2] - b[0], b[3] - b[1]
+        draw.text((rx + (rw - tw) // 2, ry + (rh - th) // 2 - b[1]), text, font=font, fill=fill)
 
-    def vline(x, y1, y2, color=C_BORDER, width=1):
-        draw.line([(x, y1), (x, y2)], fill=color, width=width)
+    def tl(text, font, fill, rx, ry, rw, rh, hpad=10):
+        b = _bb(text, font)
+        th = b[3] - b[1]
+        draw.text((rx + hpad, ry + (rh - th) // 2 - b[1]), text, font=font, fill=fill)
 
-    # ── Title ─────────────────────────────────────────────────────────────
+    def tr(text, font, fill, rx, ry, rw, rh, hpad=10):
+        b = _bb(text, font)
+        tw, th = b[2] - b[0], b[3] - b[1]
+        draw.text((rx + rw - tw - hpad, ry + (rh - th) // 2 - b[1]), text, font=font, fill=fill)
+
+    def badge(yoy_str, bx, by, bw, bh):
+        if yoy_str == "N/A":
+            bg, fg, sym = CGR100, CGR500, "N/A"
+        elif yoy_str.startswith("+"):
+            bg, fg, sym = CEMLD_BG, CEMLD, "▲ " + yoy_str[1:]
+        elif yoy_str.startswith("-"):
+            bg, fg, sym = CROSE_BG, CROSE, "▼ " + yoy_str[1:]
+        else:
+            bg, fg, sym = CGR100, CGR500, yoy_str
+        b = _bb(sym, fnt_y)
+        tw, th = b[2] - b[0], b[3] - b[1]
+        bw2, bh2 = tw + 14, th + 8
+        bx2 = bx + (bw - bw2) // 2
+        by2 = by + (bh - bh2) // 2
+        rrect(bx2, by2, bw2, bh2, 4, bg)
+        draw.text((bx2 + 7, by2 + 4 - b[1]), sym, font=fnt_y, fill=fg)
+
     cur_y = 0
-    fill(0, cur_y, total_w, TITLE_H, C_TITLE_BG)
-    cell_text(0, cur_y, total_w, TITLE_H, "쥬쥬랜드 실적 리포트", fnt_t, C_WHITE)
-    cur_y += TITLE_H
 
-    # ── Subtitle: 날짜 + 날씨 ─────────────────────────────────────────────
-    fill(0, cur_y, total_w, SUB_H, (20, 35, 50))
-    wd0 = WEEKDAY_KO[today.weekday()]
-    wd1 = WEEKDAY_KO[ptd.weekday()]
+    # ═══ HEADER ════════════════════════════════════════════════════════════
+    draw.rectangle([0, 0, TOTAL_W - 1, HDR_H - 1], fill=CS900)
+    LOGO = 44
+    lx, ly = 16, (HDR_H - LOGO) // 2
+    rrect(lx, ly, LOGO, LOGO, 8, CINDIG)
+    tc("ZZ", fnt_dv, CWHITE, lx, ly, LOGO, LOGO)
+    TX = lx + LOGO + 12
+    draw.text((TX, ly + 2), "쥬쥬랜드 실적 리포트", font=fnt_hd, fill=CWHITE)
+    b = _bb("쥬쥬랜드 실적 리포트", fnt_hd)
+    draw.text((TX, ly + 2 + (b[3] - b[1]) + 5), "임원진 보고용 대시보드", font=fnt_hs, fill=CGR400)
+    cur_y = HDR_H
+
+    # ═══ INFO ROW ══════════════════════════════════════════════════════════
+    draw.rectangle([0, cur_y, TOTAL_W - 1, cur_y + INFO_H - 1], fill=CGR50)
+    draw.line([(0, cur_y + INFO_H - 1), (TOTAL_W - 1, cur_y + INFO_H - 1)], fill=CGR200)
+
+    IP   = 10
+    LW   = 280
+    CH   = (INFO_H - IP * 3) // 2
+
+    def date_card(dx, dy, dw, dh, d_obj, wdesc, wmax, wmin, pfx):
+        rrect(dx, dy, dw, dh, 8, CWHITE, CGR200)
+        wd = WEEKDAY_KO[d_obj.weekday()]
+        draw.text((dx + 10, dy + 7), pfx, font=fnt_kl, fill=CGR500)
+        draw.text((dx + 10, dy + 21), f"{d_obj.strftime('%Y.%m.%d')} ({wd})", font=fnt_dv, fill=CGR700)
+        wstr = f"{wdesc}  {wmax}° / {wmin}°" if wdesc else f"{wmax}° / {wmin}°"
+        draw.text((dx + 10, dy + dh - 22), wstr, font=fnt_ds, fill=CGR500)
+
     w0_desc, w0_max, w0_min = weather_today
     w1_desc, w1_max, w1_min = weather_ptd
-    sub0 = f"오늘 {today.strftime('%Y-%m-%d')}({wd0})  {w0_desc}  {w0_max}/{w0_min}°"
-    sub1 = f"작년 {ptd.strftime('%Y-%m-%d')}({wd1})  {w1_desc}  {w1_max}/{w1_min}°"
-    cell_text(0, cur_y, total_w // 2, SUB_H, sub0, fnt_s, (170, 200, 225), "center")
-    cell_text(total_w // 2, cur_y, total_w // 2, SUB_H, sub1, fnt_s, (150, 175, 200), "center")
-    cur_y += SUB_H
-    header_top = cur_y
+    date_card(IP, cur_y + IP, LW - IP * 2, CH, today, w0_desc, w0_max, w0_min, "오늘")
+    date_card(IP, cur_y + IP * 2 + CH, LW - IP * 2, CH, ptd, w1_desc, w1_max, w1_min, "작년")
 
-    # ── Period header (구분 spans P_H + C_H vertically) ───────────────────
-    fill(cx[0], cur_y, col_w[0], P_H + C_H, C_PERIOD_BG)
-    cell_text(cx[0], cur_y, col_w[0], P_H + C_H, "구분", fnt_b, C_WHITE)
+    # KPI cards
+    shops_dc = dc.get("shops", {})
+    shops_dp = dp.get("shops", {})
+    shops_yc = yc.get("shops", {})
+    shops_yp = yp.get("shops", {})
+    adm_dc   = dc.get("admission", {})
+    adm_dp   = dp.get("admission", {})
 
-    for i, name in enumerate(["일별", "월누계", "연누계"]):
-        px = cx[1 + i * 2]
-        pw = col_w[1 + i * 2] + col_w[2 + i * 2]
-        fill(px, cur_y, pw, P_H, C_PERIOD_BG)
-        cell_text(px, cur_y, pw, P_H, name, fnt_b, C_WHITE)
+    d_amt_c = sum(v["amt"] for v in shops_dc.values())
+    d_amt_p = sum(v["amt"] for v in shops_dp.values())
+    y_amt_c = sum(v["amt"] for v in shops_yc.values())
+    y_amt_p = sum(v["amt"] for v in shops_yp.values())
+    d_vis_c = adm_dc.get("individual", 0) + adm_dc.get("group", 0) + adm_dc.get("free", 0)
+    d_vis_p = adm_dp.get("individual", 0) + adm_dp.get("group", 0) + adm_dp.get("free", 0)
 
-    cur_y += P_H
+    kpis = [
+        ("일일 전체매출",  f"₩{fmt_num(d_amt_c)}", yoy(d_amt_c, d_amt_p)),
+        ("일일 총 입장객", f"{fmt_num(d_vis_c)}명", yoy(d_vis_c, d_vis_p)),
+        ("연누계 전체매출", f"₩{fmt_num(y_amt_c)}", yoy(y_amt_c, y_amt_p)),
+    ]
 
-    # ── Column header ─────────────────────────────────────────────────────
-    for i in range(1, 7):
-        fill(cx[i], cur_y, col_w[i], C_H, C_COL_BG)
-        cell_text(cx[i], cur_y, col_w[i], C_H, HDR[i], fnt_b, C_WHITE)
+    RX   = LW
+    RW   = TOTAL_W - LW
+    KW   = (RW - IP * 4) // 3
+    KH   = INFO_H - IP * 2
 
-    cur_y += C_H
-    header_bot = cur_y
+    for i, (klbl, kval, kyoy) in enumerate(kpis):
+        kx = RX + IP + i * (KW + IP)
+        ky = cur_y + IP
+        rrect(kx, ky, KW, KH, 8, CWHITE, CGR200)
+        draw.text((kx + 12, ky + 12), klbl, font=fnt_kl, fill=CGR500)
+        draw.text((kx + 12, ky + 30), kval, font=fnt_kv, fill=CS900)
+        ystr = fyoy(kyoy)
+        if ystr != "N/A":
+            if ystr.startswith("+"):
+                bg, fg, sym = CEMLD_BG, CEMLD, "▲ " + ystr[1:]
+            else:
+                bg, fg, sym = CROSE_BG, CROSE, "▼ " + ystr[1:]
+            b = _bb(sym, fnt_y)
+            bw2 = b[2] - b[0] + 14;  bh2 = b[3] - b[1] + 8
+            rrect(kx + 12, ky + KH - bh2 - 12, bw2, bh2, 4, bg)
+            draw.text((kx + 12 + 7, ky + KH - bh2 - 12 + 4 - b[1]), sym, font=fnt_y, fill=fg)
 
-    # Header border lines
-    hline(header_top, C_BORDER)
-    hline(header_bot - 1, C_BORDER)
-    vline(cx[0] + col_w[0], header_top, header_bot, C_BORDER)
-    vline(total_w - 1, header_top, header_bot, C_BORDER)
-    # Thick dividers between period groups
-    for i in (3, 5):
-        vline(cx[i], header_top, header_bot, C_P_BORDER, 2)
-    # Thin dividers within each period (val | yoy)
-    for i in (2, 4, 6):
-        vline(cx[i], header_top + P_H, header_bot, C_BORDER)
+    cur_y += INFO_H
 
-    # ── Data rows ─────────────────────────────────────────────────────────
-    row_idx = 0
+    # ═══ TABLE SECTION HEADER ══════════════════════════════════════════════
+    draw.rectangle([0, cur_y, TOTAL_W - 1, cur_y + SECHDR_H - 1], fill=CS800)
+    tl("상세 실적 현황표", fnt_th, CWHITE, 0, cur_y, 300, SECHDR_H, hpad=LPAD)
+
+    # Legend
+    for sym, bg, fg, lx2 in [("▲", CEMLD_BG, CEMLD, TOTAL_W - 250), ("▼", CROSE_BG, CROSE, TOTAL_W - 145)]:
+        b = _bb(sym, fnt_y)
+        bh2 = b[3] - b[1] + 8;  bw2 = b[2] - b[0] + 12
+        by2 = cur_y + (SECHDR_H - bh2) // 2
+        rrect(lx2, by2, bw2, bh2, 3, bg)
+        draw.text((lx2 + 6, by2 + 4 - b[1]), sym, font=fnt_y, fill=fg)
+        lbl = "전년대비증가" if sym == "▲" else "전년대비감소"
+        b2 = _bb(lbl, fnt_hs)
+        draw.text((lx2 + bw2 + 4, cur_y + (SECHDR_H - (b2[3] - b2[1])) // 2 - b2[1]), lbl, font=fnt_hs, fill=CGR400)
+
+    cur_y += SECHDR_H
+
+    # ═══ COLUMN HEADERS ════════════════════════════════════════════════════
+    tbl_top = cur_y
+    draw.rectangle([LPAD, cur_y, LPAD + TABLE_W - 1, cur_y + PHDR_H + CHDR_H - 1], fill=CGR50)
+
+    # 구분 col
+    draw.rectangle([cx[0], cur_y, cx[0] + col_w[0] - 1, cur_y + PHDR_H + CHDR_H - 1], fill=CS700)
+    tc("구분", fnt_ch, CWHITE, cx[0], cur_y, col_w[0], PHDR_H + CHDR_H)
+
+    period_cfg = [
+        (1, "일별",   CBLUE100, CBLUE700, CBLUE50),
+        (3, "월누계", CINDIG1,  CINDIG,   CINDIG50),
+        (5, "연누계", CVIOL100, CVIOL700, CVIOL50),
+    ]
+    for ci, name, hbg, hfg, sbg in period_cfg:
+        pw = col_w[ci] + col_w[ci + 1]
+        draw.rectangle([cx[ci], cur_y, cx[ci] + pw - 1, cur_y + PHDR_H - 1], fill=hbg)
+        tc(name, fnt_ch, hfg, cx[ci], cur_y, pw, PHDR_H)
+        draw.rectangle([cx[ci],     cur_y + PHDR_H, cx[ci] + col_w[ci] - 1,     cur_y + PHDR_H + CHDR_H - 1], fill=sbg)
+        draw.rectangle([cx[ci + 1], cur_y + PHDR_H, cx[ci + 1] + col_w[ci+1] - 1, cur_y + PHDR_H + CHDR_H - 1], fill=sbg)
+        tc("금액/수량", fnt_ch, hfg, cx[ci],     cur_y + PHDR_H, col_w[ci],     CHDR_H)
+        tc("전년비",    fnt_ch, hfg, cx[ci + 1], cur_y + PHDR_H, col_w[ci + 1], CHDR_H)
+
+    # Header grid lines
+    draw.rectangle([LPAD, cur_y, LPAD + TABLE_W - 1, cur_y + PHDR_H + CHDR_H - 1], outline=CGR200)
+    for ci in (1, 3, 5):
+        draw.line([(cx[ci], cur_y), (cx[ci], cur_y + PHDR_H + CHDR_H - 1)], fill=CGR200)
+    for ci in (2, 4, 6):
+        draw.line([(cx[ci], cur_y + PHDR_H), (cx[ci], cur_y + PHDR_H + CHDR_H - 1)], fill=CGR200)
+    draw.line([(cx[1], cur_y + PHDR_H), (LPAD + TABLE_W - 1, cur_y + PHDR_H)], fill=CGR200)
+
+    cur_y += PHDR_H + CHDR_H
+
+    # ═══ DATA ROWS ══════════════════════════════════════════════════════════
     for row in combined:
         if row is None:
-            fill(0, cur_y, total_w, SEP_H, C_SEP_ROW)
+            draw.rectangle([LPAD, cur_y, LPAD + TABLE_W - 1, cur_y + SEP_H - 1], fill=CGR100)
             cur_y += SEP_H
             continue
 
-        label    = row[0]
-        is_total = "합계" in label or label == "전체매출"
-        is_sub   = label.startswith("  ")
-        bg = C_ROW_TOTAL if is_total else (C_ROW_ODD if row_idx % 2 == 0 else C_ROW_EVEN)
-        fill(0, cur_y, total_w, RH, bg)
+        label = row[0]
+        is_grand  = label.strip() == "전체매출"
+        is_sub_tt = "합계" in label
+        is_sub    = label.startswith("  ")
 
-        lbl_font  = fnt_b if is_total else fnt_r
-        lbl_color = C_SUB if is_sub else C_TEXT
-        cell_text(cx[0], cur_y, col_w[0], RH, label.strip(), lbl_font, lbl_color, "left")
+        if is_grand:
+            row_bg = CS800;   val_fg = CWHITE;  lbl_fg = CWHITE;   lbl_f = fnt_br
+        elif is_sub_tt:
+            row_bg = CINDIG50; val_fg = CS700;   lbl_fg = CINDIG;   lbl_f = fnt_br
+        else:
+            row_bg = CWHITE;  val_fg = CGR700;  lbl_fg = CGR500 if is_sub else CGR700;  lbl_f = fnt_nr
 
+        draw.rectangle([LPAD, cur_y, LPAD + TABLE_W - 1, cur_y + ROW_H - 1], fill=row_bg)
+
+        # Label
+        lbl_text = label.strip()
+        if is_sub:
+            dot_x = cx[0] + 18
+            b = _bb("·", fnt_nr)
+            draw.text((dot_x, cur_y + (ROW_H - (b[3] - b[1])) // 2 - b[1]), "·", font=fnt_nr, fill=CGR400)
+            tl(lbl_text, lbl_f, lbl_fg, dot_x + (b[2] - b[0]) + 4, cur_y, col_w[0] - 30, ROW_H, hpad=0)
+        else:
+            tl(lbl_text, lbl_f, lbl_fg, cx[0], cur_y, col_w[0], ROW_H, hpad=12)
+
+        # Values + YoY badges
         for pi in range(3):
             vi, yi = 1 + pi * 2, 2 + pi * 2
-            vf = fnt_b if is_total else fnt_r
-            cell_text(cx[vi], cur_y, col_w[vi], RH, row[vi], vf, C_TEXT, "right")
-            cell_text(cx[yi], cur_y, col_w[yi], RH, row[yi], fnt_s, _yoy_color(row[yi]), "right")
+            vf = fnt_br if (is_grand or is_sub_tt) else fnt_nr
+            tr(row[vi], vf, val_fg, cx[vi], cur_y, col_w[vi], ROW_H)
+            if is_grand:
+                tc(row[yi], fnt_y, CWHITE, cx[yi], cur_y, col_w[yi], ROW_H)
+            else:
+                badge(row[yi], cx[yi], cur_y, col_w[yi], ROW_H)
 
         # Row borders
-        hline(cur_y + RH - 1)
-        vline(cx[0] + col_w[0], cur_y, cur_y + RH, C_BORDER)
-        vline(total_w - 1, cur_y, cur_y + RH, C_BORDER)
-        for i in (3, 5):
-            vline(cx[i], cur_y, cur_y + RH, C_P_BORDER, 2)
-        for i in (2, 4, 6):
-            vline(cx[i], cur_y, cur_y + RH, C_BORDER)
+        draw.line([(LPAD, cur_y + ROW_H - 1), (LPAD + TABLE_W - 1, cur_y + ROW_H - 1)], fill=CGR200)
+        for ci in (1, 2, 3, 4, 5, 6):
+            draw.line([(cx[ci], cur_y), (cx[ci], cur_y + ROW_H - 1)], fill=CGR200)
 
-        cur_y  += RH
-        row_idx += 1
+        cur_y += ROW_H
 
-    # Outer frame
-    draw.rectangle([0, header_top, total_w - 1, cur_y - 1], outline=C_BORDER)
+    # Table outer border
+    draw.rectangle([LPAD, tbl_top, LPAD + TABLE_W - 1, cur_y - 1], outline=CGR200)
+
+    # ═══ FOOTER ════════════════════════════════════════════════════════════
+    draw.rectangle([0, cur_y, TOTAL_W - 1, cur_y + FOOT_H - 1], fill=CGR100)
+    draw.line([(0, cur_y), (TOTAL_W - 1, cur_y)], fill=CGR200)
+    tl("※ 모든 금액은 부가세(VAT 10%) 포함 금액입니다.", fnt_ft, CGR500, 0, cur_y, TOTAL_W, FOOT_H, hpad=LPAD)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
