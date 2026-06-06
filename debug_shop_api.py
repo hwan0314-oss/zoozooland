@@ -1,4 +1,4 @@
-"""OKPOS 매장별매출분석 - 올바른 S_CONTROLLER(010)로 API 호출"""
+"""OKPOS 매장별매출분석 - 원시 응답 및 파라미터 진단"""
 import os, re, json, requests, urllib3
 from datetime import date
 
@@ -45,82 +45,130 @@ def do_login():
     return sess
 
 
-def call_shop_api(sess, jsp_path, ctrl, n, v, date1, date2):
-    """dayranking010.jsp 폼 필드에 맞게 API 호출"""
-    payload = {
-        n: v,
-        "S_CONTROLLER": ctrl,
-        "S_METHOD": "search",
-        "SHEETSEQ": "1",
-        "S_SAVENAME": "SHOP_CD,SHOP_NM,TOT_SALE_AMT,TOT_DC_AMT,DCM_SALE_AMT,VAT_AMT,TOT_SALE_CNT,FD_GST_T_CNT,SALE_DATE_CNT",
-        "S_ORDERBY": "",
-        "date1_1": date1,
-        "date1_2": date2,
-        "date_period1": "366",
-        "ss_SHOP_TYPE_FG": "%",
-        "ss_SHOP_GROUP_CD": "%",
-        "ss_TYPE_UD": "U",
-        "ss_SEL_CNT": "500",
-        "EX_CST": "false",
-    }
-    r = sess.post(BASE_URL + "/sale/shopsale/ddd.htmlSheetAction",
-                  data=payload,
-                  headers={"Referer": BASE_URL + jsp_path},
-                  verify=False, timeout=15)
-    try:
-        d = r.json()
-        code = d.get("Result", {}).get("Code", 0)
-        msg  = d.get("Result", {}).get("Msg", "")
-        rows = len(d.get("Data", []))
-        return code, msg, rows, d
-    except Exception as e:
-        return None, str(e), 0, {}
-
-
 def main():
     today = date.today().strftime("%Y-%m-%d")
     jan1  = date.today().strftime("%Y") + "-01-01"
     sess  = do_login()
 
-    # 각 sub-page에서 토큰 + 올바른 컨트롤러로 API 호출
-    sub_pages = [
-        ("/sale/shopsale/dayranking010.jsp",   "sale.shopsale.dayranking010",   "매장순위"),
-        ("/sale/shopsale/dayranking020.jsp",   "sale.shopsale.dayranking020",   "매장순위(상품)"),
-        ("/sale/shopsale/monthranking010.jsp", "sale.shopsale.monthranking010", "매장월별순위"),
-        ("/sale/shopsale/type010.jsp",         "sale.shopsale.type010",         "매장형태별"),
-        ("/sale/shopsale/brand010.jsp",        "sale.shopsale.brand010",        "브랜드별"),
+    jsp_path = "/sale/shopsale/dayranking010.jsp"
+    r = sess.get(BASE_URL + jsp_path,
+                 headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"},
+                 verify=False, timeout=15)
+    html = r.content.decode("utf-8", errors="ignore")
+    n, v = extract_token(html)
+    print(f"Token: {n} = {v}")
+
+    # 시도할 파라미터 세트
+    test_cases = [
+        ("빈 S_SAVENAME + 연초~오늘", {
+            "S_SAVENAME": "",
+            "date1_1": jan1, "date1_2": today,
+            "ss_SHOP_TYPE_FG": "%", "ss_SHOP_GROUP_CD": "%",
+            "ss_TYPE_UD": "U", "ss_SEL_CNT": "500",
+        }),
+        ("빈 S_SAVENAME + 오늘만", {
+            "S_SAVENAME": "",
+            "date1_1": today, "date1_2": today,
+            "ss_SHOP_TYPE_FG": "%", "ss_SHOP_GROUP_CD": "%",
+            "ss_TYPE_UD": "U", "ss_SEL_CNT": "500",
+        }),
+        ("ss_SHOP_TYPE_FG 빈값", {
+            "S_SAVENAME": "",
+            "date1_1": jan1, "date1_2": today,
+            "ss_SHOP_TYPE_FG": "", "ss_SHOP_GROUP_CD": "",
+            "ss_TYPE_UD": "U", "ss_SEL_CNT": "500",
+        }),
+        ("하위 500", {
+            "S_SAVENAME": "",
+            "date1_1": jan1, "date1_2": today,
+            "ss_SHOP_TYPE_FG": "%", "ss_SHOP_GROUP_CD": "%",
+            "ss_TYPE_UD": "D", "ss_SEL_CNT": "500",
+        }),
     ]
 
-    print(f"\n=== 매장별매출분석 API 호출 (기간: {jan1} ~ {today}) ===")
-    for jsp_path, ctrl, label in sub_pages:
-        r = sess.get(BASE_URL + jsp_path,
-                     headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"},
-                     verify=False, timeout=15)
-        n, v = extract_token(r.content.decode("utf-8", errors="ignore"))
-        if not n:
-            print(f"\n[{label}] CSRF 토큰 없음 (status={r.status_code})")
+    for label, extra in test_cases:
+        # 각 시도마다 토큰 재조회
+        r2 = sess.get(BASE_URL + jsp_path,
+                      headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"},
+                      verify=False, timeout=15)
+        html2 = r2.content.decode("utf-8", errors="ignore")
+        n2, v2 = extract_token(html2)
+        if not n2:
+            print(f"\n[{label}] 토큰 없음")
             continue
 
-        code, msg, rows, d = call_shop_api(sess, jsp_path, ctrl, n, v, jan1, today)
-        sym = "✅" if rows > 0 else ("⚠️" if code == 0 else "❌")
-        print(f"\n[{label}] {sym} ctrl={ctrl} code={code} rows={rows} msg={msg}")
-
-        if rows > 0:
-            keys = list(d["Data"][0].keys())
-            print(f"  Keys: {keys}")
-            for row in d["Data"][:20]:
-                print(f"  {json.dumps(row, ensure_ascii=False)}")
-
-        # 오늘 하루만도 시도
-        if rows == 0:
-            code2, msg2, rows2, d2 = call_shop_api(sess, jsp_path, ctrl, n, v, today, today)
-            print(f"  [오늘만] code={code2} rows={rows2} msg={msg2}")
-            if rows2 > 0:
-                keys = list(d2["Data"][0].keys())
-                print(f"  Keys: {keys}")
-                for row in d2["Data"][:20]:
+        payload = {
+            n2: v2,
+            "S_CONTROLLER": "sale.shopsale.dayranking010",
+            "S_METHOD": "search",
+            "SHEETSEQ": "1",
+            "S_ORDERBY": "",
+            "date_period1": "366",
+            "EX_CST": "false",
+            **extra,
+        }
+        r3 = sess.post(BASE_URL + "/sale/shopsale/ddd.htmlSheetAction",
+                       data=payload,
+                       headers={"Referer": BASE_URL + jsp_path},
+                       verify=False, timeout=15)
+        try:
+            d = r3.json()
+            code = d.get("Result", {}).get("Code", "?")
+            msg  = d.get("Result", {}).get("Msg", "")
+            rows = len(d.get("Data", []))
+            print(f"\n[{label}] code={code} rows={rows} msg={msg}")
+            # 전체 Result 객체 출력
+            print(f"  Result: {json.dumps(d.get('Result', {}), ensure_ascii=False)}")
+            if rows > 0:
+                print(f"  Keys: {list(d['Data'][0].keys())}")
+                for row in d['Data'][:5]:
                     print(f"  {json.dumps(row, ensure_ascii=False)}")
+            elif rows == 0:
+                # 데이터 없을 때 전체 응답 구조 확인
+                non_data_keys = {k: v for k, v in d.items() if k != 'Data'}
+                print(f"  All keys: {list(d.keys())}")
+                print(f"  Non-data: {json.dumps(non_data_keys, ensure_ascii=False)[:500]}")
+        except Exception as e:
+            print(f"\n[{label}] JSON 파싱 실패: {e}")
+            print(f"  Raw (200자): {r3.text[:200]}")
 
+    # ── 매장 목록 조회 시도 ──────────────────────────────────────────
+    print("\n\n=== 매장 목록 직접 조회 ===")
+    # prod API에서 SHOP_CD/SHOP_NM 조회 시도
+    r_prod = sess.get(BASE_URL + "/sale/sale/prod010.jsp",
+                      headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"},
+                      verify=False, timeout=15)
+    np, vp = extract_token(r_prod.content.decode("utf-8", errors="ignore"))
+    if np:
+        r_prod2 = sess.post(BASE_URL + "/sale/sale/prod011.jsp", data={np: vp},
+                            verify=False, timeout=15)
+        np2, vp2 = extract_token(r_prod2.content.decode("utf-8", errors="ignore"))
+        if np2:
+            shop_payload = {
+                np2: vp2,
+                "S_CONTROLLER": "sale.sale.prod011",
+                "S_METHOD": "search",
+                "SHEETSEQ": "1",
+                "S_SAVENAME": "SHOP_CD,SHOP_NM,DCM_SALE_AMT,MCLS_NM,LCLS_NM",
+                "S_ORDERBY": "",
+                "date1_1": jan1, "date1_2": today,
+                "date_period1": "366",
+                "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
+                "ss_PAGE_SIZE": "50", "ss_PAGE_NO1": "1",
+            }
+            r_shop = sess.post(BASE_URL + "/sale/sale/ddd.htmlSheetAction",
+                               data=shop_payload, verify=False, timeout=15)
+            try:
+                d_shop = r_shop.json()
+                rows_s = len(d_shop.get("Data", []))
+                print(f"prod011 API: code={d_shop.get('Result',{}).get('Code')} rows={rows_s}")
+                if rows_s > 0:
+                    shops = set((row.get("SHOP_CD",""), row.get("SHOP_NM","")) for row in d_shop["Data"])
+                    print(f"  매장목록: {sorted(shops)}")
+                    mcls = set(row.get("MCLS_NM","") for row in d_shop["Data"])
+                    print(f"  MCLS_NM: {sorted(mcls)}")
+            except Exception as e:
+                print(f"prod API 실패: {e}")
 
 if __name__ == "__main__":
     main()
