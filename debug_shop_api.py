@@ -1,14 +1,9 @@
-"""
-OKPOS 매장별매출분석 API 탐색 v2
-- top_frame.js / udfMainFrm.js 에서 네비게이션 로직 추출
-- menu.jsp 전체 HTML에서 매장 관련 데이터 구조 탐색
-- 상품별 API 응답에서 SHOP_CD 실제 값 확인
-"""
+"""OKPOS SHOP_CD 집중 확인 + 매장 목록 API 탐색"""
 import json, os, re, requests, urllib3
 from datetime import date
+from collections import defaultdict
 
 urllib3.disable_warnings()
-
 BASE_URL = "https://kis.okpos.co.kr"
 USER_ID  = os.environ["KIS_ID"]
 USER_PW  = os.environ["KIS_PW"]
@@ -18,7 +13,6 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "ko-KR,ko;q=0.9",
 }
-
 
 def extract_token(html):
     for pat in [
@@ -31,7 +25,6 @@ def extract_token(html):
         if m:
             return (m.group(2), m.group(3)) if len(m.groups()) == 3 else (m.group(1), m.group(2))
     return None, None
-
 
 def do_login():
     sess = requests.Session()
@@ -53,154 +46,152 @@ def do_login():
     return sess
 
 
-def search_js(content, label, keywords):
-    print(f"\n[{label}에서 키워드 검색]")
-    found = False
-    lines = content.split('\n')
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if any(k in stripped for k in keywords):
-            # 전후 2줄 컨텍스트
-            start = max(0, i-1)
-            end   = min(len(lines), i+3)
-            for j in range(start, end):
-                print(f"  L{j+1}: {lines[j].strip()[:200]}")
-            print()
-            found = True
-    if not found:
-        print("  (없음)")
-
-
 def main():
     today = date.today().strftime("%Y-%m-%d")
     sess  = do_login()
 
-    # ── 1. 외부 JS 파일 읽기 ──────────────────────────────────────────────
-    js_files = [
-        "/login/top_frame.js",
-        "/common/js/udfMainFrm.js",
-    ]
-    for path in js_files:
-        r = sess.get(BASE_URL + path, verify=False, timeout=20)
-        print(f"\n{'='*60}")
-        print(f"=== {path}  [{r.status_code}  {len(r.text)}바이트] ===")
-        print(f"{'='*60}")
-        if r.status_code != 200:
-            print("  접근 불가")
-            continue
-
-        content = r.text
-        # 전체 출력 (최대 8000자)
-        print(content[:8000])
-        if len(content) > 8000:
-            print(f"\n... (이하 {len(content)-8000}자 생략) ...\n")
-            # 남은 부분에서 매장 관련만 추출
-            search_js(content[8000:], "나머지 부분",
-                      ['매장', 'shop', 'SHOP', 'sale', 'content', 'frame', 'src', 'load'])
-
-    # ── 2. menu.jsp 전체 HTML에서 매장 관련 탐색 ─────────────────────────
-    print(f"\n{'='*60}")
-    print("=== menu.jsp 전체 HTML 매장 탐색 ===")
+    # ── 1. menu.jsp 인코딩 확인 + '매장' 검색 ────────────────────────────
+    print("\n=== menu.jsp 인코딩 확인 ===")
     r_menu = sess.get(BASE_URL + "/login/menu.jsp",
                       headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
-    menu_html = r_menu.text
-    print(f"menu.jsp len={len(menu_html)}")
+    print(f"  HTTP 인코딩: {r_menu.encoding}")
+    print(f"  Content-Type: {r_menu.headers.get('Content-Type')}")
 
-    # 매장 단어 주변 컨텍스트 출력
-    print("\n[HTML에서 '매장' 단어 전후 200자]")
-    for m in re.finditer(r'.{0,100}매장.{0,100}', menu_html):
-        print(f"  ...{m.group().strip()[:250]}...")
+    # EUC-KR 시도
+    for enc in [r_menu.encoding or "utf-8", "euc-kr", "utf-8"]:
+        try:
+            text = r_menu.content.decode(enc, errors="ignore")
+            cnt = text.count("매장")
+            print(f"  [{enc}] '매장' 출현 횟수: {cnt}")
+            if cnt > 0:
+                idx = text.find("매장")
+                print(f"  컨텍스트: ...{text[max(0,idx-80):idx+120]}...")
+                break
+        except Exception as e:
+            print(f"  [{enc}] 디코딩 오류: {e}")
 
-    # data-* 속성 패턴 (현대 SPA에서 자주 사용)
-    print("\n[data-* 속성 패턴]")
-    data_attrs = re.findall(r'data-[\w-]+=[\"\'][^\"\']+[\"\']', menu_html)
-    for attr in data_attrs[:30]:
-        print(f"  {attr}")
+    # ── 2. prod010.jsp 에서 SHOP 관련 AJAX 패턴 ─────────────────────────
+    print("\n=== prod010.jsp SHOP 관련 패턴 ===")
+    r010 = sess.get(BASE_URL + "/sale/sale/prod010.jsp",
+                    headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
+    for enc in [r010.encoding or "utf-8", "euc-kr"]:
+        try:
+            t010 = r010.content.decode(enc, errors="ignore")
+            # SHOP 관련 라인
+            for line in t010.split('\n'):
+                if any(k in line for k in ['SHOP', 'shop', '매장', 'ss_SHOP']):
+                    print(f"  {line.strip()[:200]}")
+            break
+        except:
+            pass
 
-    # 모든 onclick 속성 (첫 50개)
-    print("\n[모든 onclick 속성 (처음 50개)]")
-    onclicks = re.findall(r'onclick=["\'][^"\']{5,}["\']', menu_html)
-    for oc in onclicks[:50]:
-        print(f"  {oc[:200]}")
+    # ── 3. 상품별 API: SHOP_CD 실제 값 확인 ──────────────────────────────
+    print("\n=== 상품별 API SHOP_CD 실제 값 ===")
+    n, v = extract_token(r010.text)
+    r011 = sess.post(BASE_URL + "/sale/sale/prod011.jsp", data={n: v},
+                     headers={"Referer": BASE_URL + "/sale/sale/prod010.jsp"}, verify=False, timeout=30)
+    n2, v2 = extract_token(r011.text)
 
-    # fnGoMenu / goMenu / goPage 패턴 전체
-    print("\n[goMenu/goPage/fnGoMenu 패턴]")
-    go_patterns = re.findall(r'(?:goMenu|goPage|fnGoMenu|fnMove|menuClick)\s*\([^)]+\)', menu_html)
-    for p in go_patterns[:30]:
-        print(f"  {p[:200]}")
-
-    # JSON 배열/객체 패턴 (메뉴 데이터일 가능성)
-    print("\n[큰 JSON 구조 시작 패턴 (100자 이상)]")
-    json_chunks = re.findall(r'\[[\s\S]{100,500}?\]', menu_html)
-    for chunk in json_chunks[:5]:
-        print(f"  {chunk.strip()[:300]}")
-
-    # ── 3. 상품별 API에서 SHOP_CD 실제 값 확인 ───────────────────────────
-    print(f"\n{'='*60}")
-    print("=== 상품별 API SHOP_CD 실제 값 확인 ===")
-    r1 = sess.get(BASE_URL + "/sale/sale/prod010.jsp",
-                  headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
-    n, v = extract_token(r1.text)
-    r2 = sess.post(BASE_URL + "/sale/sale/prod011.jsp", data={n: v},
-                   headers={"Referer": BASE_URL + "/sale/sale/prod010.jsp"}, verify=False, timeout=30)
-    n2, v2 = extract_token(r2.text)
-
-    S_SAVENAME = (
-        "sSeq|LCLS_NM|MCLS_NM|SCLS_NM|SALE_DATE|PROD_CD|BAR_CD|MAP_PROD_CD"
-        "|PROD_NM|VENDORS_NM|COLOR_CD|SIZE_STR_CD|SALE_QTY|PROD_WEIGHT"
-        "|TOT_SALE_AMT|TOT_DC_AMT|DCM_SALE_AMT|DC_AMT_GEN|DC_AMT_SVC"
-        "|DC_AMT_JCD|DC_AMT_CPN|DC_AMT_CST|DC_AMT_FOD|DC_AMT_PACK"
-        "|DC_AMT_YAP|SHOP_CD|SHOP_NM"   # SHOP_NM도 추가
-    )
     payload = {
         n2: v2,
         "S_CONTROLLER": "sale.sale.prod011", "S_METHOD": "search",
-        "SHEETSEQ": "1", "S_SAVENAME": S_SAVENAME, "S_ORDERBY": "",
-        "ss_PROD_FG": "N", "date1_1": today, "date1_2": today,
-        "date_period1": "366",
-        "ss_PROD_CD": "", "ss_PROD_NM": "",
-        "ss_LCLS_CD": "", "ss_MCLS_CD": "", "ss_SCLS_CD": "",
-        "ss_CLS_TEXT": "전체", "ss_BAR_CD": "", "ss_SHOP_CD": "",
-        "ss_SHOP_NM": "전체", "ss_SHOP_INFO": "[]",
-        "ss_VENDOR_CD": "", "ss_VENDOR_NM": "전체", "ss_VENDOR_INFO": "[]",
-        "ss_chk": "0", "ss_PAGE_SIZE": "500", "ss_PAGE_NO1": "1",
+        "SHEETSEQ": "1",
+        "S_SAVENAME": "LCLS_NM|MCLS_NM|PROD_NM|SALE_QTY|DCM_SALE_AMT|SHOP_CD|SHOP_NM",
+        "S_ORDERBY": "",
+        "ss_PROD_FG": "N", "date1_1": today, "date1_2": today, "date_period1": "366",
+        "ss_PROD_CD": "", "ss_PROD_NM": "", "ss_LCLS_CD": "", "ss_MCLS_CD": "", "ss_SCLS_CD": "",
+        "ss_CLS_TEXT": "전체", "ss_BAR_CD": "", "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
+        "ss_SHOP_INFO": "[]", "ss_VENDOR_CD": "", "ss_VENDOR_NM": "전체", "ss_VENDOR_INFO": "[]",
+        "ss_chk": "0", "ss_PAGE_SIZE": "300", "ss_PAGE_NO1": "1",
     }
     r = sess.post(BASE_URL + "/sale/sale/ddd.htmlSheetAction", data=payload,
                   headers={"Referer": BASE_URL + "/sale/sale/prod011.jsp"},
                   verify=False, timeout=60)
     rows = r.json().get("Data", [])
-    print(f"총 {len(rows)}개 행, 첫 번째 행 키: {list(rows[0].keys()) if rows else 'N/A'}")
+    print(f"총 {len(rows)}행 | 키: {list(rows[0].keys()) if rows else 'N/A'}")
 
-    # SHOP_CD / SHOP_NM 분포
-    from collections import Counter
-    shop_dist = Counter()
+    # 첫 5개 행 전체 출력 (SHOP_CD 값 확인)
+    print("\n첫 5개 행 (전체 필드):")
+    for row in rows[:5]:
+        print(f"  {json.dumps(row, ensure_ascii=False)}")
+
+    # SHOP_CD/SHOP_NM 분포
+    shop_dist = defaultdict(lambda: {"cnt": 0, "amt": 0})
     for row in rows:
-        cd = row.get("SHOP_CD") or "(empty)"
-        nm = row.get("SHOP_NM") or "(empty)"
-        shop_dist[(cd, nm)] += 1
+        cd = row.get("SHOP_CD") or ""
+        nm = row.get("SHOP_NM") or ""
+        key = f"CD={cd!r} NM={nm!r}"
+        shop_dist[key]["cnt"] += 1
+        shop_dist[key]["amt"] += int(row.get("DCM_SALE_AMT") or 0)
 
-    print(f"\nSHOP_CD / SHOP_NM 분포 ({len(shop_dist)}종):")
-    for (cd, nm), cnt in sorted(shop_dist.items()):
-        print(f"  SHOP_CD={cd!r}  SHOP_NM={nm!r}  건수={cnt}")
+    print(f"\nSHOP_CD 분포 ({len(shop_dist)}종):")
+    for key, v in sorted(shop_dist.items(), key=lambda x: -x[1]["amt"]):
+        print(f"  {key}  건수={v['cnt']:3d}  매출={v['amt']:>12,}원")
 
-    # 샘플 원본 행 출력 (SHOP_CD 있는 것 우선)
-    print("\n원본 행 샘플 (처음 10개, 전체 필드):")
-    for row in rows[:10]:
-        print(f"  {json.dumps(row, ensure_ascii=False)[:250]}")
+    # ── 4. shop_group_type_tree.jsp 접근 (udfMainFrm.js에서 발견) ──────
+    print("\n=== shop_group_type_tree.jsp 접근 시도 ===")
+    paths = [
+        "/common/jsp/shop_group_type_tree.jsp",
+        "/common/jsp/shopList.jsp",
+        "/common/jsp/shop_list.jsp",
+    ]
+    for path in paths:
+        r = sess.get(BASE_URL + path,
+                     headers={"Referer": BASE_URL + "/sale/sale/prod010.jsp"}, verify=False, timeout=10)
+        print(f"  [{r.status_code} {len(r.text)}] {path}")
+        if r.status_code == 200:
+            # SHOP 관련 데이터 찾기
+            for enc in [r.encoding or "utf-8", "euc-kr"]:
+                try:
+                    t = r.content.decode(enc, errors="ignore")
+                    shops = re.findall(r'SHOP_CD[^"\']*["\']([^"\']+)["\']', t)
+                    if shops:
+                        print(f"    SHOP_CD 발견: {shops[:10]}")
+                    # JSON 데이터 찾기
+                    jsons = re.findall(r'\{[^{}]{10,200}\}', t)
+                    for j in jsons[:3]:
+                        if any(k in j for k in ['SHOP', 'shop', '매장']):
+                            print(f"    JSON: {j[:200]}")
+                    break
+                except:
+                    pass
 
-    # ── 4. 추가: ss_SHOP_CD 파라미터로 특정 매장 필터링 가능한지 테스트 ──
-    # 만약 SHOP_CD가 있다면, 특정 매장 코드로 필터링해볼 수 있음
-    non_empty_shops = [(cd, nm) for (cd, nm), _ in shop_dist.items() if cd != "(empty)"]
-    if non_empty_shops:
-        print(f"\n✅ SHOP_CD가 존재합니다! 총 {len(non_empty_shops)}개 매장 코드")
-        for cd, nm in non_empty_shops:
-            cnt = shop_dist[(cd, nm)]
-            total_amt = sum(int(r.get("DCM_SALE_AMT") or 0) for r in rows if (r.get("SHOP_CD") or "(empty)") == cd)
-            print(f"  SHOP_CD={cd}  SHOP_NM={nm}  건수={cnt}  합계={total_amt:,}원")
-    else:
-        print("\n❌ 모든 행의 SHOP_CD가 비어있음 → 매장별 API 필요")
+    # ── 5. 매장 목록 전용 컨트롤러 시도 ────────────────────────────────
+    print("\n=== 매장 목록 컨트롤러 탐색 ===")
+    controllers = [
+        "common.shop.shopList011",
+        "basic.shop.shopList011",
+        "sale.sale.shopList011",
+        "login.shopInfo011",
+        "common.common.shopList011",
+        "sale.stat.shopStat011",
+        "sale.sale.shopStat011",
+        "sale.sale.saleShop011",
+    ]
+    for ctrl in controllers:
+        payload2 = {
+            n2: v2,
+            "S_CONTROLLER": ctrl, "S_METHOD": "search",
+            "SHEETSEQ": "1", "S_SAVENAME": "", "S_ORDERBY": "",
+            "date1_1": today, "date1_2": today,
+            "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
+            "ss_PAGE_SIZE": "50", "ss_PAGE_NO1": "1",
+        }
+        try:
+            r = sess.post(BASE_URL + "/sale/sale/ddd.htmlSheetAction", data=payload2,
+                          verify=False, timeout=10)
+            d = r.json()
+            code = d.get("Result", {}).get("Code", 0)
+            msg  = d.get("Result", {}).get("Message", "")[:40]
+            rws  = len(d.get("Data", []))
+            sym  = "✅" if rws > 0 else ("⚠️" if code >= 0 else "❌")
+            print(f"  {sym} {ctrl}: code={code} rows={rws} msg={msg}")
+            if rws > 0:
+                print(f"    Keys: {list(d['Data'][0].keys())}")
+                for row in d['Data'][:3]:
+                    print(f"    {json.dumps(row, ensure_ascii=False)[:150]}")
+        except Exception as e:
+            print(f"  [ERR] {ctrl}: {e}")
 
 
 if __name__ == "__main__":
