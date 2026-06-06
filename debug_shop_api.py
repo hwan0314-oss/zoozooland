@@ -1,5 +1,7 @@
-"""OKPOS HistoryFrm.AddTab 함수 정의 및 탭ID→URL 매핑 탐색"""
-import os, re, requests, urllib3
+"""OKPOS history.jsp / menuv.jsp 에서 '매장별매출분석' JSP 경로 추출"""
+import os, re, json, requests, urllib3
+from datetime import date
+from collections import defaultdict
 
 urllib3.disable_warnings()
 BASE_URL = "https://kis.okpos.co.kr"
@@ -44,117 +46,161 @@ def do_login():
     return sess
 
 
-def check(sess, path, label, referer=None):
-    hdrs = {"Referer": BASE_URL + (referer or "/login/top_frame.jsp")}
-    r = sess.get(BASE_URL + path, headers=hdrs, verify=False, timeout=10)
-    size = len(r.text)
-    print(f"  [{r.status_code} {size:6}] {label}: {path}")
-    return r if r.status_code == 200 and size > 200 else None
-
-
 def main():
-    sess = do_login()
+    today = date.today().strftime("%Y-%m-%d")
+    sess  = do_login()
 
-    # ── 1. top_frame.jsp 구조 (frameset/frame/iframe 확인) ──────────────
-    print("\n=== top_frame.jsp 구조 ===")
-    r = sess.get(BASE_URL + "/login/top_frame.jsp",
-                 headers={"Referer": BASE_URL + "/login/login_check_action.jsp"}, verify=False, timeout=30)
-    text = r.content.decode("utf-8", errors="ignore")
-    print(f"  크기: {len(text):,}자")
-    # frame/iframe 태그 추출
-    for m in re.finditer(r'<(?:frame|iframe)[^>]+>', text, re.IGNORECASE):
-        print(f"  FRAME: {m.group()[:200]}")
-    # HistoryFrm 참조
-    for m in re.finditer(r'.{0,60}HistoryFrm.{0,60}', text):
-        print(f"  HistoryFrm: {m.group().strip()[:160]}")
-    # 외부 스크립트 목록
-    scripts = re.findall(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', text, re.IGNORECASE)
-    print(f"  외부 스크립트: {scripts}")
+    # ── 1. history.jsp → menu_arr 전체 파싱 ─────────────────────────────
+    print("\n=== history.jsp menu_arr 파싱 ===")
+    r = sess.get(BASE_URL + "/login/history.jsp",
+                 headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
+    hist = r.content.decode("utf-8", errors="ignore")
+    print(f"  크기: {len(hist):,}자")
 
-    # ── 2. menu.jsp 외부 스크립트에서 AddTab 정의 탐색 ──────────────────
-    print("\n=== menu.jsp 외부 스크립트 → AddTab 탐색 ===")
-    r_menu = sess.get(BASE_URL + "/login/menu.jsp",
-                      headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
-    menu_text = r_menu.content.decode("utf-8", errors="ignore")
-    menu_scripts = re.findall(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', menu_text, re.IGNORECASE)
-    print(f"  메뉴 스크립트 목록: {menu_scripts}")
+    # menu_arr[N][K] = 'VALUE' 패턴으로 파싱
+    entries = defaultdict(dict)
+    for m in re.finditer(r"menu_arr\[(\d+)\]\[(\d+)\]\s*=\s*'([^']*)'", hist):
+        i, k, v = int(m.group(1)), int(m.group(2)), m.group(3)
+        entries[i][k] = v
 
-    for src in menu_scripts:
-        url = BASE_URL + src if src.startswith("/") else src
-        r = sess.get(url, headers={"Referer": BASE_URL + "/login/menu.jsp"}, verify=False, timeout=15)
-        js = r.content.decode("utf-8", errors="ignore")
-        print(f"\n  [{r.status_code} {len(js):,}자] {src}")
-        if "AddTab" in js:
-            # AddTab 함수 전체 출력
-            m = re.search(r'.{0,30}AddTab.{0,2000}', js, re.DOTALL)
-            if m:
-                print(f"    AddTab 발견:\n{m.group()[:2000]}")
-        if "000132" in js or "000323" in js:
-            print(f"    탭ID 데이터 발견!")
-            idx = js.find("000132")
-            if idx < 0: idx = js.find("000323")
-            print(f"    컨텍스트: ...{js[max(0,idx-200):idx+300]}...")
+    print(f"  총 메뉴 항목: {len(entries)}개")
 
-    # ── 3. HistoryFrm 관련 JSP 탐색 ─────────────────────────────────────
-    print("\n=== HistoryFrm 관련 JSP 탐색 ===")
-    candidates = [
-        "/login/history.jsp",
-        "/login/historyFrm.jsp",
-        "/login/tab.jsp",
-        "/login/tabFrm.jsp",
-        "/login/menuTab.jsp",
-        "/login/tabHistory.jsp",
-        "/common/jsp/history.jsp",
-        "/common/jsp/tab.jsp",
-        "/login/main.jsp",
-        "/login/content.jsp",
-        "/login/mainFrm.jsp",
-    ]
-    for path in candidates:
-        r = check(sess, path, "")
-        if r:
+    # 키 설명: [0]=대분류코드, [1]=대분류명, [2]=중분류코드, [3]=중분류명,
+    #          [4]=프로그램코드, [5]=프로그램명, [6]=JSP경로, [7]=탭인덱스, [8]=즐겨찾기
+    FIELDS = {0: "LCLS_CD", 1: "LCLS_NM", 2: "MCLS_CD", 3: "MCLS_NM",
+              4: "PGM_CD", 5: "PGM_NM", 6: "PGM_FILE", 7: "TAB_IDX", 8: "FAV"}
+
+    # 매출 관련 메뉴만 출력
+    print("\n  [매출/분석/매장 관련 메뉴]")
+    keywords = ["매출", "분석", "매장", "shop", "sale", "stat"]
+    for i in sorted(entries.keys()):
+        e = entries[i]
+        pgm_nm = e.get(5, "")
+        mcls_nm = e.get(3, "")
+        lcls_nm = e.get(1, "")
+        if any(k in pgm_nm for k in keywords) or any(k in mcls_nm for k in keywords):
+            cd = e.get(4, "")
+            path = e.get(6, "")
+            print(f"  [{cd}] {lcls_nm} > {mcls_nm} > {pgm_nm}")
+            print(f"        → {path}")
+
+    # 매장별매출분석 직접 검색
+    print("\n  ['매장별매출' 검색]")
+    for i, e in entries.items():
+        if "매장별" in e.get(5, "") or "매장별" in e.get(3, ""):
+            print(f"  ★ 발견! [{e.get(4)}] {e.get(1)} > {e.get(3)} > {e.get(5)}")
+            print(f"         JSP: {e.get(6)}")
+
+    # ── 2. menuv.jsp → JSON 파싱 ─────────────────────────────────────────
+    print("\n=== menuv.jsp JSON 파싱 ===")
+    r2 = sess.get(BASE_URL + "/login/menuv.jsp",
+                  headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
+    menuv = r2.content.decode("utf-8", errors="ignore")
+    print(f"  크기: {len(menuv):,}자")
+
+    # JSON 오브젝트 추출
+    json_objects = re.findall(r'\{[^{}]+\}', menuv)
+    parsed = []
+    for obj in json_objects:
+        try:
+            d = json.loads(obj)
+            if "PGM_NM" in d:
+                parsed.append(d)
+        except:
+            pass
+    print(f"  파싱된 메뉴 오브젝트: {len(parsed)}개")
+
+    # 매장/매출 관련만 출력
+    print("\n  [매출/분석/매장 관련 메뉴 (menuv.jsp)]")
+    for d in parsed:
+        nm = d.get("PGM_NM", "")
+        mcls = d.get("PGM_MCLS_NM", "")
+        if any(k in nm for k in keywords) or any(k in mcls for k in keywords):
+            print(f"  [{d.get('PGM_CD')}] {d.get('PGM_LCLS_NM')} > {d.get('PGM_MCLS_NM')} > {nm}")
+            print(f"        → {d.get('PGM_FILE_NM')}")
+
+    # ── 3. 발견된 JSP로 API 탐색 ─────────────────────────────────────────
+    print("\n=== 발견된 매장 관련 JSP 직접 접근 ===")
+    # history.jsp에서 발견된 매장/매출 경로들 수집
+    target_paths = set()
+    for i, e in entries.items():
+        nm = e.get(5, "")
+        path = e.get(6, "")
+        if path and ("매장" in nm or "분석" in nm or "shop" in path.lower() or "sale" in path.lower()):
+            target_paths.add(path)
+
+    for path in sorted(target_paths):
+        r = sess.get(BASE_URL + path,
+                     headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=10)
+        print(f"  [{r.status_code} {len(r.text):5}] {path}")
+        if r.status_code == 200 and len(r.text) > 500:
             t = r.content.decode("utf-8", errors="ignore")
-            if "AddTab" in t:
-                print(f"    ★ AddTab 발견!")
-                m = re.search(r'.{0,50}AddTab.{0,1000}', t, re.DOTALL)
-                if m: print(f"    {m.group()[:800]}")
-            frames = re.findall(r'<(?:frame|iframe)[^>]+>', t, re.IGNORECASE)
-            for f in frames:
-                print(f"    FRAME: {f[:150]}")
+            # S_CONTROLLER 값 찾기
+            for m in re.finditer(r'S_CONTROLLER["\s:=\']+([a-zA-Z0-9_.]+)', t):
+                print(f"    S_CONTROLLER: {m.group(1)}")
+            # form action 찾기
+            for m in re.finditer(r'action\s*=\s*["\']([^"\']+)["\']', t):
+                print(f"    action: {m.group(1)}")
+            title = re.search(r'<title[^>]*>([^<]+)</title>', t, re.IGNORECASE)
+            if title:
+                print(f"    title: {title.group(1).strip()}")
 
-    # ── 4. 메뉴ID → URL 서버 조회 시도 ──────────────────────────────────
-    print("\n=== 메뉴ID → URL 서버 조회 시도 ===")
-    sample_ids = ["000132", "000323", "000111"]
-    for menuId in sample_ids:
-        url_patterns = [
-            f"/login/getMenuUrl.jsp?menuId={menuId}",
-            f"/login/getPagePath.jsp?menuId={menuId}",
-            f"/login/menuDetail.jsp?menuId={menuId}",
-            f"/common/getMenuUrl.jsp?menuId={menuId}",
-            f"/login/menu_page.jsp?menuId={menuId}",
-        ]
-        for path in url_patterns:
-            r = check(sess, path, f"menuId={menuId}")
+    # ── 4. 매장별매출분석 API 호출 (JSP 경로 발견 시) ─────────────────────
+    # 발견된 경로 중 '매장별매출분석'에 해당하는 것을 바탕으로 API 호출
+    shop_sale_path = None
+    for i, e in entries.items():
+        nm = e.get(5, "")
+        if "매장별매출" in nm or ("매장" in nm and "분석" in nm):
+            shop_sale_path = e.get(6, "")
+            print(f"\n★★★ 매장별매출분석 발견: [{e.get(4)}] {nm}")
+            print(f"    JSP: {shop_sale_path}")
+            break
 
-    # ── 5. top_frame.jsp의 자식 프레임 재귀 탐색 ───────────────────────
-    print("\n=== top_frame.jsp 내 프레임 재귀 조회 ===")
-    frame_srcs = re.findall(r'<(?:frame|iframe)[^>]+src\s*=\s*["\']([^"\']+)["\']', text, re.IGNORECASE)
-    for src in frame_srcs:
-        url = BASE_URL + src if src.startswith("/") else src
-        r2 = sess.get(url, headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=10)
-        t2 = r2.content.decode("utf-8", errors="ignore")
-        print(f"\n  [{r2.status_code} {len(t2):,}자] {src}")
-        if "AddTab" in t2:
-            print(f"    ★ AddTab 발견!")
-            m = re.search(r'AddTab[^}]*\}', t2, re.DOTALL)
-            if m: print(f"    {m.group()[:500]}")
-        if "000132" in t2:
-            idx = t2.find("000132")
-            print(f"    탭ID 000132 발견: ...{t2[max(0,idx-100):idx+200]}...")
-        # 이 프레임이 로드하는 스크립트
-        sub_scripts = re.findall(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', t2, re.IGNORECASE)
-        for ss in sub_scripts[:5]:
-            print(f"    sub-script: {ss}")
+    if shop_sale_path:
+        # 010.jsp → 011.jsp 패턴으로 API 접근
+        api_path = shop_sale_path.replace("010.jsp", "011.jsp")
+        print(f"\n=== 매장별매출분석 API 호출 시도 ===")
+        r010 = sess.get(BASE_URL + shop_sale_path,
+                        headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=15)
+        print(f"  010.jsp: [{r010.status_code} {len(r010.text)}]")
+
+        n, v = extract_token(r010.text)
+        if n:
+            r011 = sess.post(BASE_URL + api_path, data={n: v},
+                             headers={"Referer": BASE_URL + shop_sale_path}, verify=False, timeout=15)
+            print(f"  011.jsp: [{r011.status_code} {len(r011.text)}]")
+            n2, v2 = extract_token(r011.text)
+
+            # S_CONTROLLER 추출
+            ctrl = None
+            for m in re.finditer(r'S_CONTROLLER["\s:=\']+([a-zA-Z0-9_.]+)', r011.content.decode("utf-8", errors="ignore")):
+                ctrl = m.group(1)
+                print(f"  S_CONTROLLER 발견: {ctrl}")
+                break
+
+            if ctrl and n2:
+                payload = {
+                    n2: v2,
+                    "S_CONTROLLER": ctrl, "S_METHOD": "search",
+                    "SHEETSEQ": "1", "S_SAVENAME": "", "S_ORDERBY": "",
+                    "date1_1": today, "date1_2": today, "date_period1": "366",
+                    "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
+                    "ss_PAGE_SIZE": "50", "ss_PAGE_NO1": "1",
+                }
+                r_api = sess.post(BASE_URL + "/sale/sale/ddd.htmlSheetAction", data=payload,
+                                  headers={"Referer": BASE_URL + api_path}, verify=False, timeout=30)
+                try:
+                    d = r_api.json()
+                    rows = d.get("Data", [])
+                    code = d.get("Result", {}).get("Code", 0)
+                    print(f"\n  API 결과: code={code}, rows={len(rows)}")
+                    if rows:
+                        print(f"  Keys: {list(rows[0].keys())}")
+                        for row in rows[:10]:
+                            print(f"  {json.dumps(row, ensure_ascii=False)[:150]}")
+                except Exception as e:
+                    print(f"  API 오류: {e}")
+                    print(f"  응답: {r_api.text[:300]}")
 
 
 if __name__ == "__main__":
