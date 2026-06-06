@@ -32,3 +32,11 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           KMA_API_KEY: ${{ secrets.KMA_API_KEY }}
         run: python report.py
+
+      - name: Commit dashboard data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/report_data.json
+          git diff --cached --quiet || git commit -m "chore: update dashboard data $(date +'%Y-%m-%d %H:%M KST' -d '+9 hours')"
+          git push

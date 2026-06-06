@@ -24,10 +24,14 @@ CHAT_ID   = -1003990713280
 KST = timezone(timedelta(hours=9))
 KMA_API_KEY = os.environ.get("KMA_API_KEY", "")
 
-FOOD_KEYWORDS    = ["먹이", "양분유체험"]
-ONLINE_TICKETS   = {"온라인티켓(LS)", "네이버 주중", "네이버 주말"}
-ONLINE_TICKET_PRICE = 15_000
-FREE_PRODUCTS    = {"24개월미만무료입장", "초대권"}
+FOOD_KEYWORDS  = ["먹이", "양분유체험"]
+# 외부 플랫폼(네이버 스마트플레이스 / LS파트너) 결제 상품:
+#   - OKPOS에는 qty만 기록, TOT_SALE_AMT = 0 (대사 목적 0원 상품)
+#   - 실제 정산금액은 각 플랫폼에서 별도 집계
+NAVER_TICKETS  = {"네이버 주중", "네이버 주말"}
+LS_TICKETS     = {"온라인티켓(LS)"}
+ONLINE_TICKETS = NAVER_TICKETS | LS_TICKETS  # 매출 ₩0, 입장수량은 개인으로 집계
+FREE_PRODUCTS  = {"24개월미만무료입장", "초대권"}
 
 ZOOZOOLAND_LAT = 37.6899
 ZOOZOOLAND_LON = 126.8547
@@ -195,14 +199,16 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     cats      = {}
     food      = {"qty": 0, "amt": 0}
     admission = {"individual": 0, "group": 0, "free": 0}
+    # 외부정산 온라인 티켓 수량 별도 집계 (매출 ₩0, 실적 파악용)
+    online    = {"naver": 0, "ls": 0}
 
     for row in rows:
         cat     = row.get("MCLS_NM") or row.get("LCLS_NM") or "기타"
         prod_nm = (row.get("PROD_NM") or "").strip()
         scls_nm = (row.get("SCLS_NM") or "").strip()
         qty     = int(row.get("SALE_QTY", 0) or 0)
-        amt     = qty * ONLINE_TICKET_PRICE if prod_nm in ONLINE_TICKETS \
-                  else int(row.get("TOT_SALE_AMT", 0) or 0)
+        # 온라인 티켓: OKPOS TOT_SALE_AMT = 0(외부결제) → 가짜 금액 없이 0 그대로 사용
+        amt     = int(row.get("TOT_SALE_AMT", 0) or 0)
 
         if cat not in cats:
             cats[cat] = {"qty": 0, "amt": 0}
@@ -218,11 +224,19 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
                 admission["free"] += qty
             elif "단체" in scls_nm or "단체" in prod_nm:
                 admission["group"] += qty
-            elif "개인" in scls_nm:
+            else:
+                # 개인 + 온라인티켓(SCLS_NM이 "개인"이 아닐 수 있으므로 else로 포괄)
+                # 온라인티켓은 외부결제이므로 단체·무료가 아닌 이상 개인 입장자로 집계
                 admission["individual"] += qty
 
+        if prod_nm in NAVER_TICKETS:
+            online["naver"] += qty
+        elif prod_nm in LS_TICKETS:
+            online["ls"] += qty
+
     print(f"  Categories: {list(cats.keys())}")
-    return {"cats": cats, "food": food, "admission": admission}
+    print(f"  Online qty: naver={online['naver']}, ls={online['ls']}")
+    return {"cats": cats, "food": food, "admission": admission, "online": online}
 
 
 def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
@@ -232,6 +246,7 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
         "cats": {},
         "food": {"qty": 0, "amt": 0},
         "admission": {"individual": 0, "group": 0, "free": 0},
+        "online": {"naver": 0, "ls": 0},
     }
     current = start
     while current <= end:
@@ -247,6 +262,8 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
         total["food"]["amt"] += chunk["food"]["amt"]
         for k in ("individual", "group", "free"):
             total["admission"][k] += chunk["admission"][k]
+        for k in ("naver", "ls"):
+            total["online"][k] += chunk["online"][k]
         current = chunk_end + timedelta(days=1)
     return total
 
@@ -487,6 +504,7 @@ def _section_data(curr, prev):
         *store_rows,
         ("  점포합계", f"{fmt_num(tc)}원",    fyoy(yoy(tc, tp))),
         None,
+        # 전체매출: 온라인티켓은 OKPOS에 ₩0으로 등록(외부정산)이므로 이미 제외된 실집계
         ("전체매출",   f"{fmt_num(all_c)}원", fyoy(yoy(all_c, all_p))),
     ]
 
@@ -691,6 +709,154 @@ def create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, 
     return buf
 
 
+# ─── Dashboard JSON export ────────────────────────────────────────────────────
+
+def _build_dashboard_row(label, dc, dp, mc, mp, yc, yp, *,
+                         header=False, indent=False, subtotal=False, grand_total=False,
+                         separator=False):
+    """대시보드 HTML이 소비하는 row dict 생성."""
+    if separator:
+        return {"separator": True}
+    return {
+        "label": label,
+        **({"header": True}    if header     else {}),
+        **({"indent": True}    if indent     else {}),
+        **({"subtotal": True}  if subtotal   else {}),
+        **({"grandTotal": True} if grand_total else {}),
+        "d": {"val": dc, "yoy": dp},
+        "m": {"val": mc, "yoy": mp},
+        "y": {"val": yc, "yoy": yp},
+    }
+
+def _fv(n, unit):
+    """숫자 → "1,234원" / "1,234명" 형태."""
+    return f"{fmt_num(int(n))}{unit}"
+
+def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, yc, yp):
+    """대시보드 index.html 이 fetch('report_data.json') 으로 읽는 JSON을 반환."""
+    WEEKDAY_KO_L = ["월", "화", "수", "목", "금", "토", "일"]
+
+    cats_dc = dc["cats"]; cats_dp = dp["cats"]
+    cats_mc = mc["cats"]; cats_mp = mp["cats"]
+    cats_yc = yc["cats"]; cats_yp = yp["cats"]
+
+    # 입장
+    def adm_rows():
+        for period, c, p in [("d", dc, dp), ("m", mc, mp), ("y", yc, yp)]:
+            pass  # calculated below
+
+        ind = lambda c, p: (c["admission"]["individual"], p["admission"]["individual"])
+        grp = lambda c, p: (c["admission"]["group"],      p["admission"]["group"])
+        fre = lambda c, p: (c["admission"]["free"],        p["admission"]["free"])
+
+        def pv(c, p): return (
+            c["admission"]["individual"] + c["admission"]["group"] + c["admission"]["free"],
+            p["admission"]["individual"] + p["admission"]["group"] + p["admission"]["free"],
+        )
+
+        def row3(fn, label, **kw):
+            dv, dpv = fn(dc, dp); mv, mpv = fn(mc, mp); yv, ypv = fn(yc, yp)
+            return _build_dashboard_row(
+                label,
+                _fv(dv,"명"), fyoy(yoy(dv,dpv)),
+                _fv(mv,"명"), fyoy(yoy(mv,mpv)),
+                _fv(yv,"명"), fyoy(yoy(yv,ypv)),
+                **kw,
+            )
+
+        return [
+            row3(pv,  "입장(전체)", header=True),
+            row3(ind, "개인",       indent=True),
+            row3(grp, "단체",       indent=True),
+            row3(fre, "무료",       indent=True),
+        ]
+
+    # 먹이
+    def food_row():
+        dv=dc["food"]["amt"]; dpv=dp["food"]["amt"]
+        mv=mc["food"]["amt"]; mpv=mp["food"]["amt"]
+        yv=yc["food"]["amt"]; ypv=yp["food"]["amt"]
+        return _build_dashboard_row(
+            "먹이판매",
+            _fv(dv,"원"), fyoy(yoy(dv,dpv)),
+            _fv(mv,"원"), fyoy(yoy(mv,mpv)),
+            _fv(yv,"원"), fyoy(yoy(yv,ypv)),
+        )
+
+    # 점포
+    def store_rows_and_subtotal():
+        rows = []
+        tc = tp = tm_c = tm_p = ty_c = ty_p = 0
+        for k, lbl in STORE_KEYS:
+            dv  = cats_dc.get(k,{}).get("amt",0); dpv = cats_dp.get(k,{}).get("amt",0)
+            mv  = cats_mc.get(k,{}).get("amt",0); mpv = cats_mp.get(k,{}).get("amt",0)
+            yv  = cats_yc.get(k,{}).get("amt",0); ypv = cats_yp.get(k,{}).get("amt",0)
+            tc += dv; tp += dpv; tm_c += mv; tm_p += mpv; ty_c += yv; ty_p += ypv
+            rows.append(_build_dashboard_row(
+                lbl,
+                _fv(dv,"원"), fyoy(yoy(dv,dpv)),
+                _fv(mv,"원"), fyoy(yoy(mv,mpv)),
+                _fv(yv,"원"), fyoy(yoy(yv,ypv)),
+            ))
+        rows.append(_build_dashboard_row(
+            "점포합계",
+            _fv(tc,"원"), fyoy(yoy(tc,tp)),
+            _fv(tm_c,"원"), fyoy(yoy(tm_c,tm_p)),
+            _fv(ty_c,"원"), fyoy(yoy(ty_c,ty_p)),
+            subtotal=True,
+        ))
+        return rows
+
+    # 전체매출 (온라인티켓 ₩0이므로 OKPOS 실집계만 포함)
+    all_dc=sum(v["amt"] for v in cats_dc.values()); all_dp=sum(v["amt"] for v in cats_dp.values())
+    all_mc=sum(v["amt"] for v in cats_mc.values()); all_mp=sum(v["amt"] for v in cats_mp.values())
+    all_yc=sum(v["amt"] for v in cats_yc.values()); all_yp=sum(v["amt"] for v in cats_yp.values())
+    total_row = _build_dashboard_row(
+        "전체매출",
+        _fv(all_dc,"원"), fyoy(yoy(all_dc,all_dp)),
+        _fv(all_mc,"원"), fyoy(yoy(all_mc,all_mp)),
+        _fv(all_yc,"원"), fyoy(yoy(all_yc,all_yp)),
+        grand_total=True,
+    )
+
+    # 온라인 외부정산 수량 (참고용)
+    naver_d = dc["online"]["naver"]; ls_d = dc["online"]["ls"]
+    naver_m = mc["online"]["naver"]; ls_m = mc["online"]["ls"]
+    naver_y = yc["online"]["naver"]; ls_y = yc["online"]["ls"]
+
+    return {
+        "today_date": f"{today.strftime('%Y-%m-%d')} ({WEEKDAY_KO[today.weekday()]})",
+        "prev_date":  f"{ptd.strftime('%Y-%m-%d')} ({WEEKDAY_KO[ptd.weekday()]})",
+        "today_weather": {"desc": weather_today[0], "tmax": weather_today[1], "tmin": weather_today[2]},
+        "prev_weather":  {"desc": weather_ptd[0],   "tmax": weather_ptd[1],   "tmin": weather_ptd[2]},
+        "kpi": {
+            "daily_sales":         f"{fmt_num(all_dc)}",
+            "daily_visitors":      f"{fmt_num(dc['admission']['individual'] + dc['admission']['group'] + dc['admission']['free'])}",
+            "ytd_sales":           f"{fmt_num(all_yc)}",
+            "daily_sales_yoy":     fyoy(yoy(all_dc, all_dp)),
+            "daily_visitors_yoy":  fyoy(yoy(
+                dc["admission"]["individual"] + dc["admission"]["group"] + dc["admission"]["free"],
+                dp["admission"]["individual"] + dp["admission"]["group"] + dp["admission"]["free"],
+            )),
+            "ytd_sales_yoy":       fyoy(yoy(all_yc, all_yp)),
+        },
+        # 온라인 외부정산: OKPOS 매출 ₩0, 실수익은 네이버/LS 플랫폼에서 별도 정산
+        "online_external": {
+            "naver": {"daily": naver_d, "monthly": naver_m, "ytd": naver_y},
+            "ls":    {"daily": ls_d,    "monthly": ls_m,    "ytd": ls_y},
+        },
+        "rows": [
+            *adm_rows(),
+            {"separator": True},
+            food_row(),
+            {"separator": True},
+            *store_rows_and_subtotal(),
+            total_row,
+        ],
+        "generated_at": datetime.now(KST).strftime("%Y-%m-%d %H:%M KST"),
+    }
+
+
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
 async def main():
@@ -722,6 +888,14 @@ async def main():
     weather_today = get_weather(today)
     weather_ptd   = get_weather(ptd)
     print(f"  today: {weather_today}, ptd({ptd}): {weather_ptd}")
+
+    # 대시보드 JSON 저장 (dashboard/report_data.json)
+    print("Generating dashboard JSON...")
+    dash_json = generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, yc, yp)
+    json_path = os.path.join(os.path.dirname(__file__), "dashboard", "report_data.json")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(dash_json, f, ensure_ascii=False, indent=2)
+    print(f"  Saved: {json_path}")
 
     print("Creating image...")
     img_buf = create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, yc, yp)
