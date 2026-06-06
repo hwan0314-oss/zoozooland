@@ -31,7 +31,7 @@ FOOD_KEYWORDS  = ["먹이", "양분유체험", "밀웜"]  # 밀웜 추가(카페
 #   - 실제 정산금액은 각 플랫폼에서 별도 집계
 NAVER_TICKETS  = {"네이버 주중", "네이버 주말"}
 LS_TICKETS     = {"온라인티켓(LS)"}
-ONLINE_TICKETS = NAVER_TICKETS | LS_TICKETS  # 매출 ₩0, 입장수량은 개인으로 집계
+ONLINE_TICKETS = NAVER_TICKETS | LS_TICKETS  # OKPOS amt=0 → online_ticket_price() 로 추정매출 반영
 FREE_PRODUCTS  = {"24개월미만무료입장", "초대권"}
 
 ZOOZOOLAND_LAT = 37.6899
@@ -247,8 +247,7 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     cats          = {}
     food          = {"qty": 0, "amt": 0}
     admission     = {"individual": 0, "group": 0, "free": 0}
-    admission_rev = {"individual_pos": 0, "group": 0}  # 입장매출(원): POS 실결제만
-    online        = {"naver": 0, "ls": 0}  # 외부정산 티켓 수량(매출 ₩0, 참고용)
+    admission_rev = {"individual_pos": 0, "group": 0}
 
     for row in rows:
         cat     = row.get("MCLS_NM") or row.get("LCLS_NM") or "기타"
@@ -285,17 +284,11 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
                     admission_rev["individual_pos"] += amt
             # else: 매표소 내 비입장 상품(화분·제로콜라 등) → 집계 제외
 
-        if prod_nm in NAVER_TICKETS:
-            online["naver"] += qty
-        elif prod_nm in LS_TICKETS:
-            online["ls"] += qty
-
     print(f"  Categories: {list(cats.keys())}")
-    print(f"  Online qty: naver={online['naver']}, ls={online['ls']}")
     print(f"  Admission rev: pos_ind={admission_rev['individual_pos']:,}, grp={admission_rev['group']:,}")
     return {
         "cats": cats, "food": food,
-        "admission": admission, "admission_rev": admission_rev, "online": online,
+        "admission": admission, "admission_rev": admission_rev,
     }
 
 
@@ -307,7 +300,6 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
         "food": {"qty": 0, "amt": 0},
         "admission": {"individual": 0, "group": 0, "free": 0},
         "admission_rev": {"individual_pos": 0, "group": 0},
-        "online": {"naver": 0, "ls": 0},
     }
     current = start
     while current <= end:
@@ -325,8 +317,6 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
             total["admission"][k] += chunk["admission"][k]
         for k in ("individual_pos", "group"):
             total["admission_rev"][k] += chunk["admission_rev"][k]
-        for k in ("naver", "ls"):
-            total["online"][k] += chunk["online"][k]
         current = chunk_end + timedelta(days=1)
     return total
 
@@ -1062,11 +1052,6 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
         grand_total=True,
     )
 
-    # 온라인 외부정산 수량 (참고용)
-    naver_d = dc["online"]["naver"]; ls_d = dc["online"]["ls"]
-    naver_m = mc["online"]["naver"]; ls_m = mc["online"]["ls"]
-    naver_y = yc["online"]["naver"]; ls_y = yc["online"]["ls"]
-
     return {
         "today_date": f"{today.strftime('%Y-%m-%d')} ({WEEKDAY_KO[today.weekday()]})",
         "prev_date":  f"{ptd.strftime('%Y-%m-%d')} ({WEEKDAY_KO[ptd.weekday()]})",
@@ -1082,11 +1067,6 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
                 dp["admission"]["individual"] + dp["admission"]["group"] + dp["admission"]["free"],
             )),
             "ytd_sales_yoy":       fyoy(yoy(all_yc, all_yp)),
-        },
-        # 온라인 외부정산: OKPOS 매출 ₩0, 실수익은 네이버/LS 플랫폼에서 별도 정산
-        "online_external": {
-            "naver": {"daily": naver_d, "monthly": naver_m, "ytd": naver_y},
-            "ls":    {"daily": ls_d,    "monthly": ls_m,    "ytd": ls_y},
         },
         "rows": [
             *adm_rows(),
