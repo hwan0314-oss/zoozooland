@@ -275,10 +275,13 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
                 admission["group"] += qty
                 admission_rev["group"] += amt
             elif "개인" in scls_nm or prod_nm in ONLINE_TICKETS:
-                # 개인 입장: POS 결제(SCLS_NM="개인") + 온라인티켓(SCLS_NM="개인")
-                # 온라인티켓은 OKPOS amt=0, 별도 집계
+                # 개인 입장: POS 결제 + 네이버/LS 온라인 티켓
+                # 온라인 티켓은 OKPOS amt=0 → 기간별 단가로 추정 매출 반영
                 admission["individual"] += qty
-                if prod_nm not in ONLINE_TICKETS:  # POS 실결제만 매출에 반영
+                if prod_nm in ONLINE_TICKETS:
+                    sale_d = row.get("SALE_DATE", "")
+                    admission_rev["individual_pos"] += qty * online_ticket_price(sale_d)
+                else:
                     admission_rev["individual_pos"] += amt
             # else: 매표소 내 비입장 상품(화분·제로콜라 등) → 집계 제외
 
@@ -329,6 +332,20 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
 
 
 # ─── Data helpers ─────────────────────────────────────────────────────────────
+
+def online_ticket_price(sale_date_str):
+    """네이버/LS 온라인 티켓 건당 입장료 (기간별 단가)."""
+    try:
+        s = str(sale_date_str).replace("-", "")
+        d = date(int(s[:4]), int(s[4:6]), int(s[6:8]))
+    except Exception:
+        return 15_000
+    if date(2025, 1, 1) <= d <= date(2025, 2, 28):
+        return 12_000
+    if date(2026, 3, 4) <= d <= date(2026, 3, 31):
+        return 10_000
+    return 15_000
+
 
 def yoy(curr, prev):
     if not prev:
