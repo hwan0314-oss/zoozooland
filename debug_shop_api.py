@@ -1,4 +1,4 @@
-"""OKPOS shopsale010.jsp 내용 분석 + 매장별매출분석 API 호출"""
+"""OKPOS 매장별매출분석 sub-pages → S_CONTROLLER 추출 + API 호출"""
 import os, re, json, requests, urllib3
 from datetime import date
 
@@ -45,139 +45,141 @@ def do_login():
     return sess
 
 
+def try_api(sess, ctrl, n, v, date1, date2, api_path):
+    payload = {
+        n: v,
+        "S_CONTROLLER": ctrl, "S_METHOD": "search",
+        "SHEETSEQ": "1", "S_SAVENAME": "", "S_ORDERBY": "",
+        "date1_1": date1, "date1_2": date2, "date_period1": "366",
+        "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
+        "ss_PAGE_SIZE": "50", "ss_PAGE_NO1": "1",
+    }
+    r = sess.post(BASE_URL + api_path, data=payload,
+                  headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"},
+                  verify=False, timeout=15)
+    try:
+        d = r.json()
+        code = d.get("Result", {}).get("Code", 0)
+        rows = len(d.get("Data", []))
+        return code, rows, d
+    except:
+        return None, 0, {}
+
+
 def main():
     today = date.today().strftime("%Y-%m-%d")
     jan1  = date.today().strftime("%Y") + "-01-01"
     sess  = do_login()
 
-    # ── 1. shopsale010.jsp 전체 내용 출력 ───────────────────────────────
-    print("\n=== shopsale010.jsp 전체 내용 ===")
-    r010 = sess.get(BASE_URL + "/sale/shopsale/shopsale010.jsp",
-                    headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=15)
-    content = r010.content.decode("utf-8", errors="ignore")
-    print(content)
+    base_ref = BASE_URL + "/sale/shopsale/shopsale010.jsp"
 
-    # ── 2. shopsale 관련 JSP 변형 시도 ─────────────────────────────────
-    print("\n=== shopsale 관련 JSP 변형 시도 ===")
-    paths = [
-        "/sale/shopsale/shopsale020.jsp",
-        "/sale/shopsale/shopsale_result.jsp",
-        "/sale/shopsale/shopsale_search.jsp",
-        "/sale/shopsale/shopsaleList.jsp",
-        "/sale/shopsale/shopsale011.jsp",
-        "/sale/shopsale/list.jsp",
+    # sub-pages: shopsale010.jsp 안의 탭들
+    sub_pages = [
+        ("dayranking010.jsp",   "매장순위"),
+        ("dayranking020.jsp",   "매장순위(상품)"),
+        ("monthranking010.jsp", "매장월별 순위"),
+        ("type010.jsp",         "매장형태별 매출"),
+        ("brand010.jsp",        "브랜드별 매출"),
     ]
-    for path in paths:
-        r = sess.get(BASE_URL + path,
-                     headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"}, verify=False, timeout=10)
-        sym = "✅" if r.status_code == 200 else "❌"
-        print(f"  {sym} [{r.status_code} {len(r.text):5}] {path}")
-        if r.status_code == 200 and len(r.text) > 500:
-            t = r.content.decode("utf-8", errors="ignore")
-            for m in re.finditer(r'S_CONTROLLER["\s:=\']+([a-zA-Z0-9_.]+)', t):
-                print(f"    S_CONTROLLER: {m.group(1)}")
 
-    # ── 3. S_CONTROLLER 직접 추측 + API 호출 ───────────────────────────
-    print("\n=== S_CONTROLLER 직접 추측 + API 호출 ===")
-    # 먼저 prod011.jsp에서 CSRF 토큰 확보
-    r_prod = sess.get(BASE_URL + "/sale/sale/prod010.jsp",
-                      headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=15)
-    n, v = extract_token(r_prod.text)
-    r_prod2 = sess.post(BASE_URL + "/sale/sale/prod011.jsp", data={n: v},
-                        headers={"Referer": BASE_URL + "/sale/sale/prod010.jsp"}, verify=False, timeout=15)
-    n2, v2 = extract_token(r_prod2.text)
+    print("\n=== shopsale sub-pages S_CONTROLLER 탐색 ===")
+    found_tokens = {}  # page → (n, v)
+    found_ctrls  = {}  # page → ctrl
+
+    for fname, label in sub_pages:
+        path = f"/sale/shopsale/{fname}"
+        r010 = sess.get(BASE_URL + path,
+                        headers={"Referer": base_ref}, verify=False, timeout=15)
+        t = r010.content.decode("utf-8", errors="ignore")
+        print(f"\n[{r010.status_code} {len(t):5}] {path} ({label})")
+
+        # S_CONTROLLER 직접 값 추출 (value= 패턴)
+        ctrls = re.findall(r"S_CONTROLLER[^'\"]{0,5}['\"]([a-zA-Z0-9_.]+)['\"]", t)
+        if ctrls:
+            for c in ctrls:
+                if '.' in c:
+                    print(f"  → S_CONTROLLER 발견: {c}")
+                    found_ctrls[fname] = c
+
+        # CSRF 토큰
+        n, v = extract_token(t)
+        if n:
+            found_tokens[fname] = (n, v)
+            # 010 → 011 POST로 실제 폼 페이지 얻기
+            fname_011 = fname.replace("010.jsp", "011.jsp")
+            r011 = sess.post(BASE_URL + f"/sale/shopsale/{fname_011}",
+                             data={n: v},
+                             headers={"Referer": BASE_URL + path}, verify=False, timeout=15)
+            t011 = r011.content.decode("utf-8", errors="ignore")
+            print(f"  011.jsp: [{r011.status_code} {len(t011):5}]")
+            if r011.status_code == 200 and len(t011) > 500:
+                ctrls2 = re.findall(r"S_CONTROLLER[^'\"]{0,5}['\"]([a-zA-Z0-9_.]+)['\"]", t011)
+                for c in ctrls2:
+                    if '.' in c:
+                        print(f"  → 011 S_CONTROLLER: {c}")
+                        found_ctrls[fname] = c
+                n2, v2 = extract_token(t011)
+                if n2:
+                    found_tokens[fname] = (n2, v2)
+
+        # 주요 JS 변수/함수 패턴 출력 (잘라서)
+        for kw in ["S_CONTROLLER", "ddd.htmlSheetAction", "SheetAction", "controller"]:
+            for m in re.finditer(r'.{0,40}' + kw + r'.{0,80}', t, re.IGNORECASE):
+                snippet = m.group().strip()
+                if snippet not in ["", "."]:
+                    print(f"  [{kw}] {snippet[:160]}")
+
+    # ── API 호출: /sale/shopsale/ddd.htmlSheetAction ─────────────────────
+    print("\n=== /sale/shopsale/ddd.htmlSheetAction 호출 ===")
+    api_path = "/sale/shopsale/ddd.htmlSheetAction"
+
+    # 모든 sub-page 토큰으로 가능한 컨트롤러 시도
+    all_tokens = list(found_tokens.values())
+    if not all_tokens:
+        # fallback: prod 토큰
+        r_p = sess.get(BASE_URL + "/sale/sale/prod010.jsp",
+                       headers={"Referer": base_ref}, verify=False, timeout=15)
+        n, v = extract_token(r_p.text)
+        r_p2 = sess.post(BASE_URL + "/sale/sale/prod011.jsp", data={n: v},
+                         verify=False, timeout=15)
+        n2, v2 = extract_token(r_p2.text)
+        all_tokens = [(n2, v2)]
+
+    n_tok, v_tok = all_tokens[0]
 
     controllers = [
-        "sale.shopsale.shopsale011",
-        "sale.shopsale.shopSale011",
-        "sale.sale.shopsale011",
-        "sale.sale.shopSale011",
-        "sale.analysis.shopsale011",
-        "sale.stat.shopsale011",
+        # 발견된 컨트롤러
+        *list(found_ctrls.values()),
+        # 추측 컨트롤러
+        "sale.shopsale.dayranking011",
+        "sale.shopsale.dayRanking011",
+        "sale.shopsale.DayRanking011",
+        "sale.shopsale.monthranking011",
+        "sale.shopsale.type011",
+        "sale.shopsale.brand011",
+        "shopsale.dayranking011",
+        "sale.dayranking011",
     ]
+    # 중복 제거
+    seen = set()
+    controllers = [c for c in controllers if c not in seen and not seen.add(c)]
+
     for ctrl in controllers:
-        payload = {
-            n2: v2,
-            "S_CONTROLLER": ctrl, "S_METHOD": "search",
-            "SHEETSEQ": "1", "S_SAVENAME": "", "S_ORDERBY": "",
-            "date1_1": jan1, "date1_2": today, "date_period1": "366",
-            "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
-            "ss_PAGE_SIZE": "50", "ss_PAGE_NO1": "1",
-        }
-        r = sess.post(BASE_URL + "/sale/sale/ddd.htmlSheetAction", data=payload,
-                      headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"},
-                      verify=False, timeout=15)
-        try:
-            d = r.json()
-            code = d.get("Result", {}).get("Code", 0)
-            rows = len(d.get("Data", []))
-            sym = "✅" if rows > 0 else ("⚠️" if code >= 0 else "❌")
-            print(f"  {sym} {ctrl}: code={code} rows={rows}")
-            if rows > 0:
-                print(f"    Keys: {list(d['Data'][0].keys())}")
-                for row in d['Data'][:5]:
-                    print(f"    {json.dumps(row, ensure_ascii=False)[:150]}")
-        except Exception as e:
-            print(f"  [ERR] {ctrl}: {e}")
+        code, rows, d = try_api(sess, ctrl, n_tok, v_tok, jan1, today, api_path)
+        sym = "✅" if rows > 0 else ("⚠️" if code == 0 else "❌")
+        print(f"  {sym} {ctrl}: code={code} rows={rows}")
+        if rows > 0:
+            print(f"    Keys: {list(d['Data'][0].keys())}")
+            for row in d['Data'][:10]:
+                print(f"    {json.dumps(row, ensure_ascii=False)[:150]}")
 
-    # ── 4. shopsale010.jsp가 로드하는 실제 API URL 탐색 ─────────────────
-    # shopsale010.jsp가 iframe이나 다른 JSP를 로드하면 그 쪽 토큰으로 API 호출
-    print("\n=== shopsale010.jsp POST 시도 ===")
-    n3, v3 = extract_token(content)
-    print(f"  토큰: n={n3}, v={v3[:20] if v3 else None}")
-
-    # POST to shopsale010.jsp itself
-    if n3:
-        payload_010 = {
-            n3: v3,
-            "date1_1": jan1, "date1_2": today, "date_period1": "366",
-            "ss_SHOP_CD": "", "ss_SHOP_NM": "전체",
-            "ss_PAGE_SIZE": "50", "ss_PAGE_NO1": "1",
-        }
-        r_post = sess.post(BASE_URL + "/sale/shopsale/shopsale010.jsp", data=payload_010,
-                           headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"},
-                           verify=False, timeout=15)
-        print(f"  POST 010: [{r_post.status_code} {len(r_post.text)}]")
-        t = r_post.content.decode("utf-8", errors="ignore")
-        # S_CONTROLLER 탐색
-        for m in re.finditer(r'S_CONTROLLER["\s:=\']+([a-zA-Z0-9_.]+)', t):
-            print(f"  S_CONTROLLER: {m.group(1)}")
-        # 결과 데이터 시작 부분
-        if "SHOP" in t or "매장" in t:
-            for m in re.finditer(r'.{0,100}(?:SHOP|매장).{0,100}', t):
-                print(f"  → {m.group()[:200]}")
-
-    # ── 5. ddd.htmlSheetAction을 shopsale Referer로 시도 ────────────────
-    print("\n=== ddd.htmlSheetAction shopsale Referer 시도 ===")
-    # shopsale010.jsp → POST → shopsale가 내부적으로 쓰는 endpoint 탐색
-    # shopsale010.jsp 내 form action 추출
-    form_actions = re.findall(r'action\s*=\s*["\']([^"\']+)["\']', content, re.IGNORECASE)
-    print(f"  form actions in shopsale010.jsp: {form_actions}")
-
-    iframes = re.findall(r'src\s*=\s*["\']([^"\']+\.jsp[^"\']*)["\']', content, re.IGNORECASE)
-    print(f"  iframe/src in shopsale010.jsp: {iframes}")
-
-    # 다른 API endpoint도 시도
-    api_paths = [
-        "/sale/shopsale/ddd.htmlSheetAction",
-        "/sale/shopsale/shopsale_api.jsp",
-        "/sale/ddd.htmlSheetAction",
-        "/ddd.htmlSheetAction",
-    ]
-    if n3 and v3:
-        for api_path in api_paths:
-            payload_api = {
-                n3: v3,
-                "S_CONTROLLER": "sale.shopsale.shopsale011", "S_METHOD": "search",
-                "SHEETSEQ": "1", "S_SAVENAME": "", "S_ORDERBY": "",
-                "date1_1": jan1, "date1_2": today,
-                "ss_SHOP_CD": "", "ss_PAGE_SIZE": "50", "ss_PAGE_NO1": "1",
-            }
-            r = sess.post(BASE_URL + api_path, data=payload_api,
-                          headers={"Referer": BASE_URL + "/sale/shopsale/shopsale010.jsp"},
-                          verify=False, timeout=10)
-            sym = "✅" if r.status_code == 200 else "❌"
-            print(f"  {sym} [{r.status_code}] {api_path}: {r.text[:100]}")
+    # ── dayranking010.jsp 전체 출력 (S_CONTROLLER 못 찾으면) ─────────────
+    if not any(rows > 0 for ctrl in controllers
+               for code, rows, _ in [try_api(sess, ctrl, n_tok, v_tok, jan1, today, api_path)]):
+        print("\n=== dayranking010.jsp 전체 내용 출력 ===")
+        r = sess.get(BASE_URL + "/sale/shopsale/dayranking010.jsp",
+                     headers={"Referer": base_ref}, verify=False, timeout=15)
+        print(r.content.decode("utf-8", errors="ignore"))
 
 
 if __name__ == "__main__":
