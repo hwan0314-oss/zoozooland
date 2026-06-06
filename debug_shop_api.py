@@ -1,4 +1,4 @@
-"""OKPOS menu.jsp 매장/분석 메뉴 항목 및 네비게이션 URL 추출"""
+"""OKPOS HistoryFrm.AddTab 함수 정의 및 탭ID→URL 매핑 탐색"""
 import os, re, requests, urllib3
 
 urllib3.disable_warnings()
@@ -44,84 +44,117 @@ def do_login():
     return sess
 
 
+def check(sess, path, label, referer=None):
+    hdrs = {"Referer": BASE_URL + (referer or "/login/top_frame.jsp")}
+    r = sess.get(BASE_URL + path, headers=hdrs, verify=False, timeout=10)
+    size = len(r.text)
+    print(f"  [{r.status_code} {size:6}] {label}: {path}")
+    return r if r.status_code == 200 and size > 200 else None
+
+
 def main():
     sess = do_login()
 
-    # ── 1. menu.jsp 전체 텍스트 수신 ────────────────────────────────────
+    # ── 1. top_frame.jsp 구조 (frameset/frame/iframe 확인) ──────────────
+    print("\n=== top_frame.jsp 구조 ===")
+    r = sess.get(BASE_URL + "/login/top_frame.jsp",
+                 headers={"Referer": BASE_URL + "/login/login_check_action.jsp"}, verify=False, timeout=30)
+    text = r.content.decode("utf-8", errors="ignore")
+    print(f"  크기: {len(text):,}자")
+    # frame/iframe 태그 추출
+    for m in re.finditer(r'<(?:frame|iframe)[^>]+>', text, re.IGNORECASE):
+        print(f"  FRAME: {m.group()[:200]}")
+    # HistoryFrm 참조
+    for m in re.finditer(r'.{0,60}HistoryFrm.{0,60}', text):
+        print(f"  HistoryFrm: {m.group().strip()[:160]}")
+    # 외부 스크립트 목록
+    scripts = re.findall(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', text, re.IGNORECASE)
+    print(f"  외부 스크립트: {scripts}")
+
+    # ── 2. menu.jsp 외부 스크립트에서 AddTab 정의 탐색 ──────────────────
+    print("\n=== menu.jsp 외부 스크립트 → AddTab 탐색 ===")
     r_menu = sess.get(BASE_URL + "/login/menu.jsp",
                       headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=30)
-    text = r_menu.content.decode("utf-8", errors="ignore")
-    lines = text.splitlines()
-    print(f"menu.jsp: {len(text):,}자, {len(lines):,}줄")
+    menu_text = r_menu.content.decode("utf-8", errors="ignore")
+    menu_scripts = re.findall(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', menu_text, re.IGNORECASE)
+    print(f"  메뉴 스크립트 목록: {menu_scripts}")
 
-    # ── 2. '매장' '분석' 포함 줄 + 전후 5줄 컨텍스트 ────────────────────
-    print("\n=== '매장' 또는 '분석' 포함 라인 컨텍스트 ===")
-    printed = set()
-    keywords = ["매장", "분석", "stat"]
-    for i, line in enumerate(lines):
-        if any(k in line for k in keywords):
-            block = range(max(0, i-3), min(len(lines), i+5))
-            if i not in printed:
-                print(f"\n--- L{i+1}: {line.strip()[:120]} ---")
-                for j in block:
-                    printed.add(j)
-                    print(f"  {lines[j].rstrip()[:180]}")
+    for src in menu_scripts:
+        url = BASE_URL + src if src.startswith("/") else src
+        r = sess.get(url, headers={"Referer": BASE_URL + "/login/menu.jsp"}, verify=False, timeout=15)
+        js = r.content.decode("utf-8", errors="ignore")
+        print(f"\n  [{r.status_code} {len(js):,}자] {src}")
+        if "AddTab" in js:
+            # AddTab 함수 전체 출력
+            m = re.search(r'.{0,30}AddTab.{0,2000}', js, re.DOTALL)
+            if m:
+                print(f"    AddTab 발견:\n{m.group()[:2000]}")
+        if "000132" in js or "000323" in js:
+            print(f"    탭ID 데이터 발견!")
+            idx = js.find("000132")
+            if idx < 0: idx = js.find("000323")
+            print(f"    컨텍스트: ...{js[max(0,idx-200):idx+300]}...")
 
-    # ── 3. 모든 onclick 핸들러 ───────────────────────────────────────────
-    print("\n=== onclick 핸들러 전체 ===")
-    for m in re.finditer(r'onclick\s*=\s*["\']([^"\']{5,})["\']', text, re.IGNORECASE):
-        fn = m.group(1).strip()
-        print(f"  {fn[:200]}")
-
-    # ── 4. menu.jsp가 로드하는 스크립트 파일 ─────────────────────────────
-    print("\n=== 로드된 외부 스크립트 ===")
-    for m in re.finditer(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', text, re.IGNORECASE):
-        src = m.group(1)
-        print(f"  {src}")
-        # 매장/매출분석 관련 스크립트면 내용도 확인
-        if any(k in src.lower() for k in ["menu", "nav", "cswm"]):
-            r = sess.get(BASE_URL + src if src.startswith("/") else src,
-                         headers={"Referer": BASE_URL + "/login/menu.jsp"}, verify=False, timeout=15)
-            content = r.content.decode("utf-8", errors="ignore")
-            print(f"    크기={len(content):,}자")
-            # 네비게이션 URL 패턴 찾기
-            for nav in re.findall(r'["\'](?:/[a-zA-Z0-9/_\-]+\.jsp)["\']', content):
-                if nav not in ['"/login/menu.jsp"', "'/login/menu.jsp'"]:
-                    print(f"    JSP: {nav}")
-
-    # ── 5. JSP 경로 후보 직접 시도 (Referer 포함) ───────────────────────
-    print("\n=== JSP 경로 직접 시도 (Referer 포함) ===")
+    # ── 3. HistoryFrm 관련 JSP 탐색 ─────────────────────────────────────
+    print("\n=== HistoryFrm 관련 JSP 탐색 ===")
     candidates = [
-        "/sale/stat/shop010.jsp",
-        "/sale/stat/shopStat010.jsp",
-        "/sale/stat/saleShop010.jsp",
-        "/sale/sale/shopSale010.jsp",
-        "/sale/sale/saleShop010.jsp",
-        "/sale/month/shop010.jsp",
-        "/sale/month/shopMonth010.jsp",
-        "/stat/shop010.jsp",
-        "/stat/sale/shop010.jsp",
-        "/sale/stat/stat010.jsp",
-        "/sale/sale/stat010.jsp",
-        "/sale/sale/shopInfo010.jsp",
-        "/info/shop/shop010.jsp",
-        "/basic/shop/shop010.jsp",
+        "/login/history.jsp",
+        "/login/historyFrm.jsp",
+        "/login/tab.jsp",
+        "/login/tabFrm.jsp",
+        "/login/menuTab.jsp",
+        "/login/tabHistory.jsp",
+        "/common/jsp/history.jsp",
+        "/common/jsp/tab.jsp",
+        "/login/main.jsp",
+        "/login/content.jsp",
+        "/login/mainFrm.jsp",
     ]
     for path in candidates:
-        r = sess.get(BASE_URL + path,
-                     headers={"Referer": BASE_URL + "/login/menu.jsp"}, verify=False, timeout=10)
-        status = r.status_code
-        size = len(r.text)
-        sym = "✅" if status == 200 else ("⚠️" if status == 302 else "❌")
-        print(f"  {sym} [{status} {size:5}] {path}")
-        if status == 200 and size > 500:
-            # 유의미한 페이지면 제목과 form action 출력
-            title = re.search(r'<title[^>]*>([^<]+)</title>', r.text, re.IGNORECASE)
-            forms = re.findall(r'action\s*=\s*["\']([^"\']+)["\']', r.text)
-            if title:
-                print(f"    title: {title.group(1).strip()}")
-            for f in forms:
-                print(f"    form action: {f}")
+        r = check(sess, path, "")
+        if r:
+            t = r.content.decode("utf-8", errors="ignore")
+            if "AddTab" in t:
+                print(f"    ★ AddTab 발견!")
+                m = re.search(r'.{0,50}AddTab.{0,1000}', t, re.DOTALL)
+                if m: print(f"    {m.group()[:800]}")
+            frames = re.findall(r'<(?:frame|iframe)[^>]+>', t, re.IGNORECASE)
+            for f in frames:
+                print(f"    FRAME: {f[:150]}")
+
+    # ── 4. 메뉴ID → URL 서버 조회 시도 ──────────────────────────────────
+    print("\n=== 메뉴ID → URL 서버 조회 시도 ===")
+    sample_ids = ["000132", "000323", "000111"]
+    for menuId in sample_ids:
+        url_patterns = [
+            f"/login/getMenuUrl.jsp?menuId={menuId}",
+            f"/login/getPagePath.jsp?menuId={menuId}",
+            f"/login/menuDetail.jsp?menuId={menuId}",
+            f"/common/getMenuUrl.jsp?menuId={menuId}",
+            f"/login/menu_page.jsp?menuId={menuId}",
+        ]
+        for path in url_patterns:
+            r = check(sess, path, f"menuId={menuId}")
+
+    # ── 5. top_frame.jsp의 자식 프레임 재귀 탐색 ───────────────────────
+    print("\n=== top_frame.jsp 내 프레임 재귀 조회 ===")
+    frame_srcs = re.findall(r'<(?:frame|iframe)[^>]+src\s*=\s*["\']([^"\']+)["\']', text, re.IGNORECASE)
+    for src in frame_srcs:
+        url = BASE_URL + src if src.startswith("/") else src
+        r2 = sess.get(url, headers={"Referer": BASE_URL + "/login/top_frame.jsp"}, verify=False, timeout=10)
+        t2 = r2.content.decode("utf-8", errors="ignore")
+        print(f"\n  [{r2.status_code} {len(t2):,}자] {src}")
+        if "AddTab" in t2:
+            print(f"    ★ AddTab 발견!")
+            m = re.search(r'AddTab[^}]*\}', t2, re.DOTALL)
+            if m: print(f"    {m.group()[:500]}")
+        if "000132" in t2:
+            idx = t2.find("000132")
+            print(f"    탭ID 000132 발견: ...{t2[max(0,idx-100):idx+200]}...")
+        # 이 프레임이 로드하는 스크립트
+        sub_scripts = re.findall(r'<script[^>]+src\s*=\s*["\']([^"\']+)["\']', t2, re.IGNORECASE)
+        for ss in sub_scripts[:5]:
+            print(f"    sub-script: {ss}")
 
 
 if __name__ == "__main__":
