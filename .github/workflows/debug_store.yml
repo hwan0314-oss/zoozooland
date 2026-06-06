@@ -25,4 +25,4 @@ jobs:
         env:
           KIS_ID: ${{ secrets.KIS_ID }}
           KIS_PW: ${{ secrets.KIS_PW }}
-        run: python debug_store_api.py
+        run: python debug_shop_api.py
