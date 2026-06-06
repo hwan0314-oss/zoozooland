@@ -24,7 +24,7 @@ CHAT_ID   = -1003990713280
 KST = timezone(timedelta(hours=9))
 KMA_API_KEY = os.environ.get("KMA_API_KEY", "")
 
-FOOD_KEYWORDS  = ["먹이", "양분유체험"]
+FOOD_KEYWORDS  = ["먹이", "양분유체험", "밀웜"]  # 밀웜 추가(카페테리아 밀웜체험)
 # 외부 플랫폼(네이버 스마트플레이스 / LS파트너) 결제 상품:
 #   - OKPOS에는 qty만 기록, TOT_SALE_AMT = 0 (대사 목적 0원 상품)
 #   - 실제 정산금액은 각 플랫폼에서 별도 집계
@@ -47,13 +47,19 @@ WMO_WEATHER = {
     95: "뇌우", 96: "뇌우", 99: "뇌우",
 }
 
+# OKPOS MCLS_NM 기준 점포 목록 (매장별매출분석과 동일 기준)
+# 탐색 결과: 매장별매출분석 JSP는 JavaScript 메뉴로만 접근 가능(HTTP 직접 불가)
+#            상품별 API의 MCLS_NM 집계로 동일 데이터 확인됨
 STORE_KEYS = [
     ("레스토랑",     "레스토랑"),
     ("카페테리아",   "카페테리아"),
     ("레스토랑신규", "레스토랑(신)"),
+    ("열린매대",     "열린매대"),      # 먹이판매+음료+간식 복합 (2026-06 확인)
     ("무인점포",     "무인점포"),
     ("드론체험",     "드론체험"),
     ("베이커리",     "베이커리"),
+    ("로봇박물관",   "로봇박물관"),   # 2026-06 확인
+    ("매점",         "매점"),          # 2026-06 확인
 ]
 
 S_SAVENAME = (
@@ -196,19 +202,18 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
         raise RuntimeError(f"API error: {data['Result']['Message']}")
     rows = data.get("Data", [])
 
-    cats      = {}
-    food      = {"qty": 0, "amt": 0}
-    admission = {"individual": 0, "group": 0, "free": 0}
-    # 외부정산 온라인 티켓 수량 별도 집계 (매출 ₩0, 실적 파악용)
-    online    = {"naver": 0, "ls": 0}
+    cats          = {}
+    food          = {"qty": 0, "amt": 0}
+    admission     = {"individual": 0, "group": 0, "free": 0}
+    admission_rev = {"individual_pos": 0, "group": 0}  # 입장매출(원): POS 실결제만
+    online        = {"naver": 0, "ls": 0}  # 외부정산 티켓 수량(매출 ₩0, 참고용)
 
     for row in rows:
         cat     = row.get("MCLS_NM") or row.get("LCLS_NM") or "기타"
         prod_nm = (row.get("PROD_NM") or "").strip()
         scls_nm = (row.get("SCLS_NM") or "").strip()
         qty     = int(row.get("SALE_QTY", 0) or 0)
-        # 온라인 티켓: OKPOS TOT_SALE_AMT = 0(외부결제) → 가짜 금액 없이 0 그대로 사용
-        amt     = int(row.get("TOT_SALE_AMT", 0) or 0)
+        amt     = int(row.get("DCM_SALE_AMT", 0) or 0)  # 할인 후 실결제액
 
         if cat not in cats:
             cats[cat] = {"qty": 0, "amt": 0}
@@ -221,13 +226,19 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
 
         if cat == "매표소":
             if prod_nm in FREE_PRODUCTS:
+                # 무료 입장 (24개월미만, 초대권)
                 admission["free"] += qty
             elif "단체" in scls_nm or "단체" in prod_nm:
+                # 단체 입장 (SCLS_NM 또는 PROD_NM에 "단체" 포함)
                 admission["group"] += qty
-            else:
-                # 개인 + 온라인티켓(SCLS_NM이 "개인"이 아닐 수 있으므로 else로 포괄)
-                # 온라인티켓은 외부결제이므로 단체·무료가 아닌 이상 개인 입장자로 집계
+                admission_rev["group"] += amt
+            elif "개인" in scls_nm or prod_nm in ONLINE_TICKETS:
+                # 개인 입장: POS 결제(SCLS_NM="개인") + 온라인티켓(SCLS_NM="개인")
+                # 온라인티켓은 OKPOS amt=0, 별도 집계
                 admission["individual"] += qty
+                if prod_nm not in ONLINE_TICKETS:  # POS 실결제만 매출에 반영
+                    admission_rev["individual_pos"] += amt
+            # else: 매표소 내 비입장 상품(화분·제로콜라 등) → 집계 제외
 
         if prod_nm in NAVER_TICKETS:
             online["naver"] += qty
@@ -236,7 +247,11 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
 
     print(f"  Categories: {list(cats.keys())}")
     print(f"  Online qty: naver={online['naver']}, ls={online['ls']}")
-    return {"cats": cats, "food": food, "admission": admission, "online": online}
+    print(f"  Admission rev: pos_ind={admission_rev['individual_pos']:,}, grp={admission_rev['group']:,}")
+    return {
+        "cats": cats, "food": food,
+        "admission": admission, "admission_rev": admission_rev, "online": online,
+    }
 
 
 def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
@@ -246,6 +261,7 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
         "cats": {},
         "food": {"qty": 0, "amt": 0},
         "admission": {"individual": 0, "group": 0, "free": 0},
+        "admission_rev": {"individual_pos": 0, "group": 0},
         "online": {"naver": 0, "ls": 0},
     }
     current = start
@@ -262,6 +278,8 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
         total["food"]["amt"] += chunk["food"]["amt"]
         for k in ("individual", "group", "free"):
             total["admission"][k] += chunk["admission"][k]
+        for k in ("individual_pos", "group"):
+            total["admission_rev"][k] += chunk["admission_rev"][k]
         for k in ("naver", "ls"):
             total["online"][k] += chunk["online"][k]
         current = chunk_end + timedelta(days=1)
@@ -475,13 +493,22 @@ def _section_data(curr, prev):
     cats_c = curr["cats"];  cats_p = prev["cats"]
     fa     = curr["food"]["amt"]; pfa = prev["food"]["amt"]
     adm_c  = curr["admission"]; adm_p = prev["admission"]
+    rev_c  = curr["admission_rev"]; rev_p = prev["admission_rev"]
 
+    # 입장객 수 (명)
     ind_c = adm_c["individual"]; ind_p = adm_p["individual"]
     grp_c = adm_c["group"];      grp_p = adm_p["group"]
     fre_c = adm_c["free"];       fre_p = adm_p["free"]
     tot_c = ind_c + grp_c + fre_c
     tot_p = ind_p + grp_p + fre_p
 
+    # 입장매출 (원): 개인 POS + 단체
+    # 온라인(네이버/LS)은 외부정산 ₩0 → 별도 집계 예정, 현재는 POS만 포함
+    ir_c = rev_c["individual_pos"]; ir_p = rev_p["individual_pos"]
+    gr_c = rev_c["group"];          gr_p = rev_p["group"]
+    tr_c = ir_c + gr_c;             tr_p = ir_p + gr_p
+
+    # 점포합계
     tc, tp = 0, 0
     store_rows = []
     for k, lbl in STORE_KEYS:
@@ -490,21 +517,29 @@ def _section_data(curr, prev):
         tc += ca; tp += pa
         store_rows.append((f"  {lbl}", f"{fmt_num(ca)}원", fyoy(yoy(ca, pa))))
 
+    # 전체매출: 온라인티켓 ₩0(외부정산) 이미 제외된 OKPOS 실집계
     all_c = sum(v["amt"] for v in cats_c.values())
     all_p = sum(v["amt"] for v in cats_p.values())
 
     return [
+        # ── 입장객 수 ──
         ("입장(전체)", f"{fmt_num(tot_c)}명", fyoy(yoy(tot_c, tot_p))),
         ("  개인",     f"{fmt_num(ind_c)}명", fyoy(yoy(ind_c, ind_p))),
         ("  단체",     f"{fmt_num(grp_c)}명", fyoy(yoy(grp_c, grp_p))),
         ("  무료",     f"{fmt_num(fre_c)}명", fyoy(yoy(fre_c, fre_p))),
         None,
-        ("먹이판매",   f"{fmt_num(fa)}원",    fyoy(yoy(fa, pfa))),
+        # ── 입장매출 (개인 POS + 온라인외부정산 + 단체) ──
+        ("입장매출",     f"{fmt_num(tr_c)}원", fyoy(yoy(tr_c, tr_p))),
+        ("  개인(POS)",  f"{fmt_num(ir_c)}원", fyoy(yoy(ir_c, ir_p))),
+        ("  단체",       f"{fmt_num(gr_c)}원", fyoy(yoy(gr_c, gr_p))),
         None,
+        # ── 먹이판매 ──
+        ("먹이판매",   f"{fmt_num(fa)}원", fyoy(yoy(fa, pfa))),
+        None,
+        # ── 점포별 ──
         *store_rows,
-        ("  점포합계", f"{fmt_num(tc)}원",    fyoy(yoy(tc, tp))),
+        ("  점포합계", f"{fmt_num(tc)}원", fyoy(yoy(tc, tp))),
         None,
-        # 전체매출: 온라인티켓은 OKPOS에 ₩0으로 등록(외부정산)이므로 이미 제외된 실집계
         ("전체매출",   f"{fmt_num(all_c)}원", fyoy(yoy(all_c, all_p))),
     ]
 
@@ -740,19 +775,15 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
     cats_mc = mc["cats"]; cats_mp = mp["cats"]
     cats_yc = yc["cats"]; cats_yp = yp["cats"]
 
-    # 입장
+    # 입장객 수
     def adm_rows():
-        for period, c, p in [("d", dc, dp), ("m", mc, mp), ("y", yc, yp)]:
-            pass  # calculated below
-
-        ind = lambda c, p: (c["admission"]["individual"], p["admission"]["individual"])
-        grp = lambda c, p: (c["admission"]["group"],      p["admission"]["group"])
-        fre = lambda c, p: (c["admission"]["free"],        p["admission"]["free"])
-
         def pv(c, p): return (
             c["admission"]["individual"] + c["admission"]["group"] + c["admission"]["free"],
             p["admission"]["individual"] + p["admission"]["group"] + p["admission"]["free"],
         )
+        ind = lambda c, p: (c["admission"]["individual"], p["admission"]["individual"])
+        grp = lambda c, p: (c["admission"]["group"],      p["admission"]["group"])
+        fre = lambda c, p: (c["admission"]["free"],        p["admission"]["free"])
 
         def row3(fn, label, **kw):
             dv, dpv = fn(dc, dp); mv, mpv = fn(mc, mp); yv, ypv = fn(yc, yp)
@@ -769,6 +800,29 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
             row3(ind, "개인",       indent=True),
             row3(grp, "단체",       indent=True),
             row3(fre, "무료",       indent=True),
+        ]
+
+    # 입장매출 (POS 개인 + 단체; 온라인은 외부정산으로 추후 추가)
+    def adm_rev_rows():
+        def rev3(fn, label, **kw):
+            dv, dpv = fn(dc, dp); mv, mpv = fn(mc, mp); yv, ypv = fn(yc, yp)
+            return _build_dashboard_row(
+                label,
+                _fv(dv,"원"), fyoy(yoy(dv,dpv)),
+                _fv(mv,"원"), fyoy(yoy(mv,mpv)),
+                _fv(yv,"원"), fyoy(yoy(yv,ypv)),
+                **kw,
+            )
+        tot = lambda c, p: (
+            c["admission_rev"]["individual_pos"] + c["admission_rev"]["group"],
+            p["admission_rev"]["individual_pos"] + p["admission_rev"]["group"],
+        )
+        ind = lambda c, p: (c["admission_rev"]["individual_pos"], p["admission_rev"]["individual_pos"])
+        grp = lambda c, p: (c["admission_rev"]["group"], p["admission_rev"]["group"])
+        return [
+            rev3(tot, "입장매출",    header=True),
+            rev3(ind, "  개인(POS)", indent=True),
+            rev3(grp, "  단체",      indent=True),
         ]
 
     # 먹이
@@ -847,6 +901,8 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
         },
         "rows": [
             *adm_rows(),
+            {"separator": True},
+            *adm_rev_rows(),
             {"separator": True},
             food_row(),
             {"separator": True},
