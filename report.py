@@ -957,7 +957,8 @@ async def main():
     img_buf = create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, yc, yp)
 
     bot = telegram.Bot(token=BOT_TOKEN)
-    await bot.send_photo(chat_id=CHAT_ID, photo=img_buf)
+    caption = "* 모든 금액은 부가세(VAT 10%) 포함"
+    await bot.send_photo(chat_id=CHAT_ID, photo=img_buf, caption=caption)
     print("Sent!")
 
 
