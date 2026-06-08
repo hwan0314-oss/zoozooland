@@ -25,7 +25,6 @@ CHAT_ID   = -1003990713280
 KST = timezone(timedelta(hours=9))
 KMA_API_KEY = os.environ.get("KMA_API_KEY", "")
 
-FOOD_KEYWORDS  = ["먹이", "양분유체험", "밀웜"]  # 밀웜 추가(카페테리아 밀웜체험)
 # 외부 플랫폼(네이버 스마트플레이스 / LS파트너) 결제 상품:
 #   - OKPOS에는 qty만 기록, TOT_SALE_AMT = 0 (대사 목적 0원 상품)
 #   - 실제 정산금액은 각 플랫폼에서 별도 집계
@@ -49,8 +48,9 @@ WMO_WEATHER = {
 }
 
 # OKPOS 매장별매출분석 API (dayranking010) SHOP_NM 기준 점포 목록
-# 매표소(입장)와 먹이판매는 별도 항목으로 집계하므로 제외
+# "매표소"와 "먹이판매"는 동일 매표소 부스의 별도 POS 단말 → fetch_shop_sales에서 "매표소"로 통합
 STORE_KEYS = [
+    ("매표소",       "매표소"),
     ("쥬쥬레스토랑", "쥬쥬레스토랑"),
     ("공방카페",     "공방카페"),
     ("파충류관",     "파충류관"),
@@ -211,10 +211,16 @@ def fetch_shop_sales(sess, date_from, date_to):
     shops = {}
     for row in data.get("Data", []):
         nm = row.get("SHOP_NM", "")
-        shops[nm] = {
-            "amt": int(row.get("DCM_SALE_AMT") or 0),
-            "cnt": int(row.get("TOT_SALE_CNT") or 0),
-        }
+        if nm == "먹이판매":
+            # 매표소 부스에서 별도 POS 단말로 운영 중인 매장명 → "매표소"로 통합
+            nm = "매표소"
+        amt = int(row.get("DCM_SALE_AMT") or 0)
+        cnt = int(row.get("TOT_SALE_CNT") or 0)
+        if nm in shops:
+            shops[nm]["amt"] += amt
+            shops[nm]["cnt"] += cnt
+        else:
+            shops[nm] = {"amt": amt, "cnt": cnt}
     print(f"  Shops: {[(k, v['amt']) for k, v in shops.items()]}")
     return shops
 
@@ -248,6 +254,7 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
     food          = {"qty": 0, "amt": 0}
     admission     = {"individual": 0, "group": 0, "free": 0}
     admission_rev = {"individual_pos": 0, "group": 0}
+    online_rev    = {"naver": 0, "ls": 0}  # 네이버/LS 추정매출(전체매출 합산용)
 
     for row in rows:
         cat     = row.get("MCLS_NM") or row.get("LCLS_NM") or "기타"
@@ -261,34 +268,41 @@ def fetch_sales(sess, tok_name, tok_val, date_from, date_to):
         cats[cat]["qty"] += qty
         cats[cat]["amt"] += amt
 
-        if any(kw in prod_nm for kw in FOOD_KEYWORDS):
+        # 먹이매출: 메뉴 > 동물먹이 > 동물먹이
+        if cat == "동물먹이":
             food["qty"] += qty
             food["amt"] += amt
 
+        # 입장객/입장매출: 메뉴 > 매표소 > 개인 / 단체 (SCLS_NM 기준)
         if cat == "매표소":
-            if prod_nm in FREE_PRODUCTS:
-                # 무료 입장 (24개월미만, 초대권)
-                admission["free"] += qty
-            elif "단체" in scls_nm or "단체" in prod_nm:
-                # 단체 입장 (SCLS_NM 또는 PROD_NM에 "단체" 포함)
+            if scls_nm == "단체":
                 admission["group"] += qty
                 admission_rev["group"] += amt
-            elif "개인" in scls_nm or prod_nm in ONLINE_TICKETS:
-                # 개인 입장: POS 결제 + 네이버/LS 온라인 티켓
-                # 온라인 티켓은 OKPOS amt=0 → 기간별 단가로 추정 매출 반영
-                admission["individual"] += qty
-                if prod_nm in ONLINE_TICKETS:
-                    sale_d = row.get("SALE_DATE", "")
-                    admission_rev["individual_pos"] += qty * online_ticket_price(sale_d)
+            elif scls_nm == "개인":
+                if prod_nm in FREE_PRODUCTS:
+                    # 무료 입장 (24개월미만, 초대권)
+                    admission["free"] += qty
                 else:
-                    admission_rev["individual_pos"] += amt
+                    admission["individual"] += qty
+                    if prod_nm in ONLINE_TICKETS:
+                        # 네이버/LS 온라인 티켓: OKPOS amt=0 → 기간별 단가로 추정 매출 반영
+                        sale_d = row.get("SALE_DATE", "")
+                        rev    = qty * online_ticket_price(sale_d)
+                        admission_rev["individual_pos"] += rev
+                        if prod_nm in NAVER_TICKETS:
+                            online_rev["naver"] += rev
+                        else:
+                            online_rev["ls"] += rev
+                    else:
+                        admission_rev["individual_pos"] += amt
             # else: 매표소 내 비입장 상품(화분·제로콜라 등) → 집계 제외
 
     print(f"  Categories: {list(cats.keys())}")
     print(f"  Admission rev: pos_ind={admission_rev['individual_pos']:,}, grp={admission_rev['group']:,}")
+    print(f"  Online rev est: naver={online_rev['naver']:,}, ls={online_rev['ls']:,}")
     return {
         "cats": cats, "food": food,
-        "admission": admission, "admission_rev": admission_rev,
+        "admission": admission, "admission_rev": admission_rev, "online_rev": online_rev,
     }
 
 
@@ -300,6 +314,7 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
         "food": {"qty": 0, "amt": 0},
         "admission": {"individual": 0, "group": 0, "free": 0},
         "admission_rev": {"individual_pos": 0, "group": 0},
+        "online_rev": {"naver": 0, "ls": 0},
     }
     current = start
     while current <= end:
@@ -317,6 +332,8 @@ def fetch_sales_chunked(sess, date_from_str, date_to_str, max_days=90):
             total["admission"][k] += chunk["admission"][k]
         for k in ("individual_pos", "group"):
             total["admission_rev"][k] += chunk["admission_rev"][k]
+        for k in ("naver", "ls"):
+            total["online_rev"][k] += chunk["online_rev"][k]
         current = chunk_end + timedelta(days=1)
     return total
 
@@ -541,10 +558,11 @@ def _section_data(curr, prev):
     """(label, val_str, yoy_str) 리스트. None 은 구분선."""
     shops_c = curr.get("shops", {})
     shops_p = prev.get("shops", {})
-    fa      = shops_c.get("먹이판매", {}).get("amt", 0)
-    pfa     = shops_p.get("먹이판매", {}).get("amt", 0)
+    fa      = curr["food"]["amt"]
+    pfa     = prev["food"]["amt"]
     adm_c   = curr["admission"]; adm_p = prev["admission"]
     rev_c   = curr["admission_rev"]; rev_p = prev["admission_rev"]
+    onl_c   = curr["online_rev"]; onl_p = prev["online_rev"]
 
     # 입장객 수 (명)
     ind_c = adm_c["individual"]; ind_p = adm_p["individual"]
@@ -553,24 +571,23 @@ def _section_data(curr, prev):
     tot_c = ind_c + grp_c + fre_c
     tot_p = ind_p + grp_p + fre_p
 
-    # 입장매출 (원): 개인 POS + 단체
-    # 온라인(네이버/LS)은 외부정산 ₩0 → 별도 집계 예정, 현재는 POS만 포함
+    # 입장매출 (원): 개인(POS+온라인추정) + 단체
     ir_c = rev_c["individual_pos"]; ir_p = rev_p["individual_pos"]
     gr_c = rev_c["group"];          gr_p = rev_p["group"]
     tr_c = ir_c + gr_c;             tr_p = ir_p + gr_p
 
-    # 점포합계
-    tc, tp = 0, 0
+    # 점포별
     store_rows = []
     for k, lbl in STORE_KEYS:
         ca = shops_c.get(k, {}).get("amt", 0)
         pa = shops_p.get(k, {}).get("amt", 0)
-        tc += ca; tp += pa
         store_rows.append((f"  {lbl}", f"{fmt_num(ca)}원", fyoy(yoy(ca, pa))))
 
-    # 전체매출: 매장별매출분석 API의 모든 매장 합계
-    all_c = sum(v["amt"] for v in shops_c.values())
-    all_p = sum(v["amt"] for v in shops_p.values())
+    # 전체매출: 점포별 매출 합계 + 네이버/LS 온라인 추정매출
+    shop_c = sum(v["amt"] for v in shops_c.values())
+    shop_p = sum(v["amt"] for v in shops_p.values())
+    all_c  = shop_c + onl_c["naver"] + onl_c["ls"]
+    all_p  = shop_p + onl_p["naver"] + onl_p["ls"]
 
     return [
         # ── 입장객 수 ──
@@ -579,17 +596,16 @@ def _section_data(curr, prev):
         ("  단체",     f"{fmt_num(grp_c)}명", fyoy(yoy(grp_c, grp_p))),
         ("  무료",     f"{fmt_num(fre_c)}명", fyoy(yoy(fre_c, fre_p))),
         None,
-        # ── 입장매출 (개인 POS + 온라인외부정산 + 단체) ──
+        # ── 입장매출 (개인 POS+온라인추정 + 단체) ──
         ("입장매출",     f"{fmt_num(tr_c)}원", fyoy(yoy(tr_c, tr_p))),
         ("  개인(POS)",  f"{fmt_num(ir_c)}원", fyoy(yoy(ir_c, ir_p))),
         ("  단체",       f"{fmt_num(gr_c)}원", fyoy(yoy(gr_c, gr_p))),
         None,
-        # ── 먹이판매 ──
-        ("먹이판매",   f"{fmt_num(fa)}원", fyoy(yoy(fa, pfa))),
+        # ── 먹이매출 ──
+        ("먹이매출",   f"{fmt_num(fa)}원", fyoy(yoy(fa, pfa))),
         None,
         # ── 점포별 ──
         *store_rows,
-        ("  점포합계", f"{fmt_num(tc)}원", fyoy(yoy(tc, tp))),
         None,
         ("전체매출",   f"{fmt_num(all_c)}원", fyoy(yoy(all_c, all_p))),
     ]
@@ -1004,46 +1020,40 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
             rev3(grp, "  단체",      indent=True),
         ]
 
-    # 먹이
+    # 먹이매출 (메뉴 > 동물먹이 > 동물먹이)
     def food_row():
-        dv=shops_dc.get("먹이판매",{}).get("amt",0); dpv=shops_dp.get("먹이판매",{}).get("amt",0)
-        mv=shops_mc.get("먹이판매",{}).get("amt",0); mpv=shops_mp.get("먹이판매",{}).get("amt",0)
-        yv=shops_yc.get("먹이판매",{}).get("amt",0); ypv=shops_yp.get("먹이판매",{}).get("amt",0)
+        dv=dc["food"]["amt"]; dpv=dp["food"]["amt"]
+        mv=mc["food"]["amt"]; mpv=mp["food"]["amt"]
+        yv=yc["food"]["amt"]; ypv=yp["food"]["amt"]
         return _build_dashboard_row(
-            "먹이판매",
+            "먹이매출",
             _fv(dv,"원"), fyoy(yoy(dv,dpv)),
             _fv(mv,"원"), fyoy(yoy(mv,mpv)),
             _fv(yv,"원"), fyoy(yoy(yv,ypv)),
         )
 
     # 점포
-    def store_rows_and_subtotal():
+    def store_rows():
         rows = []
-        tc = tp = tm_c = tm_p = ty_c = ty_p = 0
         for k, lbl in STORE_KEYS:
             dv  = shops_dc.get(k,{}).get("amt",0); dpv = shops_dp.get(k,{}).get("amt",0)
             mv  = shops_mc.get(k,{}).get("amt",0); mpv = shops_mp.get(k,{}).get("amt",0)
             yv  = shops_yc.get(k,{}).get("amt",0); ypv = shops_yp.get(k,{}).get("amt",0)
-            tc += dv; tp += dpv; tm_c += mv; tm_p += mpv; ty_c += yv; ty_p += ypv
             rows.append(_build_dashboard_row(
                 lbl,
                 _fv(dv,"원"), fyoy(yoy(dv,dpv)),
                 _fv(mv,"원"), fyoy(yoy(mv,mpv)),
                 _fv(yv,"원"), fyoy(yoy(yv,ypv)),
             ))
-        rows.append(_build_dashboard_row(
-            "점포합계",
-            _fv(tc,"원"), fyoy(yoy(tc,tp)),
-            _fv(tm_c,"원"), fyoy(yoy(tm_c,tm_p)),
-            _fv(ty_c,"원"), fyoy(yoy(ty_c,ty_p)),
-            subtotal=True,
-        ))
         return rows
 
-    # 전체매출 (매장별매출분석 API 모든 매장 합계)
-    all_dc=sum(v["amt"] for v in shops_dc.values()); all_dp=sum(v["amt"] for v in shops_dp.values())
-    all_mc=sum(v["amt"] for v in shops_mc.values()); all_mp=sum(v["amt"] for v in shops_mp.values())
-    all_yc=sum(v["amt"] for v in shops_yc.values()); all_yp=sum(v["amt"] for v in shops_yp.values())
+    # 전체매출 (점포별 매출 합계 + 네이버/LS 온라인 추정매출)
+    all_dc=sum(v["amt"] for v in shops_dc.values())+dc["online_rev"]["naver"]+dc["online_rev"]["ls"]
+    all_dp=sum(v["amt"] for v in shops_dp.values())+dp["online_rev"]["naver"]+dp["online_rev"]["ls"]
+    all_mc=sum(v["amt"] for v in shops_mc.values())+mc["online_rev"]["naver"]+mc["online_rev"]["ls"]
+    all_mp=sum(v["amt"] for v in shops_mp.values())+mp["online_rev"]["naver"]+mp["online_rev"]["ls"]
+    all_yc=sum(v["amt"] for v in shops_yc.values())+yc["online_rev"]["naver"]+yc["online_rev"]["ls"]
+    all_yp=sum(v["amt"] for v in shops_yp.values())+yp["online_rev"]["naver"]+yp["online_rev"]["ls"]
     total_row = _build_dashboard_row(
         "전체매출",
         _fv(all_dc,"원"), fyoy(yoy(all_dc,all_dp)),
@@ -1075,7 +1085,7 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
             {"separator": True},
             food_row(),
             {"separator": True},
-            *store_rows_and_subtotal(),
+            *store_rows(),
             total_row,
         ],
         "generated_at": datetime.now(KST).strftime("%Y-%m-%d %H:%M KST"),
@@ -1136,8 +1146,7 @@ async def main():
     img_buf = create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, yc, yp)
 
     bot = telegram.Bot(token=BOT_TOKEN)
-    caption = "* 모든 금액은 부가세(VAT 10%) 포함"
-    await bot.send_photo(chat_id=CHAT_ID, photo=img_buf, caption=caption)
+    await bot.send_photo(chat_id=CHAT_ID, photo=img_buf)
     print("Sent!")
 
 
