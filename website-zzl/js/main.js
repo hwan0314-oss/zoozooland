@@ -174,9 +174,11 @@
     try {
       const res = await fetch('data/settings.json', { cache: 'no-cache' });
       if (!res.ok) return;
-      const { group_email } = await res.json();
+      const { group_email, biz_email } = await res.json();
       const gl = document.getElementById('groupEmailLink');
       if (group_email && gl) gl.href = `mailto:${group_email}`;
+      const bl = document.getElementById('bizEmailLink');
+      if (biz_email && bl) bl.href = `mailto:${biz_email}?subject=%5BZZL%20PARTNERSHIP%5D%20%EC%A0%9C%ED%9C%B4%20%EB%AC%B8%EC%9D%98`;
     } catch {}
   }
   loadSettings();
@@ -373,23 +375,5 @@
   }
   initReviewSlider();
 
-  /* ── 제휴 폼 ── */
-  document.getElementById('partnerForm')?.addEventListener('submit', e => {
-    e.preventDefault();
-    const company = document.getElementById('fCompany')?.value.trim();
-    const name    = document.getElementById('fName')?.value.trim();
-    const phone   = document.getElementById('fPhone')?.value.trim();
-    const email   = document.getElementById('fEmail')?.value.trim();
-    const content = document.getElementById('fContent')?.value.trim();
-    const note    = document.getElementById('partnerNote');
-    if (!email) {
-      if (note) { note.classList.remove('hidden'); note.style.color='#ff4444'; note.textContent='EMAIL_REQUIRED: input valid address'; }
-      return;
-    }
-    const subj = encodeURIComponent(`[ZZL PARTNERSHIP] ${company||'N/A'} - ${name||'N/A'}`);
-    const body = encodeURIComponent(`COMPANY: ${company}\nCONTACT: ${name}\nPHONE: ${phone}\nEMAIL: ${email}\n\nPROPOSAL:\n${content}`);
-    window.location.href = `mailto:biz@zoozoo.kr?subject=${subj}&body=${body}`;
-    if (note) { note.classList.remove('hidden'); note.style.color='#D4FF00'; note.textContent='EMAIL_CLIENT_OPENED — reply within 2-3 business days'; }
-  });
 
 })();
