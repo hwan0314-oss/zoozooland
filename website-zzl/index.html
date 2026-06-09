@@ -485,29 +485,24 @@
       </div>
     </div>
 
-    <!-- 제휴 폼 -->
+    <!-- 제휴 문의 -->
     <div class="card-frame bg-black p-8 md:p-12">
       <div class="mono text-[#D4FF00] mb-8">MODULE: PARTNERSHIP_PROTOCOL</div>
       <h3 class="text-3xl font-black mb-4">마케팅 / 제휴</h3>
       <p class="text-gray-400 text-sm mb-10 leading-relaxed">
         광고 · 협찬 · 콜라보 제안을 환영합니다.
       </p>
-      <form id="partnerForm" class="space-y-4" novalidate>
-        <div class="grid grid-cols-2 gap-4">
-          <input type="text" id="fCompany" class="partner-input" placeholder="COMPANY_NAME">
-          <input type="text" id="fName"    class="partner-input" placeholder="CONTACT_PERSON">
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <input type="tel"   id="fPhone" class="partner-input" placeholder="PHONE_NUMBER">
-          <input type="email" id="fEmail" class="partner-input" placeholder="EMAIL_ADDRESS *">
-        </div>
-        <textarea id="fContent" rows="4" class="partner-input" placeholder="PROPOSAL_CONTENT..."></textarea>
-        <button type="submit"
-                class="w-full py-4 bg-[#D4FF00] text-black font-black mono text-xs uppercase hover:bg-white transition">
-          SUBMIT_PROPOSAL →
-        </button>
-        <p id="partnerNote" class="mono text-[10px] text-center hidden"></p>
-      </form>
+      <div class="space-y-3">
+        <a href="tel:031-962-4500"
+           class="block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition">
+          CALL: 031-962-4500
+        </a>
+        <a href="mailto:hwan9740@zoozoo.kr?subject=%5BZZL%20PARTNERSHIP%5D%20%EC%A0%9C%ED%9C%B4%20%EB%AC%B8%EC%9D%98"
+           class="block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition"
+           id="bizEmailLink">
+          EMAIL_PROPOSAL →
+        </a>
+      </div>
     </div>
   </div>
 </section>
