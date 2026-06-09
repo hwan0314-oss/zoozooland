@@ -1,0 +1,45 @@
+name: Validate Report Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: '검증 기준 날짜 (YYYY-MM-DD, 비워두면 오늘)'
+        required: false
+        default: ''
+
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Korean fonts
+        run: sudo apt-get install -y fonts-nanum
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run validation
+        env:
+          KIS_ID: ${{ secrets.KIS_ID }}
+          KIS_PW: ${{ secrets.KIS_PW }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          KMA_API_KEY: ${{ secrets.KMA_API_KEY }}
+        run: |
+          DATE="${{ github.event.inputs.target_date }}"
+          if [ -z "$DATE" ]; then
+            python validate_data.py
+          else
+            python validate_data.py "$DATE"
+          fi
