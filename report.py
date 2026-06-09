@@ -800,7 +800,7 @@ def create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, 
 
     kpis = [
         ("일일 전체매출",   f"₩{fmt_num(d_amt_c)}", yoy(d_amt_c, d_amt_p)),
-        ("일일 유료 입장객", f"{fmt_num(d_vis_c)}명", yoy(d_vis_c, d_vis_p)),
+        ("일일 총 유료 입장객", f"{fmt_num(d_vis_c)}명", yoy(d_vis_c, d_vis_p)),
         ("연누계 전체매출", f"₩{fmt_num(y_amt_c)}", yoy(y_amt_c, y_amt_p)),
     ]
 
