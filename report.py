@@ -677,7 +677,7 @@ def create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, 
     CHDR_H   = 26
     ROW_H    = 32
     SEP_H    = 6
-    FOOT_H   = 28
+    FOOT_H   = 82
 
     # col widths sum = TABLE_W = 880
     col_w = [165, 143, 97, 143, 97, 143, 92]
@@ -791,16 +791,16 @@ def create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, 
     adm_dc   = dc.get("admission", {})
     adm_dp   = dp.get("admission", {})
 
-    d_amt_c = sum(v["amt"] for v in shops_dc.values())
-    d_amt_p = sum(v["amt"] for v in shops_dp.values())
-    y_amt_c = sum(v["amt"] for v in shops_yc.values())
-    y_amt_p = sum(v["amt"] for v in shops_yp.values())
-    d_vis_c = adm_dc.get("individual", 0) + adm_dc.get("group", 0) + adm_dc.get("free", 0)
-    d_vis_p = adm_dp.get("individual", 0) + adm_dp.get("group", 0) + adm_dp.get("free", 0)
+    d_amt_c = sum(v["amt"] for v in shops_dc.values()) + dc["online_rev"]["naver"] + dc["online_rev"]["ls"]
+    d_amt_p = sum(v["amt"] for v in shops_dp.values()) + dp["online_rev"]["naver"] + dp["online_rev"]["ls"]
+    y_amt_c = sum(v["amt"] for v in shops_yc.values()) + yc["online_rev"]["naver"] + yc["online_rev"]["ls"]
+    y_amt_p = sum(v["amt"] for v in shops_yp.values()) + yp["online_rev"]["naver"] + yp["online_rev"]["ls"]
+    d_vis_c = adm_dc.get("individual", 0) + adm_dc.get("group", 0)
+    d_vis_p = adm_dp.get("individual", 0) + adm_dp.get("group", 0)
 
     kpis = [
-        ("일일 전체매출",  f"₩{fmt_num(d_amt_c)}", yoy(d_amt_c, d_amt_p)),
-        ("일일 총 입장객", f"{fmt_num(d_vis_c)}명", yoy(d_vis_c, d_vis_p)),
+        ("일일 전체매출",   f"₩{fmt_num(d_amt_c)}", yoy(d_amt_c, d_amt_p)),
+        ("일일 유료 입장객", f"{fmt_num(d_vis_c)}명", yoy(d_vis_c, d_vis_p)),
         ("연누계 전체매출", f"₩{fmt_num(y_amt_c)}", yoy(y_amt_c, y_amt_p)),
     ]
 
@@ -931,7 +931,17 @@ def create_report_image(today, ptd, weather_today, weather_ptd, dc, dp, mc, mp, 
     # ═══ FOOTER ════════════════════════════════════════════════════════════
     draw.rectangle([0, cur_y, TOTAL_W - 1, cur_y + FOOT_H - 1], fill=CGR100)
     draw.line([(0, cur_y), (TOTAL_W - 1, cur_y)], fill=CGR200)
-    tl("※ 모든 금액은 부가세(VAT 10%) 포함 금액입니다.", fnt_ft, CGR500, 0, cur_y, TOTAL_W, FOOT_H, hpad=LPAD)
+    foot_notes = [
+        "※ 모든 금액은 부가세(VAT 10%) 포함 금액입니다.",
+        "※ 네이버·LS 매출은 OKPOS 수량 × 기간별 단가(기본 ₩15,000 / 2025.01~02 ₩12,000 / 2026.03 ₩10,000) 추정값입니다.",
+        "※ 일별 실적은 전년의 같은 요일(최근접 날짜)과 비교됩니다.",
+        "※ 먹이매출은 매표소·먹이판매 각 포스에서 먹이 상품 매출만 별도 합산한 금액입니다.",
+    ]
+    fn_y = cur_y + 8
+    for fn in foot_notes:
+        b = _bb(fn, fnt_ft)
+        draw.text((LPAD, fn_y - b[1]), fn, font=fnt_ft, fill=CGR500)
+        fn_y += (b[3] - b[1]) + 4
 
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
@@ -1069,12 +1079,12 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
         "prev_weather":  {"desc": weather_ptd[0],   "tmax": weather_ptd[1],   "tmin": weather_ptd[2]},
         "kpi": {
             "daily_sales":         f"{fmt_num(all_dc)}",
-            "daily_visitors":      f"{fmt_num(dc['admission']['individual'] + dc['admission']['group'] + dc['admission']['free'])}",
+            "daily_visitors":      f"{fmt_num(dc['admission']['individual'] + dc['admission']['group'])}",
             "ytd_sales":           f"{fmt_num(all_yc)}",
             "daily_sales_yoy":     fyoy(yoy(all_dc, all_dp)),
             "daily_visitors_yoy":  fyoy(yoy(
-                dc["admission"]["individual"] + dc["admission"]["group"] + dc["admission"]["free"],
-                dp["admission"]["individual"] + dp["admission"]["group"] + dp["admission"]["free"],
+                dc["admission"]["individual"] + dc["admission"]["group"],
+                dp["admission"]["individual"] + dp["admission"]["group"],
             )),
             "ytd_sales_yoy":       fyoy(yoy(all_yc, all_yp)),
         },
