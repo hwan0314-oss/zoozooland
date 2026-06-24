@@ -1,0 +1,5 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <rect width="128" height="128" rx="28" fill="#0A0B0A"/>
+  <text x="16" y="60" font-family="Inter, Arial, sans-serif" font-size="50" font-weight="900" fill="#D4FF00" letter-spacing="-0.05em">ZZ</text>
+  <text x="110" y="94" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="900" fill="#FFFFFF" text-anchor="end">L</text>
+</svg>

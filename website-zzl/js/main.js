@@ -2,13 +2,26 @@
 (() => {
   'use strict';
 
-  /* ── LightWidget 브라우저 캐시 방지 ── */
-  const lwIframe = document.querySelector('.lightwidget-widget');
-  if (lwIframe) {
-    const base = lwIframe.getAttribute('src').split('?')[0];
-    const ts = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-    lwIframe.setAttribute('src', `${base}?cb=${ts}`);
+  /* ── 인스타그램 피드 ── */
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+  async function loadInstagramFeed() {
+    const grid = document.getElementById('igFeed');
+    if (!grid) return;
+    try {
+      const res = await fetch('data/instagram_feed.json', { cache: 'no-cache' });
+      if (!res.ok) return;
+      const { posts = [] } = await res.json();
+      grid.innerHTML = posts.map(p => `
+        <a href="${escapeHtml(p.permalink || '#')}" target="_blank" rel="noopener" class="photo-cell">
+          <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.caption || 'ZZL Instagram')}" loading="lazy">
+          <span class="photo-log">${escapeHtml((p.caption || '').slice(0, 24))}</span>
+        </a>
+      `).join('');
+    } catch {}
+  }
+  loadInstagramFeed();
 
   /* ── 스무스 스크롤 ── */
   document.querySelectorAll('a[href^="#"]').forEach(a => {
