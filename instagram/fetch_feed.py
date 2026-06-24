@@ -10,7 +10,7 @@ import requests
 
 ACCESS_TOKEN = os.environ["INSTAGRAM_ACCESS_TOKEN"]
 ACCOUNT_ID = os.environ["INSTAGRAM_ACCOUNT_ID"]
-API = "https://graph.facebook.com/v21.0"
+API = "https://graph.instagram.com/v21.0"
 LIMIT = 9
 OUT_FILE = Path(__file__).parent.parent / "website" / "data" / "instagram_feed.json"
 
