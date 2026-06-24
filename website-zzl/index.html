@@ -7,6 +7,8 @@
   <meta property="og:title" content="ZZL | by ZooZooLand">
   <meta name="naver-site-verification" content="268c79a17229de847a503ba366c2212bb078a05e" />
   <title>ZZL — 쥬쥬랜드를 가장 힙하게, 쯜기다</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta property="og:image" content="https://zoozoo.kr/favicon.svg">
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -101,12 +103,8 @@
     </div>
   </div>
 
-  <!-- LightWidget Instagram 피드 -->
-  <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
-  <iframe src="https://cdn.lightwidget.com/widgets/32f54e0fcb97522380cb96c203bb1a40.html"
-    scrolling="no" allowtransparency="true" class="lightwidget-widget"
-    title="ZZL 인스타그램 피드"
-    style="width:100%;border:0;overflow:hidden;min-height:420px;"></iframe>
+  <!-- 인스타그램 피드 (Graph API 직접 렌더링) -->
+  <div id="igFeed" class="grid grid-cols-3 gap-2 md:gap-3"></div>
 </section>
 
 <!-- ═══════════════════════════════════════════
