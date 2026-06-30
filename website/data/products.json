@@ -2,12 +2,12 @@
   "products": [
     {
       "id": "prod_1780412500458",
-      "name": "[2026.06] 쥬쥬랜드",
+      "name": "[2026.07] 쥬쥬랜드",
       "sale_price": 15000,
       "original_price": 28000,
       "discount_rate": 46,
-      "valid_until": "2026.6.30",
-      "booking_url": "https://m.booking.naver.com/booking/5/bizes/480021/items/7727962?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place",
+      "valid_until": "2026.7.31",
+      "booking_url": "https://m.booking.naver.com/booking/5/bizes/480021/items/7817598?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place",
       "og_image": "https://naverbooking-phinf.pstatic.net/20251130_123/1764490833006v11pv_JPEG/72_-_%BA%B9%BB%E7%BA%BB.jpg?type=f804_408_60_sharpen"
     }
   ]
