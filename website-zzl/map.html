@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>ZZL 가이드맵 — 쥬쥬랜드</title>
+  <meta name="description" content="쥬쥬랜드 가이드맵. 동물 관람 구역, 편의시설, 프로그램 안내.">
+  <meta property="og:title" content="ZZL 가이드맵">
+  <meta property="og:description" content="쥬쥬랜드 현장 가이드맵">
+  <meta property="og:image" content="https://zoozoo.kr/images/guidemap.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: #0A0B0A; color: #fff; font-family: 'Inter', sans-serif; }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* 상단 바 */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(10,11,10,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; height: 56px;
+    }
+    .logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 900; font-size: 1rem; letter-spacing: 0.05em;
+      color: #fff; text-decoration: none;
+    }
+    .logo span { color: #D4FF00; }
+    .header-right {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; }
+    .btn-dl {
+      background: #D4FF00; color: #0A0B0A;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+      font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 8px 16px; text-decoration: none; transition: filter 0.2s;
+    }
+    .btn-dl:hover { filter: brightness(1.1); }
+    .btn-home {
+      color: rgba(255,255,255,0.4);
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      text-decoration: none; transition: color 0.2s;
+    }
+    .btn-home:hover { color: #D4FF00; }
+
+    /* 맵 뷰어 */
+    .map-viewer {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      touch-action: pan-x pan-y;
+    }
+    .map-img {
+      max-width: 100%; max-height: calc(100vh - 56px - 32px);
+      object-fit: contain;
+      user-select: none; -webkit-user-drag: none;
+    }
+
+    /* 하단 바 */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-info { color: rgba(255,255,255,0.3); font-size: 0.55rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; }
+    .footer-tel { color: rgba(255,255,255,0.5); font-size: 0.6rem; font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .footer-tel:hover { color: #D4FF00; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo"><span>ZZL</span> 쥬쥬랜드</a>
+  <div class="header-right">
+    <a href="/" class="btn-home">← 홈</a>
+    <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" class="btn-dl">PDF 저장</a>
+  </div>
+</header>
+
+<div class="map-viewer">
+  <img src="images/guidemap.png" alt="ZZL 쥬쥬랜드 가이드맵" class="map-img">
+</div>
+
+<footer>
+  <span class="footer-info">ZZL_MAP · zoozoo.kr/map</span>
+  <a href="tel:031-962-4500" class="footer-tel">031-962-4500</a>
+</footer>
+
+</body>
+</html>
