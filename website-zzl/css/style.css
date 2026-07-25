@@ -281,21 +281,22 @@ section {
   user-select: none; -webkit-user-drag: none;
 }
 
+/* 모달 오버레이 버튼: fixed로 뷰포트 기준 배치 (부모 CSS 캐시 영향 없음) */
 .map-modal-close {
-  position: absolute; top: 20px; right: 20px; z-index: 10;
+  position: fixed; top: 20px; right: 20px; z-index: 1010;
   display: flex; align-items: center; justify-content: center;
   width: 44px; height: 44px;
   background: rgba(10,11,10,0.75);
   border: 1px solid rgba(255,255,255,0.25);
   color: #fff; cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.2s, color 0.2s;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 .map-modal-close:hover { border-color: var(--zzl-lime); color: var(--zzl-lime); }
 
 .map-modal-dl {
-  position: absolute; bottom: 24px; right: 24px; z-index: 10;
+  position: fixed; bottom: 24px; right: 24px; z-index: 1010;
   background: var(--zzl-lime); color: var(--forest-black);
   font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
   font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em;
@@ -305,11 +306,16 @@ section {
 .map-modal-dl:hover { filter: brightness(1.1); }
 
 .map-modal-hint {
-  position: absolute; bottom: 30px; left: 24px; z-index: 10;
+  position: fixed; bottom: 30px; left: 24px; z-index: 1010;
   font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
   text-transform: uppercase; letter-spacing: 0.1em;
   color: rgba(255,255,255,0.2);
 }
+
+/* 모달 닫혔을 때 오버레이 버튼 숨김 */
+.map-modal:not(.open) .map-modal-close,
+.map-modal:not(.open) .map-modal-dl,
+.map-modal:not(.open) .map-modal-hint { display: none; }
 
 @media (max-width: 768px) {
   .map-modal-close { top: 16px; right: 16px; width: 40px; height: 40px; }
