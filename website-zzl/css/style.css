@@ -259,51 +259,19 @@ section {
   .floating-map-btn:active { transform: scale(0.9); }
 }
 
-/* ── 가이드맵 모달 ── */
+/* ── 가이드맵 모달 (전체화면) ── */
 .map-modal {
   position: fixed; inset: 0; z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none;
   transition: opacity 0.25s ease;
-  background: rgba(5,6,5,0.95);
-  backdrop-filter: blur(12px);
+  background: rgba(5,6,5,0.98);
 }
 .map-modal.open { opacity: 1; pointer-events: auto; }
 
-.map-modal-body {
-  position: relative; z-index: 1;
-  width: 96vw; max-width: 1200px; max-height: 96vh;
-  background: #111;
-  border: 1px solid rgba(212,255,0,0.2);
-  display: flex; flex-direction: column;
-  transform: scale(0.96);
-  transition: transform 0.25s ease;
-}
-.map-modal.open .map-modal-body { transform: scale(1); }
-
-.map-modal-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--zzl-lime);
-}
-.map-modal-close {
-  display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px;
-  border: 1px solid rgba(255,255,255,0.2);
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.map-modal-close:hover { border-color: var(--zzl-lime); color: var(--zzl-lime); }
-
 .map-modal-img-area {
-  flex: 1; overflow: hidden;
+  position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
   touch-action: none; cursor: grab;
 }
 .map-modal-img-area.dragging { cursor: grabbing; }
@@ -312,15 +280,41 @@ section {
   transform-origin: center; pointer-events: none;
   user-select: none; -webkit-user-drag: none;
 }
-.map-modal-foot {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 20px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  color: rgba(255,255,255,0.4);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+
+.map-modal-close {
+  position: absolute; top: 20px; right: 20px; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  background: rgba(10,11,10,0.75);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff; cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.map-modal-close:hover { border-color: var(--zzl-lime); color: var(--zzl-lime); }
+
+.map-modal-dl {
+  position: absolute; bottom: 24px; right: 24px; z-index: 10;
+  background: var(--zzl-lime); color: var(--forest-black);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+  font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 12px 20px; text-decoration: none;
+  transition: filter 0.2s;
+}
+.map-modal-dl:hover { filter: brightness(1.1); }
+
+.map-modal-hint {
+  position: absolute; bottom: 30px; left: 24px; z-index: 10;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.2);
+}
+
+@media (max-width: 768px) {
+  .map-modal-close { top: 16px; right: 16px; width: 40px; height: 40px; }
+  .map-modal-dl { bottom: 20px; right: 20px; padding: 10px 16px; }
+  .map-modal-hint { bottom: 24px; left: 20px; }
 }
 
 /* ── Swiper 공지 커스텀 ── */

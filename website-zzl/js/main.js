@@ -68,7 +68,6 @@
 
   /* ── 가이드맵 모달 ── */
   const mapModal      = document.getElementById('mapModal');
-  const mapModalBg    = mapModal?.querySelector('.map-modal-body')?.parentElement;
   const mapModalClose = document.getElementById('mapModalClose');
   const mapModalImg   = document.getElementById('mapModalImg');
   const mapModalArea  = document.getElementById('mapModalArea');
