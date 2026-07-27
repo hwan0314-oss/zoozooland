@@ -15,11 +15,11 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { background: #0A0B0A; color: #fff; font-family: 'Inter', sans-serif; }
-    body { min-height: 100vh; display: flex; flex-direction: column; }
+    body { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* 상단 바 */
+    /* ── 상단 헤더 ── */
     header {
-      position: sticky; top: 0; z-index: 50;
+      position: relative; z-index: 50; flex-shrink: 0;
       background: rgba(10,11,10,0.95);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -32,10 +32,7 @@
       color: #fff; text-decoration: none;
     }
     .logo span { color: #D4FF00; }
-    .header-right {
-      display: flex; align-items: center; gap: 12px;
-    }
-    .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
     .btn-dl {
       background: #D4FF00; color: #0A0B0A;
       font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
@@ -51,27 +48,100 @@
     }
     .btn-home:hover { color: #D4FF00; }
 
-    /* 맵 뷰어 */
+    /* ── GPS 상태 바 ── */
+    .gps-bar {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem; text-transform: uppercase; letter-spacing: 0.12em;
+      background: rgba(10,11,10,0.7);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: border-color 0.4s;
+    }
+    .gps-bar-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      transition: background 0.4s;
+    }
+    .gps-bar.finding  .gps-bar-dot { background: rgba(255,255,255,0.25); }
+    .gps-bar.found    .gps-bar-dot { background: #D4FF00; animation: dot-blink 2.4s ease-in-out infinite; }
+    .gps-bar.outside  .gps-bar-dot { background: rgba(255,200,0,0.7); }
+    .gps-bar.error    .gps-bar-dot { background: rgba(255,80,80,0.7); }
+    .gps-bar.found    { border-bottom-color: rgba(212,255,0,0.15); }
+    #gpsBarText { color: rgba(255,255,255,0.4); transition: color 0.4s; }
+    .gps-bar.found #gpsBarText { color: rgba(212,255,0,0.6); }
+    @keyframes dot-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.25; }
+    }
+
+    /* ── 맵 뷰어 ── */
     .map-viewer {
-      flex: 1;
+      flex: 1; min-height: 0;
       display: flex; align-items: center; justify-content: center;
-      padding: 16px;
+      padding: 16px; overflow: hidden;
       touch-action: pan-x pan-y;
     }
+    .map-wrap {
+      position: relative;
+      display: inline-block;
+      line-height: 0;
+      max-width: 100%; max-height: 100%;
+    }
     .map-img {
-      max-width: 100%; max-height: calc(100vh - 56px - 32px);
+      display: block;
+      max-width: 100%;
+      max-height: calc(100dvh - 56px - 34px - 44px - 32px);
       object-fit: contain;
       user-select: none; -webkit-user-drag: none;
     }
 
-    /* 하단 바 */
+    /* GPS 정확도 원 (canvas) */
+    .gps-canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    /* GPS 위치 점 (CSS 애니메이션) */
+    .gps-dot {
+      position: absolute;
+      width: 22px; height: 22px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      display: none;
+    }
+    .gps-dot::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      background: #D4FF00;
+      border: 2.5px solid #fff;
+      box-shadow: 0 0 8px rgba(212,255,0,0.6);
+    }
+    .gps-dot::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(212,255,0,0.5);
+      animation: gps-ring 2s cubic-bezier(0,0,0.2,1) infinite;
+    }
+    @keyframes gps-ring {
+      0%   { transform: scale(0.8); opacity: 0.8; }
+      100% { transform: scale(2.8); opacity: 0; }
+    }
+
+    /* ── 하단 바 ── */
     footer {
+      flex-shrink: 0;
       border-top: 1px solid rgba(255,255,255,0.06);
-      padding: 12px 20px;
+      padding: 12px 20px; height: 44px;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .footer-info { color: rgba(255,255,255,0.3); font-size: 0.55rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; }
-    .footer-tel { color: rgba(255,255,255,0.5); font-size: 0.6rem; font-family: 'JetBrains Mono', monospace; text-decoration: none; }
+    .footer-info { color: rgba(255,255,255,0.2); font-size: 0.5rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; }
+    .footer-tel { color: rgba(255,255,255,0.4); font-size: 0.55rem; font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: color 0.2s; }
     .footer-tel:hover { color: #D4FF00; }
   </style>
 </head>
@@ -85,14 +155,180 @@
   </div>
 </header>
 
+<div class="gps-bar finding" id="gpsBar">
+  <span class="gps-bar-dot"></span>
+  <span id="gpsBarText">내 위치 찾는 중...</span>
+</div>
+
 <div class="map-viewer">
-  <img src="images/guidemap.png" alt="ZZL 쥬쥬랜드 가이드맵" class="map-img">
+  <div class="map-wrap" id="mapWrap">
+    <img src="images/guidemap.png" alt="ZZL 쥬쥬랜드 가이드맵" class="map-img" id="mapImg">
+    <canvas class="gps-canvas" id="gpsCanvas"></canvas>
+    <div class="gps-dot" id="gpsDot"></div>
+  </div>
 </div>
 
 <footer>
   <span class="footer-info">ZZL_MAP · zoozoo.kr/map</span>
   <a href="tel:031-962-4500" class="footer-tel">031-962-4500</a>
 </footer>
+
+<script>
+// ── GCP 데이터 ──────────────────────────────────────────────────────────────
+// [경도(lng), 위도(lat), 픽셀X, 픽셀Y]  ← 이미지 원본 크기: 4492 × 3176
+// 픽셀 좌표는 gcp-tool.html 측정값으로 업데이트 필요 (현재는 초기 추정값)
+const GCPs = [
+  [126.8538597, 37.6903466, 1485, 2194],  // 01. 입구(매표소) 아래
+  [126.8540339, 37.6902809, 1485, 2155],  // 02. 입구(매표소) 위
+  [126.8535053, 37.6898443, 2403, 2363],  // 03. 주차장 오른쪽 아래
+  [126.8543281, 37.689641,  2403, 1403],  // 04. 주차장 오른쪽 위
+  [126.8537643, 37.6902084, 1845, 2363],  // 05. 주차장 왼쪽 아래
+  [126.8541615, 37.690084,  1620, 1930],  // 06. 식당 왼쪽 아래
+  [126.8543509, 37.6899381, 1710, 1890],  // 07. 식당 오른쪽 위
+  [126.8549816, 37.6897766, 1823,  603],  // 08. 1번 파충류관 오른쪽 아래
+  [126.8553769, 37.6901253, 1575,  371],  // 09. 1번 파충류관 왼쪽 위
+  [126.8547496, 37.6905664, 1204, 1233],  // 10. 4번 악어 빌리지 중심
+  [126.8551222, 37.6908717,  702,  851],  // 11. 6번 로봇박물관 중심
+  [126.8546258, 37.6911832,  608, 1379],  // 12. 9번 건물 오른쪽
+  [126.8547147, 37.6913658,  551, 1334],  // 13. 9번 건물 왼쪽
+  [126.8549892, 37.691485,   743,  934],  // 14. 7번 화장실 왼쪽 위
+];
+
+// ── 아핀 변환 최소제곱법 ────────────────────────────────────────────────────
+// px = a*lng + b*lat + c
+// py = d*lng + e*lat + f
+function computeAffine(gcps) {
+  let ATA = [[0,0,0],[0,0,0],[0,0,0]];
+  let ATbx = [0,0,0], ATby = [0,0,0];
+  for (const [lng, lat, px, py] of gcps) {
+    const r = [lng, lat, 1];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) ATA[i][j] += r[i]*r[j];
+      ATbx[i] += r[i]*px;
+      ATby[i] += r[i]*py;
+    }
+  }
+  function solve(A, b) {
+    const M = A.map((row, i) => [...row, b[i]]);
+    for (let c = 0; c < 3; c++) {
+      let p = c;
+      for (let r = c+1; r < 3; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      [M[c], M[p]] = [M[p], M[c]];
+      for (let r = 0; r < 3; r++) {
+        if (r === c) continue;
+        const f = M[r][c] / M[c][c];
+        for (let k = c; k <= 3; k++) M[r][k] -= f*M[c][k];
+      }
+    }
+    return [M[0][3]/M[0][0], M[1][3]/M[1][1], M[2][3]/M[2][2]];
+  }
+  const [a, b, c] = solve(ATA, ATbx);
+  const [d, e, f] = solve(ATA, ATby);
+  return { a, b, c, d, e, f };
+}
+
+const affine = computeAffine(GCPs);
+
+function gpsToNaturalPx(lng, lat) {
+  return {
+    x: affine.a*lng + affine.b*lat + affine.c,
+    y: affine.d*lng + affine.e*lat + affine.f,
+  };
+}
+
+// ── 캔버스 리사이즈 ─────────────────────────────────────────────────────────
+const mapImg    = document.getElementById('mapImg');
+const canvas    = document.getElementById('gpsCanvas');
+const ctx       = canvas.getContext('2d');
+const gpsDot    = document.getElementById('gpsDot');
+
+function syncCanvasSize() {
+  canvas.width  = mapImg.clientWidth;
+  canvas.height = mapImg.clientHeight;
+  redrawOverlay();
+}
+
+new ResizeObserver(syncCanvasSize).observe(mapImg);
+if (mapImg.complete) syncCanvasSize();
+else mapImg.addEventListener('load', syncCanvasSize);
+
+// ── 오버레이 그리기 ─────────────────────────────────────────────────────────
+let currentPos = null;
+
+function redrawOverlay() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!currentPos) return;
+
+  const scaleX = canvas.width  / mapImg.naturalWidth;
+  const scaleY = canvas.height / mapImg.naturalHeight;
+  const { x: nx, y: ny } = gpsToNaturalPx(currentPos.lng, currentPos.lat);
+  const cx = nx * scaleX;
+  const cy = ny * scaleY;
+
+  // 정확도 반경 원
+  if (currentPos.accuracy) {
+    // 위도 1도 ≈ 111000m, affine.e = lat→py 계수 (자연 픽셀/도)
+    const pxPerMeter = Math.abs(affine.e) * scaleY / 111000;
+    const r = Math.max(currentPos.accuracy * pxPerMeter, 18);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, 2*Math.PI);
+    ctx.fillStyle = 'rgba(212,255,0,0.07)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(212,255,0,0.22)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // DOM 점 위치 업데이트
+  gpsDot.style.left = cx + 'px';
+  gpsDot.style.top  = cy + 'px';
+  gpsDot.style.display = 'block';
+}
+
+// ── 공원 경계 체크 ──────────────────────────────────────────────────────────
+const PARK = { latMin: 37.688, latMax: 37.693, lngMin: 126.852, lngMax: 126.857 };
+function inPark(lng, lat) {
+  return lng >= PARK.lngMin && lng <= PARK.lngMax &&
+         lat >= PARK.latMin && lat <= PARK.latMax;
+}
+
+// ── GPS 상태 UI ─────────────────────────────────────────────────────────────
+const gpsBar  = document.getElementById('gpsBar');
+const barText = document.getElementById('gpsBarText');
+
+function setStatus(state, text) {
+  gpsBar.className = 'gps-bar ' + state;
+  barText.textContent = text;
+}
+
+// ── GPS 추적 시작 ────────────────────────────────────────────────────────────
+if (!('geolocation' in navigator)) {
+  setStatus('error', '이 브라우저는 위치 기능을 지원하지 않아요');
+} else {
+  navigator.geolocation.watchPosition(
+    ({ coords }) => {
+      const { longitude: lng, latitude: lat, accuracy } = coords;
+
+      if (!inPark(lng, lat)) {
+        currentPos = null;
+        gpsDot.style.display = 'none';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setStatus('outside', '공원 밖에 있어요');
+        return;
+      }
+
+      currentPos = { lng, lat, accuracy };
+      redrawOverlay();
+      setStatus('found', `내 위치 확인됨 · 정확도 ${Math.round(accuracy)}m`);
+    },
+    ({ code }) => {
+      const msgs = { 1: '위치 접근이 거부됐어요', 2: '위치를 찾을 수 없어요', 3: '시간 초과' };
+      setStatus('error', msgs[code] || '위치 오류');
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 }
+  );
+}
+</script>
 
 </body>
 </html>
