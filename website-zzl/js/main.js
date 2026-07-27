@@ -108,6 +108,11 @@
   document.addEventListener('mousemove',e=>{if(!md)return;px=mpx+(e.clientX-msx);py=mpy+(e.clientY-msy);applyT();});
   document.addEventListener('mouseup',()=>{md=false;mapModalArea?.classList.remove('dragging');});
 
+  // 화면 회전 시 줌/팬 리셋 (비율 깨짐 방지)
+  window.addEventListener('orientationchange', () => setTimeout(() => {
+    if (mapModal?.classList.contains('open')) { sc=1; px=0; py=0; applyT(); }
+  }, 150));
+
   /* ── 프로그램 로딩 ── */
   async function loadPrograms() {
     const c = document.getElementById('programsList');
