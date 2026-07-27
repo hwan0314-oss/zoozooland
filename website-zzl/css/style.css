@@ -381,3 +381,11 @@ section {
   .section-label { right: 12px; font-size: 0.55rem; }
   .grid-lines { background-size: 30px 30px; }
 }
+
+/* ── 모바일 가로 방향 (짧은 화면) ──
+   갤럭시S 등 고해상도 폰이 가로일 때 CSS 너비 ~780px으로 md 브레이크포인트를
+   넘어 데스크톱 레이아웃이 되지만, 화면이 짧아 레이아웃이 깨짐. 세로형 로고 강제 사용. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .zzl-logo-large  { display: none !important; }
+  .zzl-logo-stacked { display: block !important; font-size: clamp(2.5rem, 10vw, 4rem) !important; margin-bottom: 1rem !important; }
+}
