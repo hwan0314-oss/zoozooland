@@ -260,11 +260,10 @@ if (!('geolocation' in navigator)) {
   );
 }
 
-// ── 줌/팬 이벤트 (Pointer Events API — 오버레이 위에서도 작동) ────────────────
+// ── 줌/팬 이벤트 ────────────────────────────────────────────────────────────
 let dragStartX=0, dragStartY=0, dragTx=0, dragTy=0;
-let tapTimer=null;
-const ptrs=new Map(); // pointerId → {x,y}
-let pinchDist=0, pinchMidX=0, pinchMidY=0, dragPtrId=null;
+let tapTimer=null, isPinching=false;
+let pinchDist=0, pinchMidX=0, pinchMidY=0;
 
 function vcX() { return window.innerWidth/2; }
 function vcY() { return window.innerHeight/2; }
@@ -282,28 +281,30 @@ function doubleTap(cx,cy) {
   else zoomAround(cx,cy,3);
 }
 
-document.addEventListener('pointerdown', e=>{
+// 터치 이벤트 — document 레벨로 캡처, 즉시 preventDefault로 브라우저 개입 차단
+document.addEventListener('touchstart', e=>{
   if (e.target.closest('a,button')) return;
-  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
-  if (ptrs.size===1) {
-    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; doubleTap(e.clientX,e.clientY); return; }
-    tapTimer=setTimeout(()=>{tapTimer=null;}, 300);
-    dragPtrId=e.pointerId; dragStartX=e.clientX; dragStartY=e.clientY; dragTx=tx; dragTy=ty;
-  } else if (ptrs.size===2) {
-    clearTimeout(tapTimer); tapTimer=null; dragPtrId=null;
-    const pp=[...ptrs.values()];
-    pinchDist=Math.hypot(pp[0].x-pp[1].x, pp[0].y-pp[1].y);
-    pinchMidX=(pp[0].x+pp[1].x)/2; pinchMidY=(pp[0].y+pp[1].y)/2;
+  e.preventDefault();
+  const t=[...e.touches];
+  if (t.length===1) {
+    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; doubleTap(t[0].clientX,t[0].clientY); return; }
+    tapTimer=setTimeout(()=>{tapTimer=null;},300);
+    isPinching=false;
+    dragStartX=t[0].clientX; dragStartY=t[0].clientY; dragTx=tx; dragTy=ty;
+  } else if (t.length>=2) {
+    clearTimeout(tapTimer); tapTimer=null; isPinching=true;
+    pinchDist=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+    pinchMidX=(t[0].clientX+t[1].clientX)/2; pinchMidY=(t[0].clientY+t[1].clientY)/2;
   }
-});
+},{passive:false});
 
-document.addEventListener('pointermove', e=>{
-  if (!ptrs.has(e.pointerId)) return;
-  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
-  if (ptrs.size>=2) {
-    const pp=[...ptrs.values()];
-    const d=Math.hypot(pp[0].x-pp[1].x, pp[0].y-pp[1].y);
-    const mx=(pp[0].x+pp[1].x)/2, my=(pp[0].y+pp[1].y)/2;
+document.addEventListener('touchmove', e=>{
+  if (e.target.closest('a,button')) return;
+  e.preventDefault();
+  const t=[...e.touches];
+  if (t.length>=2 && isPinching) {
+    const d=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+    const mx=(t[0].clientX+t[1].clientX)/2, my=(t[0].clientY+t[1].clientY)/2;
     if (pinchDist>0) {
       const s=Math.max(1,Math.min(MAX_SCALE,scale*d/pinchDist));
       tx=tx+(mx-vcX()-tx)*(1-s/scale)+(mx-pinchMidX);
@@ -311,19 +312,17 @@ document.addEventListener('pointermove', e=>{
       scale=s; clamp(); applyTransform(); hideHint();
     }
     pinchDist=d; pinchMidX=mx; pinchMidY=my;
-  } else if (ptrs.size===1 && e.pointerId===dragPtrId && scale>1) {
-    tx=dragTx+e.clientX-dragStartX; ty=dragTy+e.clientY-dragStartY;
+  } else if (t.length===1 && !isPinching && scale>1) {
+    tx=dragTx+(t[0].clientX-dragStartX); ty=dragTy+(t[0].clientY-dragStartY);
     clamp(); applyTransform();
   }
-});
+},{passive:false});
 
-function onPtrEnd(e) {
-  ptrs.delete(e.pointerId);
-  if (ptrs.size<2) pinchDist=0;
-  if (ptrs.size===0) { dragPtrId=null; if(scale<1){scale=1;tx=0;ty=0;applyTransform();} }
-}
-document.addEventListener('pointerup', onPtrEnd);
-document.addEventListener('pointercancel', onPtrEnd);
+document.addEventListener('touchend', e=>{
+  const t=[...e.touches];
+  if (t.length<2) { isPinching=false; pinchDist=0; }
+  if (t.length===0 && scale<1) { scale=1; tx=0; ty=0; applyTransform(); }
+});
 
 mapViewer.addEventListener('wheel',e=>{e.preventDefault(); zoomAround(e.clientX,e.clientY,scale*(e.deltaY<0?1.15:0.87));},{passive:false});
 mapViewer.addEventListener('dblclick',e=>{hideHint(); zoomAround(e.clientX,e.clientY,scale>1.5?1:3);});
