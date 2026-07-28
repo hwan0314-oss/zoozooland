@@ -14,93 +14,83 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0A0B0A; color: #fff; font-family: 'Inter', sans-serif; }
+    html, body { width: 100%; height: 100%; overflow: hidden; touch-action: none; background: #0A0B0A; color: #fff; font-family: 'Inter', sans-serif; }
 
     /* ── 지도 뷰어: 화면 전체 ── */
     .map-viewer {
       position: fixed; inset: 0; z-index: 1;
       display: flex; align-items: center; justify-content: center;
-      touch-action: none; cursor: grab;
       background: #0A0B0A;
     }
-    .map-viewer.dragging { cursor: grabbing; }
 
     /* 줌/팬 컨테이너 */
-    .map-transform {
-      position: relative; flex-shrink: 0;
-      transform-origin: center;
-    }
+    .map-transform { position: relative; flex-shrink: 0; transform-origin: center; }
     .map-img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
     .gps-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-    .gps-dot { position: absolute; width: 22px; height: 22px; transform: translate(-50%, -50%); pointer-events: none; display: none; }
-    .gps-dot::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: #FF3B30; border: 2.5px solid #fff; box-shadow: 0 0 8px rgba(255,59,48,0.6); }
-    .gps-dot::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255,59,48,0.45); animation: gps-ring 2s cubic-bezier(0,0,0.2,1) infinite; }
-    @keyframes gps-ring { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.8); opacity: 0; } }
+    .gps-dot { position: absolute; width: 22px; height: 22px; transform: translate(-50%,-50%); pointer-events: none; display: none; }
+    .gps-dot::after { content:''; position:absolute; inset:4px; border-radius:50%; background:#FF3B30; border:2.5px solid #fff; box-shadow:0 0 8px rgba(255,59,48,0.6); }
+    .gps-dot::before { content:''; position:absolute; inset:0; border-radius:50%; border:2px solid rgba(255,59,48,0.45); animation:gps-ring 2s cubic-bezier(0,0,0.2,1) infinite; }
+    @keyframes gps-ring { 0%{transform:scale(0.8);opacity:0.8;} 100%{transform:scale(2.8);opacity:0;} }
 
-    /* ── 오버레이: 상단 헤더 ── */
-    header {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-      height: 56px; padding: 0 20px;
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(10,11,10,0.82);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+    /* ── 플로팅 오버레이: 뒤로 버튼 ── */
+    .ov-back {
+      position: fixed; top: 14px; left: 14px; z-index: 20;
+      display: flex; align-items: center; min-height: 40px; padding: 0 14px;
+      background: rgba(10,11,10,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      color: rgba(255,255,255,0.65); text-decoration: none;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em; transition: color 0.2s;
     }
-    .logo { font-family: 'JetBrains Mono', monospace; font-weight: 900; font-size: 1rem; letter-spacing: 0.05em; color: #fff; text-decoration: none; }
-    .logo span { color: #D4FF00; }
-    .header-right { display: flex; align-items: center; gap: 12px; }
-    .btn-dl { background: #D4FF00; color: #0A0B0A; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 16px; text-decoration: none; transition: filter 0.2s; }
-    .btn-dl:hover { filter: brightness(1.1); }
-    .btn-home { color: rgba(255,255,255,0.4); font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: color 0.2s; }
-    .btn-home:hover { color: #D4FF00; }
+    .ov-back:hover { color: #D4FF00; }
 
-    /* ── 오버레이: GPS 상태 바 ── */
-    .gps-bar {
-      position: fixed; top: 56px; left: 0; right: 0; z-index: 20;
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 20px;
-      background: rgba(10,11,10,0.72);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
-      text-transform: uppercase; letter-spacing: 0.12em;
+    /* ── 플로팅 오버레이: PDF 버튼 ── */
+    .ov-pdf {
+      position: fixed; top: 14px; right: 14px; z-index: 20;
+      display: flex; align-items: center; min-height: 40px; padding: 0 14px;
+      background: #D4FF00; color: #0A0B0A;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; transition: filter 0.2s;
+    }
+    .ov-pdf:hover { filter: brightness(1.1); }
+
+    /* ── GPS 상태 필 ── */
+    .gps-pill {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 20;
+      display: flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px;
+      background: rgba(10,11,10,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px; border: 1px solid transparent;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.48rem;
+      text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap;
       transition: border-color 0.4s;
     }
-    .gps-bar.found { border-bottom-color: rgba(212,255,0,0.15); }
-    .gps-bar-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background 0.4s; }
-    .gps-bar.finding  .gps-bar-dot { background: rgba(255,255,255,0.25); }
-    .gps-bar.found    .gps-bar-dot { background: #D4FF00; animation: dot-blink 2.4s ease-in-out infinite; }
-    .gps-bar.outside  .gps-bar-dot { background: rgba(255,200,0,0.7); }
-    .gps-bar.error    .gps-bar-dot { background: rgba(255,80,80,0.7); }
-    #gpsBarText { color: rgba(255,255,255,0.4); transition: color 0.4s; }
-    .gps-bar.found #gpsBarText { color: rgba(212,255,0,0.6); }
-    @keyframes dot-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+    .gps-pill.found { border-color: rgba(212,255,0,0.2); }
+    .gps-dot-sm { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background 0.4s; }
+    .gps-pill.finding .gps-dot-sm { background: rgba(255,255,255,0.3); }
+    .gps-pill.found   .gps-dot-sm { background: #D4FF00; animation: dot-blink 2.4s ease-in-out infinite; }
+    .gps-pill.outside .gps-dot-sm { background: rgba(255,200,0,0.7); }
+    .gps-pill.error   .gps-dot-sm { background: rgba(255,80,80,0.7); }
+    #gpsBarText { color: rgba(255,255,255,0.45); transition: color 0.4s; }
+    .gps-pill.found #gpsBarText { color: rgba(212,255,0,0.65); }
+    @keyframes dot-blink { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
 
-    /* ── 오버레이: 하단 바 ── */
-    footer {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-      height: 44px; padding: 0 20px;
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(10,11,10,0.72);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border-top: 1px solid rgba(255,255,255,0.06);
+    /* ── 전화번호 (하단) ── */
+    .ov-tel {
+      position: fixed; bottom: 12px; right: 14px; z-index: 20;
+      color: rgba(255,255,255,0.2); font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem; text-decoration: none; text-transform: uppercase; letter-spacing: 0.06em;
+      transition: color 0.2s;
     }
-    .footer-info { color: rgba(255,255,255,0.2); font-size: 0.5rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; }
-    .footer-tel { color: rgba(255,255,255,0.4); font-size: 0.55rem; font-family: 'JetBrains Mono', monospace; text-decoration: none; transition: color 0.2s; }
-    .footer-tel:hover { color: #D4FF00; }
+    .ov-tel:hover { color: rgba(255,255,255,0.5); }
 
     /* ── 줌 힌트 ── */
-    .map-hint { position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%); z-index: 15; font-family: 'JetBrains Mono', monospace; font-size: 0.45rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.2); pointer-events: none; white-space: nowrap; transition: opacity 1s; }
+    .map-hint { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 15; font-family: 'JetBrains Mono', monospace; font-size: 0.45rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.2); pointer-events: none; white-space: nowrap; transition: opacity 1s; }
     .map-hint.hidden { opacity: 0; }
 
-    /* ── 가로 화면 컴팩트 모드 ── */
+    /* ── 가로 화면: 버튼 소형화 ── */
     @media (max-height: 500px) {
-      header { height: 44px; }
-      .logo { font-size: 0.88rem; }
-      .gps-bar { top: 44px; padding: 4px 16px; font-size: 0.45rem; }
-      footer { height: 34px; padding: 0 16px; }
-      .map-hint { bottom: 42px; }
-      .btn-dl { padding: 6px 12px; font-size: 0.55rem; }
+      .ov-back, .ov-pdf, .gps-pill { top: 8px; min-height: 34px; font-size: 0.55rem; }
+      .ov-tel { bottom: 6px; font-size: 0.45rem; }
+      .map-hint { bottom: 6px; }
     }
 
     /* ── 테스트 패널 ── */
@@ -122,26 +112,14 @@
   </div>
 </div>
 
-<!-- 오버레이: 헤더 -->
-<header>
-  <a href="/" class="logo"><span>ZZL</span> 쥬쥬랜드</a>
-  <div class="header-right">
-    <a href="/" class="btn-home">← 홈</a>
-    <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" class="btn-dl">PDF 저장</a>
-  </div>
-</header>
-
-<!-- 오버레이: GPS 상태 -->
-<div class="gps-bar finding" id="gpsBar">
-  <span class="gps-bar-dot"></span>
-  <span id="gpsBarText">내 위치 찾는 중...</span>
+<!-- 플로팅 오버레이 -->
+<a href="/" class="ov-back">← 홈</a>
+<a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" class="ov-pdf">PDF</a>
+<div class="gps-pill finding" id="gpsBar">
+  <span class="gps-dot-sm"></span>
+  <span id="gpsBarText">위치 찾는 중</span>
 </div>
-
-<!-- 오버레이: 하단 정보 -->
-<footer>
-  <span class="footer-info">ZZL_MAP · zoozoo.kr/map</span>
-  <a href="tel:031-962-4500" class="footer-tel">031-962-4500</a>
-</footer>
+<a href="tel:031-962-4500" class="ov-tel">031-962-4500</a>
 
 <!-- 줌 힌트 -->
 <div class="map-hint" id="mapHint">두 손가락으로 확대 · 두 번 탭으로 줌</div>
@@ -264,28 +242,29 @@ function redrawOverlay() {
 }
 
 // ── GPS 추적 ─────────────────────────────────────────────────────────────────
-function setStatus(s,t) { gpsBar.className='gps-bar '+s; barText.textContent=t; }
+function setStatus(s,t) { gpsBar.className='gps-pill '+s; barText.textContent=t; }
 const PARK={latMin:37.688,latMax:37.693,lngMin:126.852,lngMax:126.857};
 function inPark(lng,lat) { return lng>=PARK.lngMin&&lng<=PARK.lngMax&&lat>=PARK.latMin&&lat<=PARK.latMax; }
 
 if (!('geolocation' in navigator)) {
-  setStatus('error','이 브라우저는 위치 기능을 지원하지 않아요');
+  setStatus('error','위치 미지원');
 } else {
   navigator.geolocation.watchPosition(
     ({coords:{longitude:lng,latitude:lat,accuracy,heading}}) => {
-      if (!inPark(lng,lat)) { currentPos=null; gpsDot.style.display='none'; ctx.clearRect(0,0,canvas.width,canvas.height); setStatus('outside','공원 밖에 있어요'); return; }
+      if (!inPark(lng,lat)) { currentPos=null; gpsDot.style.display='none'; ctx.clearRect(0,0,canvas.width,canvas.height); setStatus('outside','공원 밖'); return; }
       currentPos={lng,lat,accuracy,heading}; redrawOverlay();
-      setStatus('found',`내 위치 확인됨 · 정확도 ${Math.round(accuracy)}m`);
+      setStatus('found',`정확도 ${Math.round(accuracy)}m`);
     },
-    ({code}) => setStatus('error',{1:'위치 접근이 거부됐어요',2:'위치를 찾을 수 없어요',3:'시간 초과'}[code]||'위치 오류'),
+    ({code}) => setStatus('error',{1:'위치 권한 거부',2:'위치 불명',3:'시간 초과'}[code]||'위치 오류'),
     {enableHighAccuracy:true,maximumAge:5000,timeout:30000}
   );
 }
 
-// ── 줌/팬 이벤트 ─────────────────────────────────────────────────────────────
-let touches=[], lastDist=0, lastMidX=0, lastMidY=0, isPinching=false;
+// ── 줌/팬 이벤트 (Pointer Events API — 오버레이 위에서도 작동) ────────────────
 let dragStartX=0, dragStartY=0, dragTx=0, dragTy=0;
 let tapTimer=null;
+const ptrs=new Map(); // pointerId → {x,y}
+let pinchDist=0, pinchMidX=0, pinchMidY=0, dragPtrId=null;
 
 function vcX() { return window.innerWidth/2; }
 function vcY() { return window.innerHeight/2; }
@@ -303,53 +282,57 @@ function doubleTap(cx,cy) {
   else zoomAround(cx,cy,3);
 }
 
-// 터치 리스너를 document 레벨에 걸어 헤더/푸터 위에서도 제스처가 끊기지 않게 함
-document.addEventListener('touchstart', e=>{
-  const t=[...e.touches];
-  if (t.length===1) {
-    if (e.target.closest('a,button')) return; // 버튼·링크는 일반 클릭 허용
-    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; e.preventDefault(); doubleTap(t[0].clientX,t[0].clientY); return; }
-    tapTimer=setTimeout(()=>{tapTimer=null;},300);
-    dragStartX=t[0].clientX; dragStartY=t[0].clientY; dragTx=tx; dragTy=ty; isPinching=false;
-  } else if (t.length===2) {
-    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; }
-    isPinching=true; e.preventDefault();
-    lastDist=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
-    lastMidX=(t[0].clientX+t[1].clientX)/2; lastMidY=(t[0].clientY+t[1].clientY)/2;
+document.addEventListener('pointerdown', e=>{
+  if (e.target.closest('a,button')) return;
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if (ptrs.size===1) {
+    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; doubleTap(e.clientX,e.clientY); return; }
+    tapTimer=setTimeout(()=>{tapTimer=null;}, 300);
+    dragPtrId=e.pointerId; dragStartX=e.clientX; dragStartY=e.clientY; dragTx=tx; dragTy=ty;
+  } else if (ptrs.size===2) {
+    clearTimeout(tapTimer); tapTimer=null; dragPtrId=null;
+    const pp=[...ptrs.values()];
+    pinchDist=Math.hypot(pp[0].x-pp[1].x, pp[0].y-pp[1].y);
+    pinchMidX=(pp[0].x+pp[1].x)/2; pinchMidY=(pp[0].y+pp[1].y)/2;
   }
-  touches=t;
-},{passive:false});
+});
 
-document.addEventListener('touchmove', e=>{
-  touches=[...e.touches];
-  if (touches.length===2) {
-    e.preventDefault(); hideHint();
-    const d=Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
-    const midX=(touches[0].clientX+touches[1].clientX)/2, midY=(touches[0].clientY+touches[1].clientY)/2;
-    const s=Math.max(1,Math.min(MAX_SCALE,scale*d/lastDist));
-    tx=tx+(midX-vcX()-tx)*(1-s/scale)+(midX-lastMidX);
-    ty=ty+(midY-vcY()-ty)*(1-s/scale)+(midY-lastMidY);
-    scale=s; clamp(); applyTransform();
-    lastDist=d; lastMidX=midX; lastMidY=midY;
-  } else if (touches.length===1&&!isPinching&&scale>1) {
-    e.preventDefault();
-    tx=dragTx+(touches[0].clientX-dragStartX); ty=dragTy+(touches[0].clientY-dragStartY);
+document.addEventListener('pointermove', e=>{
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if (ptrs.size>=2) {
+    const pp=[...ptrs.values()];
+    const d=Math.hypot(pp[0].x-pp[1].x, pp[0].y-pp[1].y);
+    const mx=(pp[0].x+pp[1].x)/2, my=(pp[0].y+pp[1].y)/2;
+    if (pinchDist>0) {
+      const s=Math.max(1,Math.min(MAX_SCALE,scale*d/pinchDist));
+      tx=tx+(mx-vcX()-tx)*(1-s/scale)+(mx-pinchMidX);
+      ty=ty+(my-vcY()-ty)*(1-s/scale)+(my-pinchMidY);
+      scale=s; clamp(); applyTransform(); hideHint();
+    }
+    pinchDist=d; pinchMidX=mx; pinchMidY=my;
+  } else if (ptrs.size===1 && e.pointerId===dragPtrId && scale>1) {
+    tx=dragTx+e.clientX-dragStartX; ty=dragTy+e.clientY-dragStartY;
     clamp(); applyTransform();
   }
-},{passive:false});
-
-document.addEventListener('touchend', e=>{
-  touches=[...e.touches];
-  if (touches.length<2) { isPinching=false; if(scale<1){scale=1;tx=0;ty=0;applyTransform();} }
 });
+
+function onPtrEnd(e) {
+  ptrs.delete(e.pointerId);
+  if (ptrs.size<2) pinchDist=0;
+  if (ptrs.size===0) { dragPtrId=null; if(scale<1){scale=1;tx=0;ty=0;applyTransform();} }
+}
+document.addEventListener('pointerup', onPtrEnd);
+document.addEventListener('pointercancel', onPtrEnd);
 
 mapViewer.addEventListener('wheel',e=>{e.preventDefault(); zoomAround(e.clientX,e.clientY,scale*(e.deltaY<0?1.15:0.87));},{passive:false});
 mapViewer.addEventListener('dblclick',e=>{hideHint(); zoomAround(e.clientX,e.clientY,scale>1.5?1:3);});
 
+// 마우스 드래그 (PC)
 let md=false,mTx=0,mTy=0,mSx=0,mSy=0;
-mapViewer.addEventListener('mousedown',e=>{md=true;mSx=e.clientX;mSy=e.clientY;mTx=tx;mTy=ty;mapViewer.classList.add('dragging');});
+mapViewer.addEventListener('mousedown',e=>{md=true;mSx=e.clientX;mSy=e.clientY;mTx=tx;mTy=ty;document.body.style.cursor='grabbing';});
 window.addEventListener('mousemove',e=>{if(!md)return;tx=mTx+e.clientX-mSx;ty=mTy+e.clientY-mSy;clamp();applyTransform();});
-window.addEventListener('mouseup',()=>{md=false;mapViewer.classList.remove('dragging');});
+window.addEventListener('mouseup',()=>{md=false;document.body.style.cursor='';});
 
 let hintTimer=setTimeout(hideHint,3000);
 function hideHint(){clearTimeout(hintTimer);hintEl.classList.add('hidden');}
