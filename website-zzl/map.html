@@ -33,8 +33,8 @@
     .map-img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
     .gps-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     .gps-dot { position: absolute; width: 22px; height: 22px; transform: translate(-50%, -50%); pointer-events: none; display: none; }
-    .gps-dot::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: #D4FF00; border: 2.5px solid #fff; box-shadow: 0 0 8px rgba(212,255,0,0.6); }
-    .gps-dot::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(212,255,0,0.45); animation: gps-ring 2s cubic-bezier(0,0,0.2,1) infinite; }
+    .gps-dot::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: #FF3B30; border: 2.5px solid #fff; box-shadow: 0 0 8px rgba(255,59,48,0.6); }
+    .gps-dot::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255,59,48,0.45); animation: gps-ring 2s cubic-bezier(0,0,0.2,1) infinite; }
     @keyframes gps-ring { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.8); opacity: 0; } }
 
     /* ── 오버레이: 상단 헤더 ── */
@@ -231,11 +231,24 @@ function redrawOverlay() {
   const sx=displayW/mapImg.naturalWidth, sy=displayH/mapImg.naturalHeight;
   const {x:nx,y:ny}=gpsToNaturalPx(currentPos.lng,currentPos.lat);
   const cx=nx*sx, cy=ny*sy;
+  // 진행 방향 (이동 중에만 heading 값이 유효)
+  if (currentPos.heading != null && isFinite(currentPos.heading)) {
+    const hr=currentPos.heading*Math.PI/180;
+    const ndx=affine.a*Math.sin(hr)+affine.b*Math.cos(hr);
+    const ndy=affine.d*Math.sin(hr)+affine.e*Math.cos(hr);
+    const coneAngle=Math.atan2(ndy*sy, ndx*sx);
+    const spread=Math.PI/5;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,52, coneAngle-spread/2, coneAngle+spread/2);
+    ctx.closePath();
+    ctx.fillStyle='rgba(255,59,48,0.28)'; ctx.fill();
+  }
+  // 정확도 반경
   if (currentPos.accuracy) {
     const r=Math.max(currentPos.accuracy*Math.abs(affine.e)*sy/111000, 18);
     ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI);
-    ctx.fillStyle='rgba(212,255,0,0.07)'; ctx.fill();
-    ctx.strokeStyle='rgba(212,255,0,0.22)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='rgba(255,59,48,0.07)'; ctx.fill();
+    ctx.strokeStyle='rgba(255,59,48,0.22)'; ctx.lineWidth=1.5; ctx.stroke();
   }
   gpsDot.style.left=cx+'px'; gpsDot.style.top=cy+'px'; gpsDot.style.display='block';
 }
@@ -249,9 +262,9 @@ if (!('geolocation' in navigator)) {
   setStatus('error','이 브라우저는 위치 기능을 지원하지 않아요');
 } else {
   navigator.geolocation.watchPosition(
-    ({coords:{longitude:lng,latitude:lat,accuracy}}) => {
+    ({coords:{longitude:lng,latitude:lat,accuracy,heading}}) => {
       if (!inPark(lng,lat)) { currentPos=null; gpsDot.style.display='none'; ctx.clearRect(0,0,canvas.width,canvas.height); setStatus('outside','공원 밖에 있어요'); return; }
-      currentPos={lng,lat,accuracy}; redrawOverlay();
+      currentPos={lng,lat,accuracy,heading}; redrawOverlay();
       setStatus('found',`내 위치 확인됨 · 정확도 ${Math.round(accuracy)}m`);
     },
     ({code}) => setStatus('error',{1:'위치 접근이 거부됐어요',2:'위치를 찾을 수 없어요',3:'시간 초과'}[code]||'위치 오류'),
