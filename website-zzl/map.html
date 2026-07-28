@@ -67,7 +67,9 @@
       transition: border-color 0.4s;
     }
     .gps-pill.found { border-color: rgba(212,255,0,0.2); }
+    .gps-pill.idle  { cursor: pointer; }
     .gps-dot-sm { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background 0.4s; }
+    .gps-pill.idle    .gps-dot-sm { background: rgba(255,255,255,0.2); }
     .gps-pill.finding .gps-dot-sm { background: rgba(255,255,255,0.3); }
     .gps-pill.found   .gps-dot-sm { background: #D4FF00; animation: dot-blink 2.4s ease-in-out infinite; }
     .gps-pill.outside .gps-dot-sm { background: rgba(255,200,0,0.7); }
@@ -121,9 +123,9 @@
 <!-- 플로팅 오버레이 -->
 <a href="/" class="ov-back">← 홈</a>
 <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" class="ov-pdf">PDF</a>
-<div class="gps-pill finding" id="gpsBar">
+<div class="gps-pill idle" id="gpsBar">
   <span class="gps-dot-sm"></span>
-  <span id="gpsBarText">위치 찾는 중</span>
+  <span id="gpsBarText">위치 켜기</span>
 </div>
 <a href="tel:031-962-4500" class="ov-tel">031-962-4500</a>
 
@@ -255,15 +257,32 @@ function inPark(lng,lat) { return lng>=PARK.lngMin&&lng<=PARK.lngMax&&lat>=PARK.
 if (!('geolocation' in navigator)) {
   setStatus('error','위치 미지원');
 } else {
-  navigator.geolocation.watchPosition(
-    ({coords:{longitude:lng,latitude:lat,accuracy,heading}}) => {
-      if (!inPark(lng,lat)) { currentPos=null; gpsDot.style.display='none'; ctx.clearRect(0,0,canvas.width,canvas.height); setStatus('outside','공원 밖'); return; }
-      currentPos={lng,lat,accuracy,heading}; redrawOverlay();
-      setStatus('found',`정확도 ${Math.round(accuracy)}m`);
-    },
-    ({code}) => setStatus('error',{1:'위치 권한 거부',2:'위치 불명',3:'시간 초과'}[code]||'위치 오류'),
-    {enableHighAccuracy:true,maximumAge:5000,timeout:30000}
-  );
+  function startWatchPosition() {
+    setStatus('finding','위치 찾는 중');
+    navigator.geolocation.watchPosition(
+      ({coords:{longitude:lng,latitude:lat,accuracy,heading}}) => {
+        if (!inPark(lng,lat)) { currentPos=null; gpsDot.style.display='none'; ctx.clearRect(0,0,canvas.width,canvas.height); setStatus('outside','공원 밖'); return; }
+        currentPos={lng,lat,accuracy,heading}; redrawOverlay();
+        setStatus('found',`정확도 ${Math.round(accuracy)}m`);
+      },
+      ({code}) => setStatus('error',{1:'위치 권한 거부',2:'위치 불명',3:'시간 초과'}[code]||'위치 오류'),
+      {enableHighAccuracy:true,maximumAge:5000,timeout:30000}
+    );
+  }
+
+  // 이미 허용된 경우 자동 시작 — 권한 다이얼로그가 없어 터치 줌을 차단하지 않음
+  // 허용 여부 미결정('prompt') 또는 permissions API 미지원: 탭으로 수동 시작
+  (async () => {
+    if (navigator.permissions) {
+      try {
+        const p = await navigator.permissions.query({name:'geolocation'});
+        if (p.state === 'granted') { startWatchPosition(); return; }
+        if (p.state === 'denied')  { setStatus('error','위치 권한 거부'); return; }
+      } catch(e) {}
+    }
+    // 'prompt' 상태 — 탭 시 시작 (다이얼로그가 자동으로 뜨지 않도록)
+    gpsBar.addEventListener('click', startWatchPosition, {once:true});
+  })();
 }
 
 // ── 줌/팬 이벤트 ────────────────────────────────────────────────────────────
