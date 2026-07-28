@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; touch-action: none; background: #0A0B0A; color: #fff; font-family: 'Inter', sans-serif; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0A0B0A; color: #fff; font-family: 'Inter', sans-serif; }
 
     /* ── 지도 뷰어: 화면 전체 ── */
     .map-viewer {
@@ -64,7 +64,7 @@
       transition: border-color 0.4s;
     }
     .gps-pill.found { border-color: rgba(212,255,0,0.2); }
-    .gps-pill.idle  { cursor: pointer; }
+    .gps-pill.idle  { }
     .gps-dot-sm { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background 0.4s; }
     .gps-pill.idle    .gps-dot-sm { background: rgba(255,255,255,0.2); }
     .gps-pill.finding .gps-dot-sm { background: rgba(255,255,255,0.3); }
@@ -264,31 +264,17 @@ function inPark(lng,lat) { return lng>=PARK.lngMin&&lng<=PARK.lngMax&&lat>=PARK.
 if (!('geolocation' in navigator)) {
   setStatus('error','위치 미지원');
 } else {
-  function startWatchPosition() {
-    setStatus('finding','위치 찾는 중');
-    navigator.geolocation.watchPosition(
-      ({coords:{longitude:lng,latitude:lat,accuracy,heading}}) => {
-        if (!inPark(lng,lat)) { currentPos=null; gpsDot.style.display='none'; ctx.clearRect(0,0,canvas.width,canvas.height); setStatus('outside','공원 밖'); return; }
-        currentPos={lng,lat,accuracy,heading}; redrawOverlay();
-        setStatus('found',`정확도 ${Math.round(accuracy)}m`);
-      },
-      ({code}) => setStatus('error',{1:'위치 권한 거부',2:'위치 불명',3:'시간 초과'}[code]||'위치 오류'),
-      {enableHighAccuracy:true,maximumAge:5000,timeout:30000}
-    );
-  }
-
-  // 이미 허용된 경우 자동 시작 — 권한 다이얼로그 없이 조용히 시작
-  // 허용 미결정(prompt): GPS 필 탭 시 시작 (다이얼로그를 사용자 의도로 유도)
-  (async () => {
-    if (navigator.permissions) {
-      try {
-        const p = await navigator.permissions.query({name:'geolocation'});
-        if (p.state === 'granted') { startWatchPosition(); return; }
-        if (p.state === 'denied')  { setStatus('error','위치 권한 거부'); return; }
-      } catch(e) {}
-    }
-    gpsBar.addEventListener('click', startWatchPosition, {once:true});
-  })();
+  // 페이지 진입 시 즉시 위치 권한 요청
+  setStatus('finding','위치 찾는 중');
+  navigator.geolocation.watchPosition(
+    ({coords:{longitude:lng,latitude:lat,accuracy,heading}}) => {
+      if (!inPark(lng,lat)) { currentPos=null; gpsDot.style.display='none'; ctx.clearRect(0,0,canvas.width,canvas.height); setStatus('outside','공원 밖'); return; }
+      currentPos={lng,lat,accuracy,heading}; redrawOverlay();
+      setStatus('found',`정확도 ${Math.round(accuracy)}m`);
+    },
+    ({code}) => setStatus('error',{1:'위치 권한 거부',2:'위치 불명',3:'시간 초과'}[code]||'위치 오류'),
+    {enableHighAccuracy:true,maximumAge:5000,timeout:30000}
+  );
 }
 
 // ── 줌/팬 이벤트 ─────────────────────────────────────────────────────────────
