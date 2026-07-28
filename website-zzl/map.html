@@ -93,6 +93,16 @@
     .map-hint { position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%); z-index: 15; font-family: 'JetBrains Mono', monospace; font-size: 0.45rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.2); pointer-events: none; white-space: nowrap; transition: opacity 1s; }
     .map-hint.hidden { opacity: 0; }
 
+    /* ── 가로 화면 컴팩트 모드 ── */
+    @media (max-height: 500px) {
+      header { height: 44px; }
+      .logo { font-size: 0.88rem; }
+      .gps-bar { top: 44px; padding: 4px 16px; font-size: 0.45rem; }
+      footer { height: 34px; padding: 0 16px; }
+      .map-hint { bottom: 42px; }
+      .btn-dl { padding: 6px 12px; font-size: 0.55rem; }
+    }
+
     /* ── 테스트 패널 ── */
     .test-panel { position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 30; display: flex; flex-direction: column; gap: 6px; background: rgba(10,11,10,0.88); border: 1px solid rgba(212,255,0,0.3); padding: 10px 8px; backdrop-filter: blur(12px); }
     .test-label { font-family: 'JetBrains Mono', monospace; font-size: 0.42rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #D4FF00; margin-bottom: 2px; text-align: center; }
@@ -134,7 +144,7 @@
 </footer>
 
 <!-- 줌 힌트 -->
-<div class="map-hint" id="mapHint">PINCH · ZOOM · DBL TAP</div>
+<div class="map-hint" id="mapHint">두 손가락으로 확대 · 두 번 탭으로 줌</div>
 
 <!-- 테스트 패널 (URL에 ?test 있을 때만 표시) -->
 <div class="test-panel" id="testPanel" style="display:none">
@@ -293,24 +303,27 @@ function doubleTap(cx,cy) {
   else zoomAround(cx,cy,3);
 }
 
-mapViewer.addEventListener('touchstart', e=>{
-  e.preventDefault(); touches=[...e.touches];
-  if (touches.length===1) {
-    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; doubleTap(touches[0].clientX,touches[0].clientY); return; }
-    tapTimer=setTimeout(()=>{tapTimer=null;},280);
-    dragStartX=touches[0].clientX; dragStartY=touches[0].clientY; dragTx=tx; dragTy=ty; isPinching=false;
-  } else if (touches.length===2) {
+// 터치 리스너를 document 레벨에 걸어 헤더/푸터 위에서도 제스처가 끊기지 않게 함
+document.addEventListener('touchstart', e=>{
+  const t=[...e.touches];
+  if (t.length===1) {
+    if (e.target.closest('a,button')) return; // 버튼·링크는 일반 클릭 허용
+    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; e.preventDefault(); doubleTap(t[0].clientX,t[0].clientY); return; }
+    tapTimer=setTimeout(()=>{tapTimer=null;},300);
+    dragStartX=t[0].clientX; dragStartY=t[0].clientY; dragTx=tx; dragTy=ty; isPinching=false;
+  } else if (t.length===2) {
     if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; }
-    isPinching=true;
-    lastDist=Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
-    lastMidX=(touches[0].clientX+touches[1].clientX)/2; lastMidY=(touches[0].clientY+touches[1].clientY)/2;
+    isPinching=true; e.preventDefault();
+    lastDist=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+    lastMidX=(t[0].clientX+t[1].clientX)/2; lastMidY=(t[0].clientY+t[1].clientY)/2;
   }
+  touches=t;
 },{passive:false});
 
-mapViewer.addEventListener('touchmove', e=>{
-  e.preventDefault(); touches=[...e.touches];
+document.addEventListener('touchmove', e=>{
+  touches=[...e.touches];
   if (touches.length===2) {
-    hideHint();
+    e.preventDefault(); hideHint();
     const d=Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
     const midX=(touches[0].clientX+touches[1].clientX)/2, midY=(touches[0].clientY+touches[1].clientY)/2;
     const s=Math.max(1,Math.min(MAX_SCALE,scale*d/lastDist));
@@ -319,12 +332,13 @@ mapViewer.addEventListener('touchmove', e=>{
     scale=s; clamp(); applyTransform();
     lastDist=d; lastMidX=midX; lastMidY=midY;
   } else if (touches.length===1&&!isPinching&&scale>1) {
+    e.preventDefault();
     tx=dragTx+(touches[0].clientX-dragStartX); ty=dragTy+(touches[0].clientY-dragStartY);
     clamp(); applyTransform();
   }
 },{passive:false});
 
-mapViewer.addEventListener('touchend', e=>{
+document.addEventListener('touchend', e=>{
   touches=[...e.touches];
   if (touches.length<2) { isPinching=false; if(scale<1){scale=1;tx=0;ty=0;applyTransform();} }
 });
