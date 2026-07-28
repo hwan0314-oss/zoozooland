@@ -25,9 +25,6 @@
 
     /* 줌/팬 컨테이너 */
     .map-transform { position: relative; flex-shrink: 0; transform-origin: center; touch-action: none; }
-
-    /* 터치 캡처 레이어 — 맵(z:1) 위, 버튼(z:20) 아래에서 모든 맵 터치를 전담 처리 */
-    #touchLayer { position: fixed; inset: 0; z-index: 10; touch-action: none; }
     .map-img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
     .gps-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     .gps-dot { position: absolute; width: 22px; height: 22px; transform: translate(-50%,-50%); pointer-events: none; display: none; }
@@ -87,6 +84,11 @@
     }
     .ov-tel:hover { color: rgba(255,255,255,0.5); }
 
+    /* ── 줌 버튼 (+/−) ── */
+    .zoom-btns { position: fixed; right: 14px; bottom: 56px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
+    .zoom-btn { width: 40px; height: 40px; background: rgba(10,11,10,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); font-size: 1.3rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, color 0.2s; }
+    .zoom-btn:active { border-color: #D4FF00; color: #D4FF00; }
+
     /* ── 줌 힌트 ── */
     .map-hint { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 15; font-family: 'JetBrains Mono', monospace; font-size: 0.45rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.2); pointer-events: none; white-space: nowrap; transition: opacity 1s; }
     .map-hint.hidden { opacity: 0; }
@@ -96,6 +98,8 @@
       .ov-back, .ov-pdf, .gps-pill { top: 8px; min-height: 34px; font-size: 0.55rem; }
       .ov-tel { bottom: 6px; font-size: 0.45rem; }
       .map-hint { bottom: 6px; }
+      .zoom-btns { bottom: 44px; }
+      .zoom-btn { width: 34px; height: 34px; }
     }
 
     /* ── 테스트 패널 ── */
@@ -117,9 +121,6 @@
   </div>
 </div>
 
-<!-- 터치 캡처 레이어 (맵 터치 전담, 버튼은 z:20으로 그 위에서 독립 처리) -->
-<div id="touchLayer"></div>
-
 <!-- 플로팅 오버레이 -->
 <a href="/" class="ov-back">← 홈</a>
 <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" class="ov-pdf">PDF</a>
@@ -129,8 +130,14 @@
 </div>
 <a href="tel:031-962-4500" class="ov-tel">031-962-4500</a>
 
+<!-- 줌 버튼 (+/-) — 터치 줌이 안 될 때 대체 수단 -->
+<div class="zoom-btns">
+  <button class="zoom-btn" id="zoomInBtn">+</button>
+  <button class="zoom-btn" id="zoomOutBtn">−</button>
+</div>
+
 <!-- 줌 힌트 -->
-<div class="map-hint" id="mapHint">두 손가락으로 확대 · 두 번 탭으로 줌</div>
+<div class="map-hint" id="mapHint">+ 버튼으로 확대 · 두 손가락으로 확대</div>
 
 <!-- 테스트 패널 (URL에 ?test 있을 때만 표시) -->
 <div class="test-panel" id="testPanel" style="display:none">
@@ -270,8 +277,8 @@ if (!('geolocation' in navigator)) {
     );
   }
 
-  // 이미 허용된 경우 자동 시작 — 권한 다이얼로그가 없어 터치 줌을 차단하지 않음
-  // 허용 여부 미결정('prompt') 또는 permissions API 미지원: 탭으로 수동 시작
+  // 이미 허용된 경우 자동 시작 — 권한 다이얼로그 없이 조용히 시작
+  // 허용 미결정(prompt): GPS 필 탭 시 시작 (다이얼로그를 사용자 의도로 유도)
   (async () => {
     if (navigator.permissions) {
       try {
@@ -280,12 +287,11 @@ if (!('geolocation' in navigator)) {
         if (p.state === 'denied')  { setStatus('error','위치 권한 거부'); return; }
       } catch(e) {}
     }
-    // 'prompt' 상태 — 탭 시 시작 (다이얼로그가 자동으로 뜨지 않도록)
     gpsBar.addEventListener('click', startWatchPosition, {once:true});
   })();
 }
 
-// ── 줌/팬 이벤트 ────────────────────────────────────────────────────────────
+// ── 줌/팬 이벤트 ─────────────────────────────────────────────────────────────
 let dragStartX=0, dragStartY=0, dragTx=0, dragTy=0;
 let tapTimer=null, isPinching=false;
 let pinchDist=0, pinchMidX=0, pinchMidY=0;
@@ -306,30 +312,36 @@ function doubleTap(cx,cy) {
   else zoomAround(cx,cy,3);
 }
 
-// 터치 캡처 레이어 — touch-action:none 명시 + 오버레이 버튼(z:20)은 자체 처리
-// touch-action이 상속 안 되므로 레이어에 직접 설정해야 브라우저 제스처 가로채기 방지
-const touchLayer = document.getElementById('touchLayer');
-touchLayer.addEventListener('touchstart', e=>{
-  e.preventDefault();
-  const t=[...e.touches];
-  if (t.length===1) {
-    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; doubleTap(t[0].clientX,t[0].clientY); return; }
+// Pointer Events — mapViewer(touch-action:none)에 직접 달아 브라우저 제스처 차단
+// setPointerCapture: 손가락이 오버레이 위로 나가도 이벤트 추적 유지
+const ptrs = new Map();
+mapViewer.addEventListener('pointerdown', e=>{
+  if (e.target.closest('a,button,#gpsBar,.zoom-btns')) return;
+  try { mapViewer.setPointerCapture(e.pointerId); } catch(_) {}
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+  if (ptrs.size===1) {
+    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; doubleTap(e.clientX,e.clientY); return; }
     tapTimer=setTimeout(()=>{tapTimer=null;},300);
     isPinching=false;
-    dragStartX=t[0].clientX; dragStartY=t[0].clientY; dragTx=tx; dragTy=ty;
-  } else if (t.length>=2) {
+    dragStartX=e.clientX; dragStartY=e.clientY; dragTx=tx; dragTy=ty;
+    if (e.pointerType==='mouse') document.body.style.cursor='grabbing';
+  } else if (ptrs.size===2) {
     clearTimeout(tapTimer); tapTimer=null; isPinching=true;
-    pinchDist=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
-    pinchMidX=(t[0].clientX+t[1].clientX)/2; pinchMidY=(t[0].clientY+t[1].clientY)/2;
+    const [a,b]=[...ptrs.values()];
+    pinchDist=Math.hypot(a.x-b.x,a.y-b.y);
+    pinchMidX=(a.x+b.x)/2; pinchMidY=(a.y+b.y)/2;
   }
-},{passive:false});
+});
 
-touchLayer.addEventListener('touchmove', e=>{
-  e.preventDefault();
-  const t=[...e.touches];
-  if (t.length>=2 && isPinching) {
-    const d=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
-    const mx=(t[0].clientX+t[1].clientX)/2, my=(t[0].clientY+t[1].clientY)/2;
+mapViewer.addEventListener('pointermove', e=>{
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+  if (ptrs.size>=2 && isPinching) {
+    const [a,b]=[...ptrs.values()];
+    const d=Math.hypot(a.x-b.x,a.y-b.y);
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
     if (pinchDist>0) {
       const s=Math.max(1,Math.min(MAX_SCALE,scale*d/pinchDist));
       tx=tx+(mx-vcX()-tx)*(1-s/scale)+(mx-pinchMidX);
@@ -337,29 +349,30 @@ touchLayer.addEventListener('touchmove', e=>{
       scale=s; clamp(); applyTransform(); hideHint();
     }
     pinchDist=d; pinchMidX=mx; pinchMidY=my;
-  } else if (t.length===1 && !isPinching && scale>1) {
-    tx=dragTx+(t[0].clientX-dragStartX); ty=dragTy+(t[0].clientY-dragStartY);
+  } else if (ptrs.size===1 && !isPinching && (scale>1||e.pointerType==='mouse')) {
+    tx=dragTx+(e.clientX-dragStartX); ty=dragTy+(e.clientY-dragStartY);
     clamp(); applyTransform();
   }
-},{passive:false});
-
-touchLayer.addEventListener('touchend', e=>{
-  const t=[...e.touches];
-  if (t.length<2) { isPinching=false; pinchDist=0; }
-  if (t.length===0 && scale<1) { scale=1; tx=0; ty=0; applyTransform(); }
 });
 
+function onPtrEnd(e) {
+  ptrs.delete(e.pointerId);
+  if (ptrs.size<2) { isPinching=false; pinchDist=0; }
+  if (ptrs.size===0 && scale<1) { scale=1; tx=0; ty=0; applyTransform(); }
+  if (ptrs.size===0 && e.pointerType==='mouse') document.body.style.cursor='';
+}
+mapViewer.addEventListener('pointerup', onPtrEnd);
+mapViewer.addEventListener('pointercancel', onPtrEnd);
+
+// 휠 줌 (PC)
 mapViewer.addEventListener('wheel',e=>{e.preventDefault(); zoomAround(e.clientX,e.clientY,scale*(e.deltaY<0?1.15:0.87));},{passive:false});
-mapViewer.addEventListener('dblclick',e=>{hideHint(); zoomAround(e.clientX,e.clientY,scale>1.5?1:3);});
 
-// 마우스 드래그 (PC)
-let md=false,mTx=0,mTy=0,mSx=0,mSy=0;
-mapViewer.addEventListener('mousedown',e=>{md=true;mSx=e.clientX;mSy=e.clientY;mTx=tx;mTy=ty;document.body.style.cursor='grabbing';});
-window.addEventListener('mousemove',e=>{if(!md)return;tx=mTx+e.clientX-mSx;ty=mTy+e.clientY-mSy;clamp();applyTransform();});
-window.addEventListener('mouseup',()=>{md=false;document.body.style.cursor='';});
-
+// +/- 줌 버튼 (항상 작동하는 대체 수단)
 let hintTimer=setTimeout(hideHint,3000);
 function hideHint(){clearTimeout(hintTimer);hintEl.classList.add('hidden');}
+
+document.getElementById('zoomInBtn').addEventListener('click',()=>{ hideHint(); zoomAround(vcX(),vcY(),scale*1.8); });
+document.getElementById('zoomOutBtn').addEventListener('click',()=>{ zoomAround(vcX(),vcY(),scale/1.8); });
 
 // ── 테스트 모드 ───────────────────────────────────────────────────────────────
 const TEST_MODE = new URLSearchParams(location.search).has('test');
