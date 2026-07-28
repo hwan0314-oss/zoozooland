@@ -12,24 +12,27 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #0A0B0A; color: #fff; font-family: 'Inter', sans-serif; }
 
-    /* ── 지도 뷰어: 화면 전체 ── */
-    .map-viewer {
-      position: fixed; inset: 0; z-index: 1;
-      display: flex; align-items: center; justify-content: center;
-      background: #0A0B0A; touch-action: none;
-    }
+    /* Leaflet 지도 컨테이너 */
+    #mapDiv { position: fixed; inset: 0; z-index: 1; }
+    .leaflet-container { background: #0A0B0A !important; }
 
-    /* 줌/팬 컨테이너 */
-    .map-transform { position: relative; flex-shrink: 0; transform-origin: center; touch-action: none; }
-    .map-img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
-    .gps-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-    .gps-dot { position: absolute; width: 22px; height: 22px; transform: translate(-50%,-50%); pointer-events: none; display: none; }
-    .gps-dot::after { content:''; position:absolute; inset:4px; border-radius:50%; background:#FF3B30; border:2.5px solid #fff; box-shadow:0 0 8px rgba(255,59,48,0.6); }
-    .gps-dot::before { content:''; position:absolute; inset:0; border-radius:50%; border:2px solid rgba(255,59,48,0.45); animation:gps-ring 2s cubic-bezier(0,0,0.2,1) infinite; }
+    /* GPS 마커 (divIcon) */
+    .gps-icon { background: transparent !important; border: none !important; }
+    .gps-icon-inner {
+      position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px;
+      border-radius: 50%; background: #FF3B30;
+      border: 2.5px solid #fff; box-shadow: 0 0 8px rgba(255,59,48,0.6);
+    }
+    .gps-icon-ring {
+      position: absolute; inset: 0; border-radius: 50%;
+      border: 2px solid rgba(255,59,48,0.45);
+      animation: gps-ring 2s cubic-bezier(0,0,0.2,1) infinite;
+    }
     @keyframes gps-ring { 0%{transform:scale(0.8);opacity:0.8;} 100%{transform:scale(2.8);opacity:0;} }
 
     /* ── 플로팅 오버레이: 뒤로 버튼 ── */
@@ -61,10 +64,9 @@
       border-radius: 24px; border: 1px solid transparent;
       font-family: 'JetBrains Mono', monospace; font-size: 0.48rem;
       text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap;
-      transition: border-color 0.4s;
+      transition: border-color 0.4s; pointer-events: none;
     }
     .gps-pill.found { border-color: rgba(212,255,0,0.2); }
-    .gps-pill.idle  { }
     .gps-dot-sm { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background 0.4s; }
     .gps-pill.idle    .gps-dot-sm { background: rgba(255,255,255,0.2); }
     .gps-pill.finding .gps-dot-sm { background: rgba(255,255,255,0.3); }
@@ -75,7 +77,7 @@
     .gps-pill.found #gpsBarText { color: rgba(212,255,0,0.65); }
     @keyframes dot-blink { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
 
-    /* ── 전화번호 (하단) ── */
+    /* ── 전화번호 ── */
     .ov-tel {
       position: fixed; bottom: 12px; right: 14px; z-index: 20;
       color: rgba(255,255,255,0.2); font-family: 'JetBrains Mono', monospace;
@@ -86,60 +88,60 @@
 
     /* ── 줌 버튼 (+/−) ── */
     .zoom-btns { position: fixed; right: 14px; bottom: 56px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
-    .zoom-btn { width: 40px; height: 40px; background: rgba(10,11,10,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); font-size: 1.3rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, color 0.2s; }
+    .zoom-btn {
+      width: 40px; height: 40px;
+      background: rgba(10,11,10,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);
+      font-size: 1.3rem; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.2s, color 0.2s;
+    }
     .zoom-btn:active { border-color: #D4FF00; color: #D4FF00; }
 
-    /* ── 줌 힌트 ── */
-    .map-hint { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 15; font-family: 'JetBrains Mono', monospace; font-size: 0.45rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.2); pointer-events: none; white-space: nowrap; transition: opacity 1s; }
-    .map-hint.hidden { opacity: 0; }
+    /* ── 테스트 패널 ── */
+    .test-panel {
+      position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 30;
+      display: flex; flex-direction: column; gap: 6px;
+      background: rgba(10,11,10,0.88); border: 1px solid rgba(212,255,0,0.3);
+      padding: 10px 8px; backdrop-filter: blur(12px);
+    }
+    .test-label { font-family: 'JetBrains Mono', monospace; font-size: 0.42rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #D4FF00; margin-bottom: 2px; text-align: center; }
+    .test-btn {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.48rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      background: transparent; border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.55); padding: 7px 10px; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap; text-align: left;
+    }
+    .test-btn:hover { border-color: #D4FF00; color: #D4FF00; }
+    .test-btn.active { border-color: #D4FF00; background: rgba(212,255,0,0.1); color: #D4FF00; }
 
-    /* ── 가로 화면: 버튼 소형화 ── */
+    /* ── 가로 화면 소형화 ── */
     @media (max-height: 500px) {
       .ov-back, .ov-pdf, .gps-pill { top: 8px; min-height: 34px; font-size: 0.55rem; }
       .ov-tel { bottom: 6px; font-size: 0.45rem; }
-      .map-hint { bottom: 6px; }
       .zoom-btns { bottom: 44px; }
       .zoom-btn { width: 34px; height: 34px; }
     }
-
-    /* ── 테스트 패널 ── */
-    .test-panel { position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 30; display: flex; flex-direction: column; gap: 6px; background: rgba(10,11,10,0.88); border: 1px solid rgba(212,255,0,0.3); padding: 10px 8px; backdrop-filter: blur(12px); }
-    .test-label { font-family: 'JetBrains Mono', monospace; font-size: 0.42rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #D4FF00; margin-bottom: 2px; text-align: center; }
-    .test-btn { font-family: 'JetBrains Mono', monospace; font-size: 0.48rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.55); padding: 7px 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap; text-align: left; }
-    .test-btn:hover { border-color: #D4FF00; color: #D4FF00; }
-    .test-btn.active { border-color: #D4FF00; background: rgba(212,255,0,0.1); color: #D4FF00; }
   </style>
 </head>
 <body>
 
-<!-- 지도: 화면 전체 -->
-<div class="map-viewer" id="mapViewer">
-  <div class="map-transform" id="mapTransform">
-    <img src="images/guidemap.png" alt="ZZL 쥬쥬랜드 가이드맵" class="map-img" id="mapImg">
-    <canvas class="gps-canvas" id="gpsCanvas"></canvas>
-    <div class="gps-dot" id="gpsDot"></div>
-  </div>
-</div>
+<div id="mapDiv"></div>
 
-<!-- 플로팅 오버레이 -->
 <a href="/" class="ov-back">← 홈</a>
 <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" class="ov-pdf">PDF</a>
-<div class="gps-pill idle" id="gpsBar">
+<div class="gps-pill finding" id="gpsBar">
   <span class="gps-dot-sm"></span>
-  <span id="gpsBarText">위치 켜기</span>
+  <span id="gpsBarText">위치 찾는 중</span>
 </div>
 <a href="tel:031-962-4500" class="ov-tel">031-962-4500</a>
 
-<!-- 줌 버튼 (+/-) — 터치 줌이 안 될 때 대체 수단 -->
 <div class="zoom-btns">
   <button class="zoom-btn" id="zoomInBtn">+</button>
   <button class="zoom-btn" id="zoomOutBtn">−</button>
 </div>
 
-<!-- 줌 힌트 -->
-<div class="map-hint" id="mapHint">+ 버튼으로 확대 · 두 손가락으로 확대</div>
-
-<!-- 테스트 패널 (URL에 ?test 있을 때만 표시) -->
 <div class="test-panel" id="testPanel" style="display:none">
   <div class="test-label">TEST</div>
   <button class="test-btn" data-lng="126.8538597" data-lat="37.6903466">입구</button>
@@ -150,8 +152,9 @@
   <button class="test-btn" data-lng="126.8541615" data-lat="37.690084">식당</button>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ── GCP 데이터 [경도, 위도, 픽셀X, 픽셀Y] — 원본: 4492×3176 ────────────────
+// ── GCP 데이터 [경도, 위도, 픽셀X, 픽셀Y] — 원본 이미지 4492×3176 ──────────
 const GCPs = [
   [126.8538597, 37.6903466, 2487, 2054],
   [126.8540339, 37.6902809, 2510, 1839],
@@ -193,172 +196,92 @@ function computeAffine(gcps) {
 const affine = computeAffine(GCPs);
 function gpsToNaturalPx(lng,lat) { return { x:affine.a*lng+affine.b*lat+affine.c, y:affine.d*lng+affine.e*lat+affine.f }; }
 
-// ── DOM 참조 ─────────────────────────────────────────────────────────────────
-const mapViewer=document.getElementById('mapViewer'), mapTransform=document.getElementById('mapTransform');
-const mapImg=document.getElementById('mapImg'), canvas=document.getElementById('gpsCanvas'), ctx=canvas.getContext('2d');
-const gpsDot=document.getElementById('gpsDot'), gpsBar=document.getElementById('gpsBar'), barText=document.getElementById('gpsBarText');
-const hintEl=document.getElementById('mapHint');
+// ── Leaflet 지도 초기화 ───────────────────────────────────────────────────────
+const IMG_W = 4492, IMG_H = 3176;
+// CRS.Simple: [lat,lng] = [이미지 y축 반전, x]
+// 이미지 좌상단=(IMG_H,0), 우하단=(0,IMG_W) → fitBounds가 전체 이미지 맞춤
+const leafBounds = [[0, 0], [IMG_H, IMG_W]];
 
-// ── 줌/팬 상태 ───────────────────────────────────────────────────────────────
-let scale=1, tx=0, ty=0, displayW=0, displayH=0;
-const MAX_SCALE=6;
+const lmap = L.map('mapDiv', {
+  crs: L.CRS.Simple,
+  minZoom: -4,
+  maxZoom: 4,
+  zoomControl: false,
+  attributionControl: false,
+  bounceAtZoomLimits: false,
+});
 
-function applyTransform() { mapTransform.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`; }
-function clamp() {
-  tx=Math.max(-displayW*(scale-1)/2, Math.min(displayW*(scale-1)/2, tx));
-  ty=Math.max(-displayH*(scale-1)/2, Math.min(displayH*(scale-1)/2, ty));
+L.imageOverlay('images/guidemap.png', leafBounds).addTo(lmap);
+lmap.fitBounds(leafBounds);
+lmap.setMaxBounds([[-200, -200], [IMG_H + 200, IMG_W + 200]]);
+
+// ── GPS 마커 ─────────────────────────────────────────────────────────────────
+// 정확도 반경 원 (위도 1도 = 111,000m 기준으로 픽셀 환산)
+const accCircle = L.circle([IMG_H/2, IMG_W/2], {
+  radius: 0,
+  fillColor: '#FF3B30', fillOpacity: 0.07,
+  color: '#FF3B30', opacity: 0.2, weight: 1.5,
+  interactive: false,
+}).addTo(lmap);
+
+// GPS 위치 점 (pulsing dot divIcon)
+const gpsDivIcon = L.divIcon({
+  className: 'gps-icon',
+  html: '<div class="gps-icon-inner"></div><div class="gps-icon-ring"></div>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
+const gpsMarker = L.marker([IMG_H/2, IMG_W/2], {
+  icon: gpsDivIcon,
+  interactive: false,
+  zIndexOffset: 1000,
+}).addTo(lmap);
+gpsMarker.setOpacity(0);
+accCircle.setStyle({ opacity: 0, fillOpacity: 0 });
+
+// 이미지 자연 픽셀 → Leaflet LatLng 변환
+function px2ll(nx, ny) { return L.latLng(IMG_H - ny, nx); }
+
+// 정확도(m) → 이미지 픽셀 반경
+function accMetresToPx(m) { return m * Math.abs(affine.e) / 111000; }
+
+function placeGPS(nx, ny, accuracy) {
+  const ll = px2ll(nx, ny);
+  gpsMarker.setLatLng(ll).setOpacity(1);
+  accCircle.setLatLng(ll).setRadius(accMetresToPx(accuracy))
+    .setStyle({ opacity: 0.2, fillOpacity: 0.07 });
+}
+function clearGPS() {
+  gpsMarker.setOpacity(0);
+  accCircle.setStyle({ opacity: 0, fillOpacity: 0 });
 }
 
-// ── 뷰어 크기 초기화 ─────────────────────────────────────────────────────────
-function initSizes() {
-  if (!mapImg.naturalWidth) return;
-  const aw=window.innerWidth, ah=window.innerHeight;
-  const ir=mapImg.naturalWidth/mapImg.naturalHeight, ar=aw/ah;
-  displayW = ir>ar ? aw : ah*ir;
-  displayH = ir>ar ? aw/ir : ah;
-  mapTransform.style.width=Math.round(displayW)+'px';
-  mapTransform.style.height=Math.round(displayH)+'px';
-  canvas.width=Math.round(displayW); canvas.height=Math.round(displayH);
-  scale=1; tx=0; ty=0;
-  applyTransform(); redrawOverlay();
-}
-window.addEventListener('resize', initSizes);
-if (mapImg.complete && mapImg.naturalWidth) initSizes();
-else mapImg.addEventListener('load', initSizes);
+// ── GPS 상태 ─────────────────────────────────────────────────────────────────
+const gpsBar = document.getElementById('gpsBar');
+const barText = document.getElementById('gpsBarText');
+function setStatus(s, t) { gpsBar.className = 'gps-pill ' + s; barText.textContent = t; }
 
-// ── GPS 오버레이 ─────────────────────────────────────────────────────────────
-let currentPos=null;
-function redrawOverlay() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if (!currentPos || !displayW) return;
-  const sx=displayW/mapImg.naturalWidth, sy=displayH/mapImg.naturalHeight;
-  const {x:nx,y:ny}=gpsToNaturalPx(currentPos.lng,currentPos.lat);
-  const cx=nx*sx, cy=ny*sy;
-  // 진행 방향 (이동 중에만 heading 값이 유효)
-  if (currentPos.heading != null && isFinite(currentPos.heading)) {
-    const hr=currentPos.heading*Math.PI/180;
-    const ndx=affine.a*Math.sin(hr)+affine.b*Math.cos(hr);
-    const ndy=affine.d*Math.sin(hr)+affine.e*Math.cos(hr);
-    const coneAngle=Math.atan2(ndy*sy, ndx*sx);
-    const spread=Math.PI/5;
-    ctx.beginPath(); ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,52, coneAngle-spread/2, coneAngle+spread/2);
-    ctx.closePath();
-    ctx.fillStyle='rgba(255,59,48,0.28)'; ctx.fill();
-  }
-  // 정확도 반경
-  if (currentPos.accuracy) {
-    const r=Math.max(currentPos.accuracy*Math.abs(affine.e)*sy/111000, 18);
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI);
-    ctx.fillStyle='rgba(255,59,48,0.07)'; ctx.fill();
-    ctx.strokeStyle='rgba(255,59,48,0.22)'; ctx.lineWidth=1.5; ctx.stroke();
-  }
-  gpsDot.style.left=cx+'px'; gpsDot.style.top=cy+'px'; gpsDot.style.display='block';
-}
-
-// ── GPS 추적 ─────────────────────────────────────────────────────────────────
-function setStatus(s,t) { gpsBar.className='gps-pill '+s; barText.textContent=t; }
-const PARK={latMin:37.688,latMax:37.693,lngMin:126.852,lngMax:126.857};
-function inPark(lng,lat) { return lng>=PARK.lngMin&&lng<=PARK.lngMax&&lat>=PARK.latMin&&lat<=PARK.latMax; }
+const PARK = { latMin:37.688, latMax:37.693, lngMin:126.852, lngMax:126.857 };
+function inPark(lng, lat) { return lng>=PARK.lngMin&&lng<=PARK.lngMax&&lat>=PARK.latMin&&lat<=PARK.latMax; }
 
 if (!('geolocation' in navigator)) {
-  setStatus('error','위치 미지원');
+  setStatus('error', '위치 미지원');
 } else {
-  // 페이지 진입 시 즉시 위치 권한 요청
-  setStatus('finding','위치 찾는 중');
   navigator.geolocation.watchPosition(
-    ({coords:{longitude:lng,latitude:lat,accuracy,heading}}) => {
-      if (!inPark(lng,lat)) { currentPos=null; gpsDot.style.display='none'; ctx.clearRect(0,0,canvas.width,canvas.height); setStatus('outside','공원 밖'); return; }
-      currentPos={lng,lat,accuracy,heading}; redrawOverlay();
-      setStatus('found',`정확도 ${Math.round(accuracy)}m`);
+    ({coords:{longitude:lng, latitude:lat, accuracy}}) => {
+      if (!inPark(lng, lat)) { clearGPS(); setStatus('outside','공원 밖'); return; }
+      const {x:nx, y:ny} = gpsToNaturalPx(lng, lat);
+      placeGPS(nx, ny, accuracy);
+      setStatus('found', `정확도 ${Math.round(accuracy)}m`);
     },
-    ({code}) => setStatus('error',{1:'위치 권한 거부',2:'위치 불명',3:'시간 초과'}[code]||'위치 오류'),
-    {enableHighAccuracy:true,maximumAge:5000,timeout:30000}
+    ({code}) => setStatus('error', {1:'위치 권한 거부',2:'위치 불명',3:'시간 초과'}[code]||'위치 오류'),
+    {enableHighAccuracy:true, maximumAge:5000, timeout:30000}
   );
 }
 
-// ── 줌/팬 이벤트 ─────────────────────────────────────────────────────────────
-let dragStartX=0, dragStartY=0, dragTx=0, dragTy=0;
-let tapTimer=null, isPinching=false;
-let pinchDist=0, pinchMidX=0, pinchMidY=0;
-
-function vcX() { return window.innerWidth/2; }
-function vcY() { return window.innerHeight/2; }
-
-function zoomAround(cx,cy,newScale) {
-  const s=Math.max(1,Math.min(MAX_SCALE,newScale));
-  tx=tx+(cx-vcX()-tx)*(1-s/scale);
-  ty=ty+(cy-vcY()-ty)*(1-s/scale);
-  scale=s; clamp(); applyTransform();
-}
-
-function doubleTap(cx,cy) {
-  hideHint();
-  if (scale>1.5) { scale=1; tx=0; ty=0; applyTransform(); }
-  else zoomAround(cx,cy,3);
-}
-
-// Pointer Events — mapViewer(touch-action:none)에 직접 달아 브라우저 제스처 차단
-// setPointerCapture: 손가락이 오버레이 위로 나가도 이벤트 추적 유지
-const ptrs = new Map();
-mapViewer.addEventListener('pointerdown', e=>{
-  if (e.target.closest('a,button,#gpsBar,.zoom-btns')) return;
-  try { mapViewer.setPointerCapture(e.pointerId); } catch(_) {}
-  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
-
-  if (ptrs.size===1) {
-    if (tapTimer) { clearTimeout(tapTimer); tapTimer=null; doubleTap(e.clientX,e.clientY); return; }
-    tapTimer=setTimeout(()=>{tapTimer=null;},300);
-    isPinching=false;
-    dragStartX=e.clientX; dragStartY=e.clientY; dragTx=tx; dragTy=ty;
-    if (e.pointerType==='mouse') document.body.style.cursor='grabbing';
-  } else if (ptrs.size===2) {
-    clearTimeout(tapTimer); tapTimer=null; isPinching=true;
-    const [a,b]=[...ptrs.values()];
-    pinchDist=Math.hypot(a.x-b.x,a.y-b.y);
-    pinchMidX=(a.x+b.x)/2; pinchMidY=(a.y+b.y)/2;
-  }
-});
-
-mapViewer.addEventListener('pointermove', e=>{
-  if (!ptrs.has(e.pointerId)) return;
-  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
-
-  if (ptrs.size>=2 && isPinching) {
-    const [a,b]=[...ptrs.values()];
-    const d=Math.hypot(a.x-b.x,a.y-b.y);
-    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
-    if (pinchDist>0) {
-      const s=Math.max(1,Math.min(MAX_SCALE,scale*d/pinchDist));
-      tx=tx+(mx-vcX()-tx)*(1-s/scale)+(mx-pinchMidX);
-      ty=ty+(my-vcY()-ty)*(1-s/scale)+(my-pinchMidY);
-      scale=s; clamp(); applyTransform(); hideHint();
-    }
-    pinchDist=d; pinchMidX=mx; pinchMidY=my;
-  } else if (ptrs.size===1 && !isPinching && (scale>1||e.pointerType==='mouse')) {
-    tx=dragTx+(e.clientX-dragStartX); ty=dragTy+(e.clientY-dragStartY);
-    clamp(); applyTransform();
-  }
-});
-
-function onPtrEnd(e) {
-  ptrs.delete(e.pointerId);
-  if (ptrs.size<2) { isPinching=false; pinchDist=0; }
-  if (ptrs.size===0 && scale<1) { scale=1; tx=0; ty=0; applyTransform(); }
-  if (ptrs.size===0 && e.pointerType==='mouse') document.body.style.cursor='';
-}
-mapViewer.addEventListener('pointerup', onPtrEnd);
-mapViewer.addEventListener('pointercancel', onPtrEnd);
-
-// 휠 줌 (PC)
-mapViewer.addEventListener('wheel',e=>{e.preventDefault(); zoomAround(e.clientX,e.clientY,scale*(e.deltaY<0?1.15:0.87));},{passive:false});
-
-// +/- 줌 버튼 (항상 작동하는 대체 수단)
-let hintTimer=setTimeout(hideHint,3000);
-function hideHint(){clearTimeout(hintTimer);hintEl.classList.add('hidden');}
-
-document.getElementById('zoomInBtn').addEventListener('click',()=>{ hideHint(); zoomAround(vcX(),vcY(),scale*1.8); });
-document.getElementById('zoomOutBtn').addEventListener('click',()=>{ zoomAround(vcX(),vcY(),scale/1.8); });
+// ── 줌 버튼 ─────────────────────────────────────────────────────────────────
+document.getElementById('zoomInBtn').addEventListener('click', () => lmap.zoomIn());
+document.getElementById('zoomOutBtn').addEventListener('click', () => lmap.zoomOut());
 
 // ── 테스트 모드 ───────────────────────────────────────────────────────────────
 const TEST_MODE = new URLSearchParams(location.search).has('test');
@@ -370,19 +293,13 @@ if (TEST_MODE) {
   testPanel.querySelectorAll('.test-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const lng = parseFloat(btn.dataset.lng), lat = parseFloat(btn.dataset.lat);
-      currentPos = {lng, lat, accuracy: 8};
-      redrawOverlay();
-      setStatus('found', `TEST · ${btn.textContent} (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+      const {x:nx, y:ny} = gpsToNaturalPx(lng, lat);
+      placeGPS(nx, ny, 8);
+      setStatus('found', `TEST · ${btn.textContent}`);
+      lmap.panTo(px2ll(nx, ny));
       if (activeBtn) activeBtn.classList.remove('active');
       btn.classList.add('active');
       activeBtn = btn;
-      // 선택한 위치로 지도 이동 (중심)
-      const sx=displayW/mapImg.naturalWidth, sy=displayH/mapImg.naturalHeight;
-      const {x:nx,y:ny}=gpsToNaturalPx(lng,lat);
-      const cx=nx*sx, cy=ny*sy;
-      tx = -(cx - displayW/2) * scale;
-      ty = -(cy - displayH/2) * scale;
-      clamp(); applyTransform();
     });
   });
 }
