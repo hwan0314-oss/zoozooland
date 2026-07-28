@@ -204,15 +204,17 @@ const leafBounds = [[0, 0], [IMG_H, IMG_W]];
 
 const lmap = L.map('mapDiv', {
   crs: L.CRS.Simple,
-  minZoom: -4,
+  minZoom: -5,
   maxZoom: 4,
   zoomControl: false,
   attributionControl: false,
   bounceAtZoomLimits: false,
+  zoomSnap: 0,      // 소수점 줌 허용 → fitBounds가 정확히 맞춤
+  zoomDelta: 0.5,
 });
 
 L.imageOverlay('images/guidemap.png', leafBounds).addTo(lmap);
-lmap.fitBounds(leafBounds);
+lmap.fitBounds(leafBounds, { animate: false });
 lmap.setMaxBounds([[-200, -200], [IMG_H + 200, IMG_W + 200]]);
 
 // ── GPS 마커 ─────────────────────────────────────────────────────────────────
@@ -224,20 +226,26 @@ const accCircle = L.circle([IMG_H/2, IMG_W/2], {
   interactive: false,
 }).addTo(lmap);
 
-// GPS 위치 점 (pulsing dot divIcon)
-const gpsDivIcon = L.divIcon({
-  className: 'gps-icon',
-  html: '<div class="gps-icon-inner"></div><div class="gps-icon-ring"></div>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
-});
+// GPS 위치 점 (pulsing dot divIcon) — 줌에 따라 크기 스케일
+function iconSizeForZoom(z) { return Math.round(Math.max(18, Math.min(44, 24 + z * 3.5))); }
+function makeGpsIcon(z) {
+  const s = iconSizeForZoom(z);
+  return L.divIcon({
+    className: 'gps-icon',
+    html: '<div class="gps-icon-inner"></div><div class="gps-icon-ring"></div>',
+    iconSize: [s, s],
+    iconAnchor: [s/2, s/2],
+  });
+}
 const gpsMarker = L.marker([IMG_H/2, IMG_W/2], {
-  icon: gpsDivIcon,
+  icon: makeGpsIcon(lmap.getZoom()),
   interactive: false,
   zIndexOffset: 1000,
 }).addTo(lmap);
 gpsMarker.setOpacity(0);
 accCircle.setStyle({ opacity: 0, fillOpacity: 0 });
+
+lmap.on('zoomend', () => { gpsMarker.setIcon(makeGpsIcon(lmap.getZoom())); });
 
 // 이미지 자연 픽셀 → Leaflet LatLng 변환
 function px2ll(nx, ny) { return L.latLng(IMG_H - ny, nx); }
