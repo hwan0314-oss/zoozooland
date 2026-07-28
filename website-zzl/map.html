@@ -92,6 +92,13 @@
     /* ── 줌 힌트 ── */
     .map-hint { position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%); z-index: 15; font-family: 'JetBrains Mono', monospace; font-size: 0.45rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.2); pointer-events: none; white-space: nowrap; transition: opacity 1s; }
     .map-hint.hidden { opacity: 0; }
+
+    /* ── 테스트 패널 ── */
+    .test-panel { position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 30; display: flex; flex-direction: column; gap: 6px; background: rgba(10,11,10,0.88); border: 1px solid rgba(212,255,0,0.3); padding: 10px 8px; backdrop-filter: blur(12px); }
+    .test-label { font-family: 'JetBrains Mono', monospace; font-size: 0.42rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #D4FF00; margin-bottom: 2px; text-align: center; }
+    .test-btn { font-family: 'JetBrains Mono', monospace; font-size: 0.48rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.55); padding: 7px 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap; text-align: left; }
+    .test-btn:hover { border-color: #D4FF00; color: #D4FF00; }
+    .test-btn.active { border-color: #D4FF00; background: rgba(212,255,0,0.1); color: #D4FF00; }
   </style>
 </head>
 <body>
@@ -128,6 +135,17 @@
 
 <!-- 줌 힌트 -->
 <div class="map-hint" id="mapHint">PINCH · ZOOM · DBL TAP</div>
+
+<!-- 테스트 패널 (URL에 ?test 있을 때만 표시) -->
+<div class="test-panel" id="testPanel" style="display:none">
+  <div class="test-label">TEST</div>
+  <button class="test-btn" data-lng="126.8538597" data-lat="37.6903466">입구</button>
+  <button class="test-btn" data-lng="126.8549816" data-lat="37.6897766">파충류관</button>
+  <button class="test-btn" data-lng="126.8551222" data-lat="37.6908717">로봇박물관</button>
+  <button class="test-btn" data-lng="126.8547496" data-lat="37.6905664">악어빌리지</button>
+  <button class="test-btn" data-lng="126.8549892" data-lat="37.691485">화장실</button>
+  <button class="test-btn" data-lng="126.8541615" data-lat="37.690084">식당</button>
+</div>
 
 <script>
 // ── GCP 데이터 [경도, 위도, 픽셀X, 픽셀Y] — 원본: 4492×3176 ────────────────
@@ -308,6 +326,33 @@ window.addEventListener('mouseup',()=>{md=false;mapViewer.classList.remove('drag
 
 let hintTimer=setTimeout(hideHint,3000);
 function hideHint(){clearTimeout(hintTimer);hintEl.classList.add('hidden');}
+
+// ── 테스트 모드 ───────────────────────────────────────────────────────────────
+const TEST_MODE = new URLSearchParams(location.search).has('test');
+if (TEST_MODE) {
+  const testPanel = document.getElementById('testPanel');
+  testPanel.style.display = 'flex';
+  setStatus('outside', 'TEST MODE — 위치 선택');
+  let activeBtn = null;
+  testPanel.querySelectorAll('.test-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lng = parseFloat(btn.dataset.lng), lat = parseFloat(btn.dataset.lat);
+      currentPos = {lng, lat, accuracy: 8};
+      redrawOverlay();
+      setStatus('found', `TEST · ${btn.textContent} (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+      if (activeBtn) activeBtn.classList.remove('active');
+      btn.classList.add('active');
+      activeBtn = btn;
+      // 선택한 위치로 지도 이동 (중심)
+      const sx=displayW/mapImg.naturalWidth, sy=displayH/mapImg.naturalHeight;
+      const {x:nx,y:ny}=gpsToNaturalPx(lng,lat);
+      const cx=nx*sx, cy=ny*sy;
+      tx = -(cx - displayW/2) * scale;
+      ty = -(cy - displayH/2) * scale;
+      clamp(); applyTransform();
+    });
+  });
+}
 </script>
 
 </body>
