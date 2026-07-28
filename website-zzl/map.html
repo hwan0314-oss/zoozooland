@@ -227,7 +227,7 @@ const accCircle = L.circle([IMG_H/2, IMG_W/2], {
 }).addTo(lmap);
 
 // GPS 위치 점 (pulsing dot divIcon) — 줌에 따라 크기 스케일
-function iconSizeForZoom(z) { return Math.round(Math.max(18, Math.min(44, 24 + z * 3.5))); }
+function iconSizeForZoom(z) { return Math.round(Math.max(28, Math.min(54, 28 + z * 4))); }
 function makeGpsIcon(z) {
   const s = iconSizeForZoom(z);
   return L.divIcon({
