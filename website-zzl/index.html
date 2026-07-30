@@ -91,7 +91,7 @@
   <div class="section-label">ZZL-UNIT-02 / ZZL-STAGRAM</div>
   <div class="flex justify-between items-baseline mb-12 flex-wrap gap-4">
     <div>
-      <h2 class="text-3xl md:text-4xl font-black mb-2">
+      <h2 class="text-4xl md:text-5xl font-black mb-2">
         <span class="text-[#D4FF00]">ZZL</span>-STAGRAM
       </h2>
       <p class="mono text-gray-500">REAL-TIME FIELD LOGS FROM @ZOOZOOLAND_ZZL</p>
@@ -113,7 +113,7 @@
 <section id="booking" class="pt-12 pb-24 px-6 bg-[#0E0F0E]">
   <div class="section-label">ZZL-UNIT-03 / ZZL-RESERVE</div>
   <div class="mb-16">
-    <h2 class="text-4xl md:text-6xl font-black mb-4 tracking-tighter italic">
+    <h2 class="text-4xl md:text-5xl font-black mb-4 tracking-tighter italic">
       오늘, ZZL겨볼까?
     </h2>
     <div class="flex items-center gap-4">
@@ -179,7 +179,7 @@
 
   <!-- 헤더 + 인디케이터 -->
   <div class="px-6 mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-    <h2 class="text-3xl md:text-4xl font-black">
+    <h2 class="text-4xl md:text-5xl font-black">
       <span class="text-[#D4FF00]">ZZL</span>겨본 사람만 알아요
     </h2>
     <div class="flex items-center gap-3" id="reviewDots">
@@ -313,7 +313,7 @@
   <div class="section-label">ZZL-UNIT-06 / ZZL-BROADCAST</div>
   <div class="flex justify-between items-baseline mb-12 flex-wrap gap-4">
     <div>
-      <h2 class="text-3xl md:text-4xl font-black mb-2">
+      <h2 class="text-4xl md:text-5xl font-black mb-2">
         <span class="text-[#D4FF00]">ZZL</span>_BROADCAST
       </h2>
       <p class="mono text-gray-500">SYSTEM_NOTICES &amp; LIVE_EVENTS</p>
@@ -343,37 +343,35 @@
 ═══════════════════════════════════════════ -->
 <section id="guidemap" class="pt-12 pb-24 px-6 bg-black">
   <div class="section-label">ZZL-UNIT-07 / ZZL-MAP</div>
-  <div class="max-w-6xl mx-auto">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
-      <div>
-        <h2 class="text-4xl md:text-5xl font-black italic">
-          <span class="text-[#D4FF00]">ZZL</span>기는 법
-        </h2>
-      </div>
-      <div class="flex gap-3">
-        <button id="btnMapZoom"
-          class="btn-zzl mono text-[10px] px-4 py-3">FULLSCREEN</button>
-        <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" id="dlGuideMap"
-           class="btn-zzl-fill mono text-[10px] px-4 py-3">DOWNLOAD PDF</a>
-      </div>
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
+    <div>
+      <h2 class="text-4xl md:text-5xl font-black italic">
+        <span class="text-[#D4FF00]">ZZL</span>기는 법
+      </h2>
     </div>
+    <div class="flex gap-3">
+      <button id="btnMapZoom"
+        class="btn-zzl mono text-[10px] px-4 py-3">FULLSCREEN</button>
+      <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" id="dlGuideMap"
+         class="btn-zzl-fill mono text-[10px] px-4 py-3">DOWNLOAD PDF</a>
+    </div>
+  </div>
 
-    <div class="map-container border border-white/10 relative overflow-hidden cursor-pointer group"
-         id="gmapPreview">
-      <img src="images/guidemap.png" alt="ZZL 가이드맵" class="w-full h-auto block"
-           id="gmapImg" loading="lazy">
-      <!-- 이미지 없을 때 -->
-      <div id="gmapMissing" style="display:none"
-           class="absolute inset-0 flex flex-col items-center justify-center bg-[#111]">
-        <div class="mono text-[#D4FF00] text-xl font-black mb-3">ZZL_MAP_V2.0</div>
-        <p class="mono text-[10px] text-gray-600">MAP_FILE_NOT_LOADED</p>
-      </div>
-      <!-- hover 오버레이 -->
-      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-500
-                  flex items-center justify-center pointer-events-none">
-        <div class="mono text-[#D4FF00] text-xs opacity-0 group-hover:opacity-60 transition">
-          CLICK TO FULLSCREEN
-        </div>
+  <div class="map-container border border-white/10 relative overflow-hidden cursor-pointer group"
+       id="gmapPreview">
+    <img src="images/guidemap.png" alt="ZZL 가이드맵" class="w-full h-auto block"
+         id="gmapImg" loading="lazy">
+    <!-- 이미지 없을 때 -->
+    <div id="gmapMissing" style="display:none"
+         class="absolute inset-0 flex flex-col items-center justify-center bg-[#111]">
+      <div class="mono text-[#D4FF00] text-xl font-black mb-3">ZZL_MAP_V2.0</div>
+      <p class="mono text-[10px] text-gray-600">MAP_FILE_NOT_LOADED</p>
+    </div>
+    <!-- hover 오버레이 -->
+    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-500
+                flex items-center justify-center pointer-events-none">
+      <div class="mono text-[#D4FF00] text-xs opacity-0 group-hover:opacity-60 transition">
+        CLICK TO FULLSCREEN
       </div>
     </div>
   </div>
@@ -398,7 +396,7 @@
 
     <!-- 정보 -->
     <div>
-      <h2 class="text-3xl md:text-4xl font-black mb-12">
+      <h2 class="text-4xl md:text-5xl font-black mb-12">
         <span class="text-[#D4FF00]">ZZL</span>기로 오는 길
       </h2>
       <div class="space-y-10">
@@ -513,7 +511,6 @@
     </div>
     <div class="grid grid-cols-2 gap-8 mono text-[10px] uppercase">
       <div class="space-y-4">
-        <a href="#gallery"  class="block text-gray-500 hover:text-[#D4FF00] transition">ZZL-STAGRAM</a>
         <a href="#booking"  class="block text-gray-500 hover:text-[#D4FF00] transition">Reservation</a>
         <a href="#guidemap" class="block text-gray-500 hover:text-[#D4FF00] transition">ZZL-MAP</a>
       </div>
