@@ -247,7 +247,7 @@
               </div>` : ''}
           </div>
           <a href="${p.booking_url}" target="_blank" rel="noopener"
-             class="mt-auto block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">
+             class="mt-auto block w-full py-4 border border-[#D4FF00]/40 text-sm font-bold text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">
             네이버 예약하기 →
           </a>
         </div>`;
