@@ -235,16 +235,20 @@
             ${imgSrc
               ? `<img src="${imgSrc}" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition duration-500">`
               : `<div class="w-full h-full flex items-center justify-center"><span class="text-4xl">🎟</span></div>`}
-            ${rate ? `<div class="absolute top-3 right-3 tag-badge">SALE ${rate}%</div>` : ''}
           </div>
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="text-xl font-bold">${p.name}</h3>
+          <div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE / 입장요금 안내</div>
+          <div class="text-sm font-bold text-white mb-3">1인 입장권</div>
+          <div class="flex items-center gap-3 flex-wrap mb-5">
+            <div class="mono text-3xl font-bold text-[#D4FF00]">₩ ${Number(p.sale_price).toLocaleString()}</div>
+            ${p.original_price && p.original_price > p.sale_price ? `
+              <div class="flex flex-col items-start gap-1">
+                <span class="mono text-[11px] text-gray-500 line-through">${Number(p.original_price).toLocaleString()}원</span>
+                ${rate ? `<span class="tag-badge text-[9px] px-2 py-0.5">SALE ${rate}%</span>` : ''}
+              </div>` : ''}
           </div>
-          <div class="mono text-3xl font-bold text-[#D4FF00] mb-2">₩ ${Number(p.sale_price).toLocaleString()}</div>
-          ${p.valid_until ? `<div class="mono text-[10px] text-gray-600 mb-5">VALID_UNTIL: ${p.valid_until}</div>` : '<div class="mb-5"></div>'}
           <a href="${p.booking_url}" target="_blank" rel="noopener"
              class="mt-auto block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">
-            BOOK VIA NAVER →
+            네이버 예약하기 →
           </a>
         </div>`;
 
