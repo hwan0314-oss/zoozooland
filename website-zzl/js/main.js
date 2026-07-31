@@ -312,87 +312,107 @@
     if (document.getElementById('noticePlaceholder')) initSwiper(false);
   });
 
-  /* ── 리뷰 자동 슬라이더 (탁탁 방식) ── */
+  /* ── 리뷰 무한 루프 슬라이더 ── */
   function initReviewSlider() {
-    const outer = document.getElementById('reviewsOuter');
-    const track = document.getElementById('reviewsTrack');
+    const outer    = document.getElementById('reviewsOuter');
+    const track    = document.getElementById('reviewsTrack');
     const dotsWrap = document.getElementById('reviewDots');
     if (!outer || !track) return;
 
-    const cards = Array.from(track.querySelectorAll('.review-card'));
-    const TOTAL = cards.length;
+    const origCards = Array.from(track.querySelectorAll('.review-card'));
+    const TOTAL = origCards.length;
     if (!TOTAL) return;
 
+    // 원본 카드를 뒤에 복사 → [0..N-1 원본] [0..N-1 클론]
+    origCards.forEach(c => {
+      const clone = c.cloneNode(true);
+      clone.setAttribute('aria-hidden', 'true');
+      track.appendChild(clone);
+    });
+
     const INTERVAL = 4500;
+    const ANIM_MS  = 300;
     let idx = 0;
     let timer;
     let touchStartX = 0;
 
-    // 카드 너비 계산 (gap 24px 포함)
-    function cardW() {
-      return cards[0].offsetWidth + 24;
-    }
+    function cardW() { return origCards[0].offsetWidth + 24; }
 
-    // 슬라이드 이동
-    function goTo(i, instant = false) {
-      idx = ((i % TOTAL) + TOTAL) % TOTAL;
-      if (instant) track.classList.add('no-transition');
+    function move(i, animated = true) {
+      idx = i;
+      track.style.transition = animated
+        ? `transform ${ANIM_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
+        : 'none';
       track.style.transform = `translateX(-${idx * cardW()}px)`;
-      if (instant) requestAnimationFrame(() => {
-        requestAnimationFrame(() => track.classList.remove('no-transition'));
-      });
-      updateDots();
+      updateDots(((idx % TOTAL) + TOTAL) % TOTAL);
     }
 
-    // 인디케이터 점
+    // 클론 구간에 진입했으면 애니메이션 끝난 뒤 원본으로 순간 이동
+    function wrapAfter() {
+      if (idx >= TOTAL) {
+        setTimeout(() => move(idx - TOTAL, false), ANIM_MS + 20);
+      }
+    }
+
     function buildDots() {
       if (!dotsWrap) return;
       dotsWrap.innerHTML = '';
       for (let i = 0; i < TOTAL; i++) {
         const dot = document.createElement('div');
-        dot.style.cssText = `
-          width:6px;height:6px;border:1px solid rgba(212,255,0,0.4);
-          border-radius:0;transition:all 0.25s;cursor:pointer;flex-shrink:0;
-        `;
-        dot.addEventListener('click', () => { goTo(i); resetTimer(); });
+        dot.style.cssText = 'width:6px;height:6px;border:1px solid rgba(212,255,0,0.4);border-radius:0;transition:all 0.25s;cursor:pointer;flex-shrink:0;';
+        dot.addEventListener('click', () => { move(i); resetTimer(); });
         dotsWrap.appendChild(dot);
       }
-      updateDots();
+      updateDots(0);
     }
-    function updateDots() {
+
+    function updateDots(active) {
       if (!dotsWrap) return;
       dotsWrap.querySelectorAll('div').forEach((d, i) => {
-        d.style.background   = i === idx ? '#D4FF00' : 'transparent';
-        d.style.borderColor  = i === idx ? '#D4FF00' : 'rgba(212,255,0,0.3)';
-        d.style.width        = i === idx ? '20px'    : '6px';
+        d.style.background  = i === active ? '#D4FF00' : 'transparent';
+        d.style.borderColor = i === active ? '#D4FF00' : 'rgba(212,255,0,0.3)';
+        d.style.width       = i === active ? '20px'   : '6px';
       });
     }
 
-    function advance()    { goTo(idx + 1); }
+    function advance()    { move(idx + 1); wrapAfter(); }
     function startTimer() { timer = setInterval(advance, INTERVAL); }
     function stopTimer()  { clearInterval(timer); }
     function resetTimer() { stopTimer(); startTimer(); }
 
     buildDots();
+    move(0, false);
     startTimer();
 
-    // 호버 일시정지
     outer.addEventListener('mouseenter', stopTimer);
     outer.addEventListener('mouseleave', startTimer);
 
-    // 터치 스와이프
     outer.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
       stopTimer();
     }, { passive: true });
+
     outer.addEventListener('touchend', e => {
       const diff = touchStartX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 40) goTo(diff > 0 ? idx + 1 : idx - 1);
+      if (Math.abs(diff) > 40) {
+        if (diff > 0) {
+          // 왼쪽 스와이프 → 다음
+          move(idx + 1);
+          wrapAfter();
+        } else {
+          // 오른쪽 스와이프 → 이전; idx=0이면 클론 끝에서 역방향으로 시작
+          if (idx === 0) {
+            move(TOTAL, false);
+            requestAnimationFrame(() => requestAnimationFrame(() => move(TOTAL - 1)));
+          } else {
+            move(idx - 1);
+          }
+        }
+      }
       setTimeout(startTimer, 2500);
     }, { passive: true });
 
-    // 리사이즈 시 위치 보정
-    window.addEventListener('resize', () => goTo(idx, true));
+    window.addEventListener('resize', () => move(idx % TOTAL, false));
   }
   initReviewSlider();
 
