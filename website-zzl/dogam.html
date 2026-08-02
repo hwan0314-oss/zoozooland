@@ -1,2842 +1,383 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>쥬쥬랜드 동물도감</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<style>
-  :root{
-    --moss:#2A3B31; --moss-deep:#1D2A22;
-    --paper:#F7F1E1; --paper-edge:#E7DEC7;
-    --ink:#1C2620; --sage:#8C9C87; --injoo:#D63B2A;
-    --font:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
-    --mono:'SF Mono','Consolas','D2Coding',ui-monospace,monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%}
-  body{
-    background:radial-gradient(120% 80% at 50% 0%,#35493C 0%,var(--moss) 45%,var(--moss-deep) 100%);
-    font-family:var(--font);color:var(--paper);
-    display:flex;align-items:flex-start;justify-content:center;
-    padding:calc(10px + env(safe-area-inset-top)) 13px calc(20px + env(safe-area-inset-bottom));
-    overflow-y:auto;-webkit-font-smoothing:antialiased;
-  }
-  .shell{width:100%;max-width:400px}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover">
+  <title>쥬쥬랜드 동물도감</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0A0B0A;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 
-  .top{display:flex;align-items:center;gap:8px;padding:0 2px 9px}
-  .top b{font-size:12px;font-weight:800;letter-spacing:.14em;flex:1}
-  .top .prog{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--sage)}
-  .icb{width:30px;height:30px;border:1px solid rgba(247,241,225,.22);background:transparent;
-    border-radius:8px;color:rgba(247,241,225,.7);font-size:13px;cursor:pointer;flex:none}
-  .icb[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+#mapDiv{position:fixed;inset:0;z-index:1}
+.leaflet-container{background:#0A0B0A !important}
 
-  .tabs{display:flex;gap:3px;background:rgba(247,241,225,.1);border-radius:12px;padding:3px;margin-bottom:10px}
-  .tabs button{flex:1;border:none;background:transparent;border-radius:9px;cursor:pointer;
-    font-family:var(--font);font-size:12.5px;font-weight:700;padding:9px 0;color:rgba(247,241,225,.6)}
-  .tabs button[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+.gps-icon{background:transparent !important;border:none !important}
+.gps-icon-inner{position:absolute;top:4px;left:4px;right:4px;bottom:4px;border-radius:50%;
+  background:#7D9E7E;border:2.5px solid #fff;box-shadow:0 0 8px rgba(125,158,126,0.6)}
+.gps-icon-ring{position:absolute;inset:0;border-radius:50%;
+  border:2px solid rgba(125,158,126,0.45);
+  animation:gps-ring 2s cubic-bezier(0,0,0.2,1) infinite}
+@keyframes gps-ring{0%{transform:scale(0.8);opacity:0.8}100%{transform:scale(2.8);opacity:0}}
 
-  .card{position:relative;background:var(--paper);color:var(--ink);border-radius:18px;
-    box-shadow:0 1px 0 #fff inset,0 18px 40px -18px rgba(0,0,0,.65),0 2px 0 var(--paper-edge);
-    overflow:hidden}
-  .pane[hidden]{display:none}
+.gps-pill{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:20;
+  display:flex;align-items:center;gap:7px;height:36px;padding:0 14px;
+  background:rgba(10,11,10,0.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:20px;border:1px solid transparent;
+  font-family:monospace;font-size:0.5rem;text-transform:uppercase;letter-spacing:0.1em;
+  white-space:nowrap;transition:border-color 0.4s;pointer-events:none}
+.gps-pill.found{border-color:rgba(125,158,126,0.35)}
+.gps-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background 0.4s;background:rgba(255,255,255,0.2)}
+.gps-pill.found .gps-dot{background:#7D9E7E;animation:dotblink 2.4s ease-in-out infinite}
+.gps-pill.outside .gps-dot{background:rgba(255,200,0,0.7)}
+.gps-pill.error .gps-dot{background:rgba(255,80,80,0.7)}
+#gpsBarText{color:rgba(255,255,255,0.38);transition:color 0.4s}
+.gps-pill.found #gpsBarText{color:rgba(125,158,126,0.75)}
+@keyframes dotblink{0%,100%{opacity:1}50%{opacity:0.25}}
 
-  /* ── 지도 ── */
-  .mapwrap{position:relative;aspect-ratio:1/1.02;max-height:min(52vh,380px);
-    background:linear-gradient(180deg,#CFE2D2 0%,#DFE6D0 60%,#EBE4CE 100%);
-    border-bottom:1px solid var(--paper-edge);overflow:hidden}
-  .mapwrap svg{position:absolute;inset:0;width:100%;height:100%}
-  .zoneC{fill:rgba(90,130,90,.13);stroke:#7E9478;stroke-width:1;stroke-dasharray:3 3}
-  .zoneC.in{fill:rgba(214,59,42,.14);stroke:var(--injoo);stroke-dasharray:none;stroke-width:1.6}
-  .zoneDot{fill:#5C6D5C}
-  .zoneDot.in{fill:var(--injoo)}
-  .zoneT{font-family:var(--font);font-size:8.5px;font-weight:700;fill:#48583F}
-  .zoneT.in{fill:var(--injoo)}
-  .zoneN{font-family:var(--mono);font-size:7.5px;fill:#7E8C78}
-  .me{fill:#2C6BD6;stroke:#fff;stroke-width:2}
-  .meR{fill:rgba(44,107,214,.16);stroke:rgba(44,107,214,.4);stroke-width:1}
+.ov-back{position:fixed;top:14px;left:14px;z-index:20;display:flex;align-items:center;
+  height:36px;padding:0 12px;background:rgba(10,11,10,0.78);backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);color:rgba(255,255,255,0.45);text-decoration:none;
+  font-family:monospace;font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em}
+.ov-back:hover{color:#7D9E7E}
+#dexBtn{position:fixed;top:14px;right:14px;z-index:20;
+  height:36px;padding:0 14px;background:#7D9E7E;color:#0A0B0A;border:none;cursor:pointer;
+  font-family:monospace;font-size:0.52rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em}
+#dexBtn:active{filter:brightness(1.2)}
 
-  .gpsbar{padding:11px 15px;display:flex;align-items:center;gap:9px;
-    border-bottom:1px solid var(--paper-edge)}
-  .gpsbar .dot{width:7px;height:7px;border-radius:50%;background:#B4B4A2;flex:none}
-  .gpsbar .dot.on{background:#3E9E52}
-  .gpsbar span{font-size:11.5px;color:#4A5748;flex:1;line-height:1.4}
-  .gpsbar button{border:1px solid var(--paper-edge);background:transparent;border-radius:8px;
-    cursor:pointer;font-family:var(--font);font-size:11px;font-weight:700;padding:6px 10px;color:#4A5748}
+#zoneBadge{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);z-index:20;
+  max-width:88vw;display:none;align-items:center;padding:7px 14px;
+  background:rgba(125,158,126,0.12);border:1px solid rgba(125,158,126,0.35);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  font-family:monospace;font-size:0.55rem;text-transform:uppercase;
+  letter-spacing:0.08em;color:#7D9E7E;text-align:center}
+#zoneBadge.on{display:flex}
 
-  .zlist{padding:11px 13px 15px;display:flex;flex-wrap:wrap;gap:5px}
-  .zlist button{border:1px solid var(--paper-edge);background:transparent;border-radius:9px;
-    cursor:pointer;font-family:var(--font);font-size:10.5px;font-weight:700;padding:6px 8px;color:#5C6D5C}
-  .zlist button.here{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-  .zlist button.done{opacity:.45}
-  .zlist button i{font-style:normal;font-family:var(--mono);font-size:9px;opacity:.7;margin-left:3px}
+.zoom-btns{position:fixed;right:14px;bottom:64px;z-index:20;display:flex;flex-direction:column;gap:5px}
+.zoom-btn{width:40px;height:40px;background:rgba(10,11,10,0.65);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.6);
+  font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.zoom-btn:active{border-color:#7D9E7E;color:#7D9E7E}
 
-  /* ── 도감 ── */
-  .dexhead{padding:14px 16px 0;display:flex;align-items:baseline;gap:8px}
-  .dexhead h2{font-size:22px;font-weight:800;letter-spacing:-.03em}
-  .dexhead span{font-family:var(--mono);font-size:10px;color:var(--sage);letter-spacing:.1em}
-  .meter{margin:11px 16px 0;height:6px;border-radius:99px;background:#E5DFC9;overflow:hidden}
-  .meter i{display:block;height:100%;background:var(--ink);border-radius:99px;transition:width .5s}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:13px 14px 16px}
-  .cell{position:relative;aspect-ratio:1/1.12;border:1px solid var(--paper-edge);border-radius:10px;
-    background:#FBF7EC;cursor:pointer;overflow:hidden;padding:0}
-  .cell img{width:100%;height:72%;object-fit:contain;display:block}
-  .cell b{display:block;font-size:8.5px;font-weight:700;color:#42513F;line-height:1.1;
-    padding:0 2px;word-break:keep-all;overflow:hidden}
-  .cell.locked{background:#F0EBDC}
-  .cell.locked b{color:#B0AC9A}
-  .cell u{position:absolute;top:3px;right:4px;font-family:var(--mono);font-size:7px;
-    text-decoration:none;color:var(--sage)}
-  .cell .gr{position:absolute;top:3px;left:4px;width:7px;height:7px;border-radius:50%}
-  .gr.골드{background:#D6A72B}.gr.실버{background:#A8ADB4}.gr.브론즈{background:#B07A4A}
+#testPanel{position:fixed;bottom:0;left:0;right:0;z-index:25;display:none;
+  flex-wrap:wrap;gap:4px;padding:8px;background:rgba(0,0,0,0.88);max-height:140px;overflow-y:auto}
+#testPanel button{flex:1;min-width:120px;padding:5px 6px;background:#1a1a1a;
+  border:1px solid #2a2a2a;color:#888;font-size:0.58rem;cursor:pointer;text-align:center}
+#testPanel button.active{background:rgba(125,158,126,0.15);border-color:#7D9E7E;color:#7D9E7E}
 
-  /* ── 상세/조우 모달 ── */
-  .modal{position:fixed;inset:0;background:rgba(20,28,22,.7);backdrop-filter:blur(3px);
-    display:flex;align-items:center;justify-content:center;padding:16px;z-index:30}
-  .modal[hidden]{display:none}
-  .sheet{width:100%;max-width:380px;background:var(--paper);color:var(--ink);border-radius:18px;
-    overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.8);max-height:92vh;overflow-y:auto}
-  .stage{position:relative;aspect-ratio:1/.82;max-height:min(38vh,270px);
-    background:linear-gradient(180deg,#D3E3EA 0%,#DFE7DD 58%,#EDE7D6 100%)}
-  .stage canvas{display:block;width:100%;height:100%;touch-action:none}
-  .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
-  .flash.on{animation:fl .5s ease-out}
-  @keyframes fl{0%{opacity:.6}100%{opacity:0}}
-  .stag{position:absolute;top:11px;left:13px;font-family:var(--mono);font-size:10px;
-    letter-spacing:.16em;color:#5C6D5C}
-  .sil{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-  .sil img{width:64%;filter:brightness(0) opacity(.22)}
+.animal-pin{cursor:pointer}
+.animal-pin img{width:88px;height:88px;object-fit:contain;
+  animation:animalPop 0.55s cubic-bezier(0.22,0.61,0.36,1) forwards;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,0.7))}
+@keyframes animalPop{
+  0%{transform:scale(0) translateY(16px);opacity:0}
+  60%{transform:scale(1.15) translateY(-4px);opacity:1}
+  80%{transform:scale(0.95) translateY(0)}
+  100%{transform:scale(1) translateY(0)}}
+.animal-pin-label{position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+  white-space:nowrap;background:rgba(10,11,10,0.88);color:#7D9E7E;
+  font-size:0.5rem;font-family:monospace;padding:2px 7px;pointer-events:none;letter-spacing:0.05em}
 
-  .body{padding:15px 17px 6px}
-  .nameline{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
-  .kname{font-size:27px;font-weight:800;letter-spacing:-.035em;line-height:.98}
-  .ename{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--sage);padding-bottom:4px}
-  .meta{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
-  .chip{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;background:#E5E0CC;color:#4C5A48}
-  .chip.z{background:#DCE7D5;color:#42604A}
-  .chip.g{background:#F0E3C0;color:#7A5E18}
-  .rows{margin-top:12px;border-top:1px solid var(--paper-edge)}
-  .row{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:9px 0;
-    border-bottom:1px solid var(--paper-edge);align-items:baseline}
-  .row dt{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--sage)}
-  .row dd{font-size:12.5px;line-height:1.5;color:#33402F;word-break:keep-all}
-  .pend{color:#9A9484;font-style:italic}
-  .src{padding:9px 17px 0;font-size:9.5px;line-height:1.5;color:#9A9484}
+#modal{position:fixed;inset:0;z-index:30;background:rgba(8,9,8,0.95);
+  display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#modal[hidden]{display:none}
+#sheet{max-width:440px;width:100%;margin:0 auto;flex:1;display:flex;flex-direction:column}
 
-  /* ── 퍼즐 ── */
-  .qhead{padding:13px 17px 0;display:flex;align-items:baseline;gap:8px}
-  .qhead b{font-size:14px;font-weight:800;flex:1}
-  .qhead span{font-family:var(--mono);font-size:10px;color:var(--sage)}
-  .qtip{padding:7px 17px 0;font-size:11.5px;color:#5C6A58;line-height:1.5;word-break:keep-all}
-  .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:12px 15px 4px}
-  .opt{aspect-ratio:1/1;border:1px solid var(--paper-edge);border-radius:12px;background:#FBF7EC;
-    cursor:pointer;padding:3px;overflow:hidden}
-  .opt img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
-  .opt.no{animation:shake .3s}
-  .opt.yes{border-color:#3E9E52;background:#E6F2E4}
-  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-  .qbar{display:flex;gap:7px;padding:12px 15px 16px;align-items:center}
-  .qbar button{border:1px solid var(--paper-edge);background:transparent;border-radius:10px;
-    cursor:pointer;font-family:var(--font);font-size:12px;font-weight:700;padding:11px 12px;color:#5C6D5C}
-  .qbar .x{flex:none}
-  .qbar .e{flex:1}
-  .go{width:100%;height:46px;border:none;border-radius:11px;cursor:pointer;background:var(--ink);
-    color:var(--paper);font-family:var(--font);font-size:13.5px;font-weight:700}
-  .foot{padding:14px 17px 18px}
+.stage{position:relative;background:#0d0d0d;flex-shrink:0}
+.stage canvas{display:block;width:100%;height:260px}
+@media(min-height:700px){.stage canvas{height:300px}}
+.stag{position:absolute;top:10px;left:14px;font-family:monospace;font-size:0.45rem;
+  color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:0.12em}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.flash.on{animation:flashbang 0.42s forwards}
+@keyframes flashbang{0%{opacity:0.65}100%{opacity:0}}
 
-  .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));
-    transform:translate(-50%,14px);background:var(--ink);color:var(--paper);padding:11px 17px;
-    border-radius:999px;font-size:12.5px;font-weight:700;opacity:0;pointer-events:none;
-    transition:opacity .3s,transform .3s;box-shadow:0 10px 24px -10px rgba(0,0,0,.7);z-index:40}
-  .toast.on{opacity:1;transform:translate(-50%,0)}
-  .note{padding:2px 4px 0;text-align:center;font-family:var(--mono);font-size:9px;
-    letter-spacing:.12em;color:var(--sage);line-height:1.7}
-  :focus-visible{outline:2px solid var(--injoo);outline-offset:3px}
-</style>
+.qhead{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 2px;gap:8px}
+.qhead .kname-big{font-size:1.05rem;font-weight:700;letter-spacing:-0.01em;color:#fff}
+.qhead span{font-family:monospace;font-size:0.6rem;color:rgba(255,255,255,0.28);white-space:nowrap}
+.qtip{padding:4px 18px 12px;font-size:0.72rem;color:rgba(255,255,255,0.45);line-height:1.5}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 18px 6px}
+.opt{background:#161616;border:2px solid transparent;padding:4px;aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color 0.18s}
+.opt img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.opt:active{border-color:rgba(125,158,126,0.35)}
+.opt.yes{border-color:#7D9E7E;background:rgba(125,158,126,0.1)}
+.opt.no{border-color:rgba(255,70,70,0.45);animation:shk 0.28s}
+@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.qbar{display:flex;gap:8px;padding:8px 18px 20px}
+.qbar button{flex:1;height:44px;border:1px solid rgba(255,255,255,0.12);
+  background:transparent;color:rgba(255,255,255,0.4);font-size:0.68rem;cursor:pointer}
+.qbar button.x:hover{color:rgba(255,80,80,0.65);border-color:rgba(255,80,80,0.25)}
+.qbar button.e{color:rgba(255,200,0,0.55);border-color:rgba(255,200,0,0.2)}
+
+.body{padding:16px 18px}
+.nameline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.kname{font-size:1.25rem;font-weight:700}
+.ename{font-family:monospace;font-size:0.6rem;color:rgba(255,255,255,0.3);
+  text-transform:uppercase;letter-spacing:0.06em}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:3px 9px;border:1px solid rgba(255,255,255,0.1);
+  font-family:monospace;font-size:0.48rem;color:rgba(255,255,255,0.35);
+  text-transform:uppercase;letter-spacing:0.06em}
+.chip.z{border-color:rgba(125,158,126,0.3);color:#7D9E7E}
+.chip.g{border-color:rgba(200,240,0,0.25);color:#c8f000}
+.chip.g.골드{background:rgba(200,240,0,0.07)}
+.chip.g.실버{border-color:rgba(190,190,190,0.35);color:#bbb}
+.chip.g.브론즈{border-color:rgba(180,120,60,0.35);color:#b8763c}
+dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
+.row{display:flex;flex-direction:column;gap:4px;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.07)}
+.row dt{font-family:monospace;font-size:0.45rem;text-transform:uppercase;
+  letter-spacing:0.12em;color:rgba(255,255,255,0.25)}
+.row dd{font-size:0.75rem;color:rgba(255,255,255,0.72);line-height:1.55}
+.row dd em{font-style:italic;color:rgba(255,255,255,0.45)}
+.pend{color:rgba(255,255,255,0.18) !important;font-style:italic !important;font-size:0.68rem !important}
+.src-note{padding:10px 18px;font-size:0.56rem;color:rgba(255,255,255,0.18);line-height:1.6;
+  border-top:1px solid rgba(255,255,255,0.05)}
+.foot{padding:12px 18px 32px}
+.go{display:block;width:100%;height:48px;background:#7D9E7E;color:#0A0B0A;
+  border:none;font-size:0.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.08em;cursor:pointer}
+.go:active{filter:brightness(1.2)}
+
+#dexOverlay{position:fixed;inset:0;z-index:30;background:#090b09;
+  display:flex;flex-direction:column;overflow-y:auto}
+#dexOverlay[hidden]{display:none}
+.dex-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+  border-bottom:1px solid rgba(255,255,255,0.07);position:sticky;top:0;
+  background:#090b09;z-index:1;flex-shrink:0}
+.dex-hd h2{font-family:monospace;font-size:0.62rem;text-transform:uppercase;
+  letter-spacing:0.12em;color:rgba(255,255,255,0.3)}
+.dex-cnt{font-size:0.82rem;font-weight:700;color:#7D9E7E}
+.dex-cls{padding:8px 14px;background:transparent;border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,255,255,0.4);font-family:monospace;font-size:0.5rem;
+  text-transform:uppercase;cursor:pointer}
+#grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:6px}
+@media(min-width:400px){#grid{grid-template-columns:repeat(5,1fr)}}
+@media(min-width:520px){#grid{grid-template-columns:repeat(6,1fr)}}
+.cell{background:#111;border:1px solid transparent;padding:8px 4px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;position:relative}
+.cell img{width:100%;aspect-ratio:1;object-fit:contain}
+.cell b{font-size:0.52rem;text-align:center;color:rgba(255,255,255,0.65);line-height:1.3}
+.cell u{font-size:0.42rem;color:rgba(255,255,255,0.18);font-family:monospace;text-decoration:none}
+.cell.locked{opacity:0.3;filter:grayscale(1)}
+.cell.locked b{color:rgba(255,255,255,0.2)}
+.gr{position:absolute;top:4px;right:4px;width:10px;height:10px;border-radius:50%}
+.gr.골드{background:#c8f000}
+.gr.실버{background:#bbb}
+.gr.브론즈{background:#b8763c}
+
+#regAnim{position:fixed;inset:0;z-index:40;background:rgba(4,6,4,0.97);
+  display:none;align-items:center;justify-content:center;flex-direction:column}
+#regAnim.show{display:flex}
+.reg-card{display:flex;flex-direction:column;align-items:center;gap:10px;
+  animation:cardAppear 0.55s cubic-bezier(0.22,0.61,0.36,1) forwards}
+@keyframes cardAppear{
+  0%{transform:scale(0.3) translateY(50px);opacity:0}
+  100%{transform:scale(1) translateY(0);opacity:1}}
+.reg-no{font-family:monospace;font-size:0.52rem;color:rgba(125,158,126,0.45);
+  letter-spacing:0.18em;margin-bottom:4px}
+.reg-img{width:170px;height:170px;display:flex;align-items:center;justify-content:center}
+.reg-img img{width:100%;height:100%;object-fit:contain}
+.reg-name{font-size:2rem;font-weight:700;letter-spacing:-0.02em;color:#fff}
+.reg-ename{font-family:monospace;font-size:0.56rem;color:rgba(255,255,255,0.25);
+  text-transform:uppercase;letter-spacing:0.1em}
+.reg-grade{padding:5px 22px;font-size:0.95rem;font-weight:900;letter-spacing:0.12em;
+  opacity:0;transform:scale(2.4) rotate(-10deg);margin-top:4px;
+  animation:gradeStamp 0.45s 0.65s cubic-bezier(0.22,0.61,0.36,1) forwards}
+@keyframes gradeStamp{
+  0%{opacity:0;transform:scale(2.4) rotate(-10deg)}
+  55%{opacity:1;transform:scale(0.9) rotate(3deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}}
+.reg-grade.골드{background:#c8f000;color:#0A0B0A}
+.reg-grade.실버{background:#ccc;color:#0A0B0A}
+.reg-grade.브론즈{background:#b8763c;color:#fff}
+.reg-prog{font-family:monospace;font-size:0.56rem;color:rgba(125,158,126,0.5);
+  letter-spacing:0.1em;opacity:0;animation:fIn 0.4s 1.05s forwards}
+@keyframes fIn{to{opacity:1}}
+
+#toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:50;
+  max-width:92vw;padding:9px 18px;background:rgba(10,12,10,0.92);
+  border:1px solid rgba(125,158,126,0.28);color:#7D9E7E;font-size:0.7rem;
+  text-align:center;pointer-events:none;opacity:0;transition:opacity 0.22s;white-space:nowrap}
+#toast.on{opacity:1}
+  </style>
 </head>
 <body>
-<div class="shell">
-  <div class="top">
-    <a href="/" style="color:var(--sage);font-size:10px;font-family:var(--mono);text-decoration:none;flex:none;letter-spacing:.08em">← HOME</a>
-    <b style="flex:1;text-align:center">쥬쥬랜드 동물도감</b>
-    <span class="prog" id="prog">0 / 62</span>
-    <button class="icb" id="bSfx" aria-pressed="true" title="효과음">♪</button>
-    <button class="icb" id="bBgm" aria-pressed="false" title="배경음">♫</button>
-  </div>
 
-  <div class="tabs" id="tabs">
-    <button data-v="0" aria-pressed="true">지도</button>
-    <button data-v="1" aria-pressed="false">도감</button>
-  </div>
+<div id="mapDiv"></div>
+<a href="/" class="ov-back">← HOME</a>
+<button id="dexBtn">도감 0/62</button>
 
-  <!-- 지도 -->
-  <section class="pane" id="paneMap">
-    <div class="card">
-      <div class="mapwrap"><svg id="map" viewBox="0 0 300 306"></svg></div>
-      <div class="gpsbar">
-        <i class="dot" id="gdot"></i>
-        <span id="gtxt">위치 확인 전</span>
-        <button id="gbtn">위치 켜기</button>
-      </div>
-      <div class="zlist" id="zlist"></div>
-    </div>
-    <div class="note" id="note1"></div>
-  </section>
-
-  <!-- 도감 -->
-  <section class="pane" id="paneDex" hidden>
-    <div class="card">
-      <div class="dexhead"><h2 id="dexN">0종 수집</h2><span id="dexS"></span></div>
-      <div class="meter"><i id="dexBar" style="width:0%"></i></div>
-      <div class="grid" id="grid"></div>
-    </div>
-    <div class="note" id="note2"></div>
-  </section>
+<div id="gpsBar" class="gps-pill">
+  <div class="gps-dot"></div>
+  <span id="gpsBarText">위치 확인 중…</span>
 </div>
 
-<!-- 모달 -->
-<div class="modal" id="modal" hidden><div class="sheet" id="sheet"></div></div>
-<div class="toast" id="toast"></div>
+<div id="zoneBadge"></div>
 
+<div class="zoom-btns">
+  <button class="zoom-btn" id="zoomInBtn">+</button>
+  <button class="zoom-btn" id="zoomOutBtn">−</button>
+</div>
+
+<div id="testPanel">
+  <button data-lon="126.8551391" data-lat="37.6900442">파충류 빌리지</button>
+  <button data-lon="126.8552881" data-lat="37.6897889">대동물 방목장</button>
+  <button data-lon="126.8550938" data-lat="37.6911538">거북이카페</button>
+  <button data-lon="126.8553185" data-lat="37.6903786">오솔길</button>
+  <button data-lon="126.8547149" data-lat="37.6906056">악어 빌리지</button>
+  <button data-lon="126.8544686" data-lat="37.6903647">호숫가</button>
+  <button data-lon="126.8548843" data-lat="37.6915665">양 분유</button>
+  <button data-lon="126.8552734" data-lat="37.6902112">사랑새</button>
+  <button data-lon="126.8548195" data-lat="37.6897747">기타</button>
+  <button data-lon="126.8544674" data-lat="37.6912988">알파카</button>
+  <button data-lon="126.8547835" data-lat="37.6913813">원숭이</button>
+  <button data-lon="126.8548991" data-lat="37.6914150">거북이방사장</button>
+</div>
+
+<div id="modal" hidden><div id="sheet"></div></div>
+
+<div id="dexOverlay" hidden>
+  <div class="dex-hd">
+    <h2>동물도감</h2>
+    <span class="dex-cnt" id="dexCnt">0 / 62</span>
+    <button class="dex-cls" id="dexClsBtn">닫기</button>
+  </div>
+  <div id="grid"></div>
+</div>
+
+<div id="regAnim"></div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="dogam/zzl-parts.js"></script>
+<script src="dogam/zzl-species.js"></script>
+<script src="dogam/zzl-species2.js"></script>
+<script src="dogam/zzl-dex-app.js"></script>
+<script src="dogam/zzl-info.js"></script>
 <script>
-/* ============================================================
-   ZZL BLOCK PARTS LIBRARY  v1.0
-   쥬쥬랜드 동물도감 · 레고 블록형 3D 부품 라이브러리
-
-   의존: three.js r128 (전역 THREE)
-   사용: const model = ZZL.build(spec);  scene.add(model.root);
-
-   설계 원칙
-   - 모든 동물은 이 파일의 부품 조합으로만 만든다
-   - 부품은 상자·원기둥·원뿔만 사용 (레고 호환 형태)
-   - 종 구분은 색이 아니라 형태를 1순위로 한다
-   - 각 부품은 정면 렌더 PNG로 뽑아 퍼즐 선택지에 그대로 쓴다
-   ============================================================ */
-(function (global) {
-'use strict';
-
-var ZZL = {};
-
-/* ── 재질 ────────────────────────────────────────── */
-var _matCache = {};
-function mat(color) {
-  if (!_matCache[color]) {
-    _matCache[color] = new THREE.MeshStandardMaterial({
-      color: color, roughness: 0.34, metalness: 0
-    });
-  }
-  return _matCache[color];
-}
-ZZL.mat = mat;
-
-/* ── 기본 도형 ───────────────────────────────────── */
-function box(w, h, d, color, x, y, z) {
-  var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
-  m.position.set(x || 0, y || 0, z || 0);
-  m.castShadow = m.receiveShadow = true;
-  return m;
-}
-function cyl(rt, rb, h, color, x, y, z, seg) {
-  var m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 10), mat(color));
-  m.position.set(x || 0, y || 0, z || 0);
-  m.castShadow = m.receiveShadow = true;
-  return m;
-}
-function cone(r, h, color, x, y, z, seg) {
-  var m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg || 6), mat(color));
-  m.position.set(x || 0, y || 0, z || 0);
-  m.castShadow = m.receiveShadow = true;
-  return m;
-}
-ZZL.box = box; ZZL.cyl = cyl; ZZL.cone = cone;
-
-/* ── 레고 돌기(스터드) ───────────────────────────── */
-function studs(parent, color, cols, rows, gapX, gapZ, y, z0, r) {
-  r = r || 0.17;
-  var g = new THREE.CylinderGeometry(r, r, 0.13, 10);
-  for (var i = 0; i < cols; i++) for (var j = 0; j < rows; j++) {
-    var m = new THREE.Mesh(g, mat(color));
-    m.position.set((i - (cols - 1) / 2) * gapX, y, (z0 || 0) + (j - (rows - 1) / 2) * gapZ);
-    m.castShadow = m.receiveShadow = true;
-    parent.add(m);
-  }
-}
-ZZL.studs = studs;
-
-/* ── 눈 (픽셀형 · 블록 캐릭터 표준) ──────────────── */
-function pixEye(size, dark) {
-  var g = new THREE.Group();
-  var w = box(size, size, 0.08, 0xFFFFFF);
-  var p = box(size * 0.5, size * 0.62, 0.09, dark || 0x1A1E20, 0, 0, 0.02);
-  g.add(w, p);
-  g.userData.white = w;
-  return g;
-}
-ZZL.pixEye = pixEye;
-
-/* ============================================================
-   PARTS — 부위별 부품
-   각 함수는 THREE.Group을 돌려주며, 원점은 부착 지점(소켓)이다.
-   ============================================================ */
-var PARTS = {};
-
-/* ── 몸통 ────────────────────────────────────────── */
-PARTS.body = {
-  /* 4족 보행형: 알파카·사슴·염소·라쿤 등 */
-  quad: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.belly) g.add(box(o.w * 0.9, o.h * 0.2, o.d * 0.9, o.belly, 0, -o.h / 2 + 0.02, 0));
-    if (o.studs !== false) studs(g, o.dark || o.color, o.sc || 2, o.sr || 3, o.w * 0.4, o.d * 0.3, o.h / 2 + 0.06, 0);
-    return g;
-  },
-  /* 직립형: 미어캣·프레리독 */
-  upright: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.belly) g.add(box(o.w * 0.7, o.h * 0.7, 0.12, o.belly, 0, -o.h * 0.05, o.d / 2 + 0.01));
-    return g;
-  },
-  /* 조류형: 앵무·에뮤 */
-  bird: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.belly) g.add(box(o.w * 0.75, o.h * 0.8, 0.14, o.belly, 0, -o.h * 0.04, o.d / 2 + 0.01));
-    return g;
-  },
-  /* 납작 장동형: 악어·도마뱀 */
-  lowLong: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.belly) g.add(box(o.w * 0.9, o.h * 0.25, o.d * 0.9, o.belly, 0, -o.h / 2 + 0.03, 0));
-    if (o.crest) for (var i = 0; i < 5; i++)
-      g.add(box(0.12, 0.2 - i * 0.02, 0.12, o.crest, 0, o.h / 2 + 0.09, o.d * 0.3 - i * (o.d * 0.17)));
-    if (o.studs) studs(g, o.dark || o.color, 1, 3, 0, o.d * 0.28, o.h / 2 + 0.06, 0);
-    return g;
-  },
-  /* 등딱지형: 거북 */
-  shell: function (o) {
-    var g = new THREE.Group();
-    var dome = cyl(o.w * 0.42, o.w * 0.5, o.h, o.color, 0, 0, 0, o.seg || 8);
-    g.add(dome);
-    g.add(cyl(o.w * 0.5, o.w * 0.5, o.h * 0.28, o.dark || o.color, 0, -o.h * 0.5, 0, o.seg || 8));
-    /* 등딱지 판 (스쿠트) */
-    var n = o.scutes || 6;
-    for (var i = 0; i < n; i++) {
-      var a = (i / n) * Math.PI * 2;
-      g.add(box(o.w * 0.2, 0.09, o.w * 0.2, o.dark || o.color,
-        Math.cos(a) * o.w * 0.26, o.h * 0.5, Math.sin(a) * o.w * 0.26));
-    }
-    if (o.top) g.add(box(o.w * 0.24, 0.09, o.w * 0.24, o.dark || o.color, 0, o.h * 0.5, 0));
-    return g;
-  },
-  /* 납작 등딱지: 마타마타·늑대거북 */
-  shellFlat: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    var n = o.rows || 3;
-    for (var i = 0; i < n; i++)
-      for (var j = -1; j < 2; j++)
-        g.add(box(o.w * 0.22, 0.1, o.d * 0.2, o.dark || o.color,
-          j * o.w * 0.3, o.h / 2 + 0.04, (i - (n - 1) / 2) * o.d * 0.3));
-    return g;
-  },
-  /* 뱀 — 다리 없이 이어지는 마디. 굵기로 종을 가른다 */
-  serpent: function (o) {
-    var g = new THREE.Group();
-    var n = o.count || 7, segs = [];
-    var p = g;
-    for (var i = 0; i < n; i++) {
-      var s = new THREE.Group();
-      s.position.set(0, 0, i === 0 ? 0 : -o.seg);
-      var k = 1 - Math.pow(i / n, 1.6) * 0.55;
-      s.add(box(o.w * k, o.h * k, o.seg * 1.02, i % 2 ? (o.dark || o.color) : o.color, 0, 0, -o.seg / 2));
-      if (o.tipColor && i >= n - 2)
-        s.add(box(o.w * k * 1.01, o.h * k * 1.01, o.seg * 0.5, o.tipColor, 0, 0, -o.seg * 0.75));
-      p.add(s); p = s; segs.push(s);
-    }
-    g.userData.segs = segs;
-    return g;
-  },
-  /* 물고기 */
-  fish: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.belly) g.add(box(o.w * 0.9, o.h * 0.24, o.d * 0.9, o.belly, 0, -o.h / 2 + 0.03, 0));
-    return g;
-  },
-  /* 개구리·도롱뇽 — 앉은 자세의 납작 몸통 */
-  frog: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.belly) g.add(box(o.w * 0.82, o.h * 0.34, 0.12, o.belly, 0, -o.h * 0.2, o.d / 2 + 0.01));
-    if (o.dots) for (var i = 0; i < 5; i++)
-      g.add(box(0.1, 0.05, 0.1, o.dots,
-        (i % 2 ? 1 : -1) * o.w * 0.22, o.h / 2 + 0.02, (i - 2) * o.d * 0.2));
-    return g;
-  }
-};
-
-/* ── 머리 ────────────────────────────────────────── */
-PARTS.head = {
-  /* 기본 상자 머리 (+선택적 짧은 주둥이) */
-  box: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.studs) studs(g, o.dark || o.color, 2, 1, o.w * 0.42, 0, o.h / 2 + 0.06, -o.d * 0.15);
-    if (o.muzzle) {
-      var m = o.muzzle;
-      g.add(box(m.w, m.h, m.d, m.color || o.color, 0, m.y || -o.h * 0.22, o.d / 2 + m.d / 2 - 0.02));
-      g.add(box(m.w * 0.34, 0.07, 0.1, o.nose || 0x2A2A2E, 0,
-        (m.y || -o.h * 0.22) + m.h * 0.28, o.d / 2 + m.d - 0.02));
-    }
-    return g;
-  },
-  /* 긴 주둥이: 알파카·라마·사슴·말 */
-  muzzle: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    var m = o.muzzle || {};
-    var mw = m.w || o.w * 0.6, mh = m.h || o.h * 0.55, md = m.d || o.d * 0.5;
-    g.add(box(mw, mh, md, m.color || o.color, 0, m.y || -o.h * 0.2, o.d / 2 + md / 2 - 0.02));
-    g.add(box(mw * 0.36, 0.06, 0.1, o.nose || 0x453A2F, 0,
-      (m.y || -o.h * 0.2) + mh * 0.2, o.d / 2 + md - 0.02));
-    if (o.mouth) g.add(box(mw * 0.7, 0.06, 0.1, o.nose || 0x453A2F, 0,
-      (m.y || -o.h * 0.2) - mh * 0.34, o.d / 2 + md - 0.04));
-    return g;
-  },
-  /* 뾰족한 주둥이: 여우·미어캣·라쿤·코아티 */
-  snout: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    var len = o.snoutLen || o.d * 0.55;
-    var s = new THREE.Mesh(new THREE.CylinderGeometry(o.w * 0.34, o.w * 0.13, len, 4), mat(o.snoutColor || o.color));
-    s.rotation.x = Math.PI / 2; s.rotation.y = Math.PI / 4;
-    s.position.set(0, -o.h * 0.16, o.d / 2 + len / 2 - 0.04);
-    s.castShadow = true; g.add(s);
-    g.add(box(0.11, 0.09, 0.09, o.nose || 0x2A2A2E, 0, -o.h * 0.16, o.d / 2 + len - 0.06));
-    if (o.mask) { /* 눈가 마스크: 라쿤·페럿 */
-      g.add(box(o.w * 1.02, o.h * 0.26, 0.06, o.mask, 0, o.h * 0.06, o.d / 2 + 0.01));
-    }
-    return g;
-  },
-  /* 넓적 주둥이: 악어 */
-  croc: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.studs !== false) studs(g, o.dark || o.color, 2, 1, o.w * 0.45, 0, o.h / 2 + 0.06, -o.d * 0.12);
-    var s = o.snout || {};
-    var sw = s.w || o.w * 0.78, sh = s.h || o.h * 0.45, sd = s.d || o.d * 1.2;
-    g.add(box(sw, sh, sd, o.color, 0, -o.h * 0.1, o.d / 2 + sd / 2 - 0.02));
-    /* 아래턱 (별도 그룹: 애니메이션용) */
-    var jaw = new THREE.Group();
-    jaw.position.set(0, -o.h * 0.32, o.d * 0.4);
-    jaw.add(box(sw * 0.94, sh * 0.6, sd, o.dark || o.color, 0, 0, sd / 2));
-    g.add(jaw); g.userData.jaw = jaw;
-    /* 이빨 */
-    var tn = o.teeth || 4;
-    for (var i = 0; i < tn; i++) {
-      var z = o.d / 2 + 0.18 + i * (sd / tn * 0.82);
-      g.add(box(0.1, 0.15, 0.1, 0xFFFFFF, sw * 0.42, -o.h * 0.1 - sh * 0.5, z));
-      g.add(box(0.1, 0.15, 0.1, 0xFFFFFF, -sw * 0.42, -o.h * 0.1 - sh * 0.5, z));
-    }
-    g.add(box(0.09, 0.07, 0.07, 0x2C3A22, sw * 0.2, -o.h * 0.1 + sh * 0.4, o.d / 2 + sd - 0.05));
-    g.add(box(0.09, 0.07, 0.07, 0x2C3A22, -sw * 0.2, -o.h * 0.1 + sh * 0.4, o.d / 2 + sd - 0.05));
-    return g;
-  },
-  /* 갈고리 부리: 앵무 */
-  parrot: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    if (o.studs !== false) studs(g, o.dark || o.color, 2, 1, o.w * 0.44, 0, o.h / 2 + 0.06, -o.d * 0.16);
-    if (o.face) g.add(box(o.w * 0.64, o.h * 0.58, 0.12, o.face, 0, -o.h * 0.04, o.d / 2 + 0.01));
-    var bk = o.beak || 0x2A2A2E;
-    g.add(box(o.w * 0.42, o.h * 0.4, o.d * 0.46, bk, 0, -o.h * 0.11, o.d / 2 + o.d * 0.2));
-    g.add(box(o.w * 0.27, o.h * 0.34, o.d * 0.3, bk, 0, -o.h * 0.37, o.d / 2 + o.d * 0.16));
-    return g;
-  },
-  /* 납작 부리: 오리·거위 */
-  duck: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    g.add(box(o.w * 0.8, o.h * 0.24, o.d * 0.9, o.beak || 0xE8A93C, 0, -o.h * 0.2, o.d / 2 + o.d * 0.4));
-    return g;
-  },
-  /* 거북 머리 */
-  turtle: function (o) {
-    var g = new THREE.Group();
-    g.add(cyl(o.w * 0.45, o.w * 0.5, o.d, o.color, 0, 0, 0, 8));
-    g.children[0].rotation.x = Math.PI / 2;
-    g.add(box(o.w * 0.7, o.h * 0.5, o.d * 0.5, o.color, 0, -o.h * 0.1, o.d * 0.4));
-    g.add(box(o.w * 0.5, 0.05, 0.12, o.dark || 0x3A3A2E, 0, -o.h * 0.2, o.d * 0.62));
-    return g;
-  },
-  /* 뱀 머리 — 쐐기형 */
-  snake: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    g.add(box(o.w * 0.68, o.h * 0.72, o.d * 0.55, o.color, 0, -o.h * 0.06, o.d * 0.72));
-    g.add(box(o.w * 0.5, 0.05, 0.14, o.dark || 0x2A2A22, 0, -o.h * 0.3, o.d * 0.8));
-    /* 혀 */
-    if (o.tongue) {
-      g.add(box(0.05, 0.04, o.d * 0.4, o.tongue, 0, -o.h * 0.26, o.d * 1.12));
-      g.add(box(0.13, 0.04, 0.09, o.tongue, 0, -o.h * 0.26, o.d * 1.3));
-    }
-    return g;
-  },
-  /* 개구리·도롱뇽 머리 — 넓적하고 입이 크다 */
-  frog: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    g.add(box(o.w * 0.92, 0.06, o.d * 0.5, o.dark || 0x2A3A28, 0, -o.h * 0.28, o.d * 0.28));
-    g.add(box(0.07, 0.05, 0.05, o.dark || 0x2A3A28, o.w * 0.14, o.h * 0.1, o.d * 0.5));
-    g.add(box(0.07, 0.05, 0.05, o.dark || 0x2A3A28, -o.w * 0.14, o.h * 0.1, o.d * 0.5));
-    return g;
-  },
-  /* 물고기 머리 — 뾰족한 주둥이 */
-  fish: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.d, o.color));
-    var sn = o.snoutLen || o.d * 1.4;
-    g.add(box(o.w * 0.36, o.h * 0.34, sn, o.dark || o.color, 0, -o.h * 0.06, o.d / 2 + sn / 2));
-    g.add(box(o.w * 0.3, 0.05, sn * 0.9, 0xE8E2D2, 0, -o.h * 0.22, o.d / 2 + sn / 2));
-    return g;
-  }
-};
-
-/* ── 목 ──────────────────────────────────────────── */
-PARTS.neck = {
-  /* 긴 목: 알파카·라마·에뮤·거위 */
-  long: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.w, o.color, 0, o.h / 2, 0));
-    if (o.collar) g.add(box(o.w * 1.25, o.h * 0.35, o.w * 1.2, o.collar, 0, o.h * 0.22, 0));
-    return g;
-  },
-  /* 짧은 목 (연결부만) */
-  short: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, o.w, o.color, 0, o.h / 2, 0));
-    return g;
-  },
-  /* 거북 목: 앞으로 뻗음 */
-  fwd: function (o) {
-    var g = new THREE.Group();
-    var m = cyl(o.w * 0.4, o.w * 0.44, o.h, o.color, 0, 0, o.h / 2, 8);
-    m.rotation.x = Math.PI / 2; g.add(m);
-    return g;
-  }
-};
-
-/* ── 다리 ────────────────────────────────────────── */
-PARTS.legs = {
-  /* 원기둥 다리 + 발굽/발 */
-  post: function (o) {
-    var g = new THREE.Group();
-    o.pos.forEach(function (p) {
-      var leg = new THREE.Group();
-      leg.position.set(p[0], 0, p[1]);
-      leg.add(cyl(o.r, o.r * 0.94, o.len, o.color, 0, -o.len / 2, 0, 9));
-      if (o.foot === 'hoof') leg.add(cyl(o.r * 1.2, o.r * 1.2, 0.16, o.footColor || 0x453A2F, 0, -o.len - 0.06, 0, 9));
-      else if (o.foot === 'paw') leg.add(box(o.r * 2.6, 0.13, o.r * 3.2, o.footColor || o.color, 0, -o.len - 0.05, o.r * 0.5));
-      else if (o.foot === 'claw') {
-        leg.add(box(o.r * 2.8, 0.13, o.r * 3.4, o.footColor || o.color, 0, -o.len - 0.05, o.r * 0.6));
-        for (var i = -1; i < 2; i++)
-          leg.add(box(0.08, 0.09, 0.16, o.clawColor || 0xE8E2D2, i * o.r * 0.9, -o.len - 0.05, o.r * 2.1));
-      }
-      if (o.fluff) leg.add(box(o.r * 2.6, o.r * 2.6, o.r * 2.6, o.fluff, 0, -o.len * 0.12, 0));
-      g.add(leg);
-    });
-    return g;
-  },
-  /* 짧고 굵은 기둥: 설가타·코끼리형 */
-  column: function (o) {
-    var g = new THREE.Group();
-    o.pos.forEach(function (p) {
-      var leg = new THREE.Group();
-      leg.position.set(p[0], 0, p[1]);
-      leg.add(cyl(o.r, o.r * 1.15, o.len, o.color, 0, -o.len / 2, 0, 8));
-      leg.add(box(o.r * 2.4, 0.14, o.r * 2.6, o.footColor || o.color, 0, -o.len - 0.05, 0));
-      g.add(leg);
-    });
-    return g;
-  },
-  /* 조류 다리 */
-  bird: function (o) {
-    var g = new THREE.Group();
-    o.pos.forEach(function (p) {
-      var leg = new THREE.Group();
-      leg.position.set(p[0], 0, p[1]);
-      leg.add(cyl(o.r, o.r, o.len, o.color, 0, -o.len / 2, 0, 8));
-      leg.add(box(o.r * 3.4, 0.11, o.r * 4.6, o.color, 0, -o.len - 0.04, o.r * 1.2));
-      g.add(leg);
-    });
-    return g;
-  },
-  /* 도마뱀·악어형 벌어진 다리 */
-  sprawl: function (o) {
-    var g = new THREE.Group();
-    o.pos.forEach(function (p) {
-      var leg = new THREE.Group();
-      leg.position.set(p[0], 0, p[1]);
-      leg.rotation.z = p[0] > 0 ? -0.3 : 0.3;
-      leg.add(cyl(o.r, o.r * 0.9, o.len, o.color, 0, -o.len / 2, 0, 8));
-      leg.add(box(o.r * 3, 0.12, o.r * 3.4, o.color, 0, -o.len - 0.04, o.r * 0.6));
-      g.add(leg);
-    });
-    return g;
-  },
-  /* 개구리 — 접힌 뒷다리 + 물갈퀴 발 */
-  frog: function (o) {
-    var g = new THREE.Group();
-    /* 앞다리 */
-    [[o.fw, o.fz], [-o.fw, o.fz]].forEach(function (p) {
-      var leg = new THREE.Group();
-      leg.position.set(p[0], 0, p[1]);
-      leg.add(cyl(o.r * 0.8, o.r * 0.7, o.len * 0.8, o.color, 0, -o.len * 0.4, 0, 7));
-      leg.add(box(o.r * 2.4, 0.1, o.r * 2.8, o.color, 0, -o.len * 0.8, o.r * 0.7));
-      g.add(leg);
-    });
-    /* 뒷다리 — 옆으로 접힘 */
-    [[o.bw, o.bz, 1], [-o.bw, o.bz, -1]].forEach(function (p) {
-      var leg = new THREE.Group();
-      leg.position.set(p[0], 0, p[1]);
-      leg.rotation.z = p[2] * 0.5;
-      leg.add(box(o.r * 2.2, o.r * 1.6, o.len * 1.1, o.color, 0, 0, -o.len * 0.3));
-      leg.add(cyl(o.r * 0.8, o.r * 0.7, o.len * 0.9, o.color, p[2] * o.r * 0.6, -o.len * 0.45, 0, 7));
-      leg.add(box(o.r * 3, 0.1, o.r * 3.6, o.web || o.color, p[2] * o.r * 0.6, -o.len * 0.88, o.r * 1.0));
-      g.add(leg);
-    });
-    return g;
-  }
-};
-
-/* ── 꼬리 ────────────────────────────────────────── */
-PARTS.tail = {
-  none: function () { return new THREE.Group(); },
-  /* 마디형(휘어짐): 악어·도마뱀 */
-  segment: function (o) {
-    var g = new THREE.Group(); var segs = [], p = g;
-    var n = o.count || 3;
-    for (var i = 0; i < n; i++) {
-      var s = new THREE.Group();
-      s.position.set(0, 0, i === 0 ? 0 : -(o.len / n) * 0.95);
-      var w = o.w * (1 - i / (n + 1)), h = o.h * (1 - i / (n + 1));
-      s.add(box(w, h, o.len / n, i % 2 ? (o.dark || o.color) : o.color, 0, 0, -(o.len / n) / 2));
-      if (o.crest && i < n - 1) s.add(box(0.1, 0.14, 0.1, o.crest, 0, h / 2 + 0.06, -(o.len / n) / 2));
-      p.add(s); p = s; segs.push(s);
-    }
-    g.userData.segs = segs;
-    return g;
-  },
-  /* 덤불 꼬리: 여우·라쿤·다람쥐 */
-  bushy: function (o) {
-    var g = new THREE.Group();
-    var n = o.rings || 4;
-    for (var i = 0; i < n; i++) {
-      var c = (o.stripe && i % 2) ? o.stripe : o.color;
-      g.add(box(o.w * (1 - i * 0.08), o.w * (1 - i * 0.08), o.len / n, c, 0, i * 0.04, -(o.len / n) * (i + 0.5)));
-    }
-    if (o.tip) g.add(box(o.w * 0.66, o.w * 0.66, o.len / n * 0.7, o.tip, 0, n * 0.04, -o.len - 0.08));
-    return g;
-  },
-  /* 뭉치: 토끼·알파카 */
-  tuft: function (o) {
-    var g = new THREE.Group();
-    g.add(box(o.w, o.w, o.w * 0.8, o.color, 0, 0, -o.w * 0.4));
-    return g;
-  },
-  /* 깃털 부채: 앵무 */
-  feather: function (o) {
-    var g = new THREE.Group();
-    g.rotation.x = o.tilt === undefined ? -0.35 : o.tilt;
-    [[-o.w * 0.32, o.dark || o.color], [0, o.color], [o.w * 0.32, o.dark || o.color]].forEach(function (q) {
-      g.add(box(o.w * 0.3, 0.1, o.len, q[1], q[0], 0, -o.len / 2));
-    });
-    return g;
-  },
-  /* 가늘고 긴: 원숭이·제넷 */
-  thin: function (o) {
-    var g = new THREE.Group(); var segs = [], p = g;
-    var n = o.count || 4;
-    for (var i = 0; i < n; i++) {
-      var s = new THREE.Group();
-      s.position.set(0, i === 0 ? 0 : 0.06, i === 0 ? 0 : -(o.len / n));
-      var c = (o.stripe && i % 2) ? o.stripe : o.color;
-      s.add(cyl(o.r * (1 - i * 0.1), o.r * (1 - i * 0.14), o.len / n, c, 0, 0, -(o.len / n) / 2, 7));
-      s.children[0].rotation.x = Math.PI / 2;
-      p.add(s); p = s; segs.push(s);
-    }
-    g.userData.segs = segs;
-    return g;
-  },
-  /* 짧은 판: 거북 */
-  stub: function (o) {
-    var g = new THREE.Group();
-    g.add(cone(o.r, o.len, o.color, 0, 0, -o.len / 2, 5));
-    g.children[0].rotation.x = -Math.PI / 2;
-    return g;
-  }
-};
-
-/* ── 귀 ──────────────────────────────────────────── */
-PARTS.ears = {
-  none: function () { return new THREE.Group(); },
-  /* 긴 귀: 토끼·나귀 */
-  long: function (o) {
-    var g = new THREE.Group(); var L = [];
-    [1, -1].forEach(function (s) {
-      var e = new THREE.Group();
-      e.position.set(s * o.gap, 0, 0); e.rotation.z = s * (o.spread || 0.12);
-      e.add(box(o.w, o.len, o.w * 0.5, o.color, 0, o.len / 2, 0));
-      if (o.inner) e.add(box(o.w * 0.5, o.len * 0.72, 0.06, o.inner, 0, o.len / 2, o.w * 0.26));
-      g.add(e); L.push(e);
-    });
-    g.userData.ears = L;
-    return g;
-  },
-  /* 바나나형 (앞뒤로 휨): 라마 */
-  banana: function (o) {
-    var g = new THREE.Group(); var L = [];
-    [1, -1].forEach(function (s) {
-      var e = new THREE.Group();
-      e.position.set(s * o.gap, 0, 0); e.rotation.z = s * 0.3; e.rotation.x = -0.2;
-      e.add(box(o.w, o.len * 0.6, o.w * 0.5, o.color, 0, o.len * 0.3, 0));
-      e.add(box(o.w * 0.8, o.len * 0.5, o.w * 0.5, o.color, 0, o.len * 0.78, -o.w * 0.22));
-      g.add(e); L.push(e);
-    });
-    g.userData.ears = L;
-    return g;
-  },
-  /* 삼각 귀: 알파카·염소·사슴 */
-  point: function (o) {
-    var g = new THREE.Group(); var L = [];
-    [1, -1].forEach(function (s) {
-      var e = new THREE.Group();
-      e.position.set(s * o.gap, 0, 0); e.rotation.z = s * (o.spread || 0.22);
-      e.add(cone(o.w, o.len, o.color, 0, o.len / 2, 0, 5));
-      g.add(e); L.push(e);
-    });
-    g.userData.ears = L;
-    return g;
-  },
-  /* 크고 넓은 귀: 사막여우 */
-  big: function (o) {
-    var g = new THREE.Group(); var L = [];
-    [1, -1].forEach(function (s) {
-      var e = new THREE.Group();
-      e.position.set(s * o.gap, 0, 0); e.rotation.z = s * (o.spread || 0.3);
-      e.add(box(o.w, o.len, o.w * 0.4, o.color, 0, o.len / 2, 0));
-      if (o.inner) e.add(box(o.w * 0.6, o.len * 0.7, 0.06, o.inner, 0, o.len * 0.46, o.w * 0.21));
-      g.add(e); L.push(e);
-    });
-    g.userData.ears = L;
-    return g;
-  },
-  /* 작고 둥근 귀: 라쿤·미어캣·원숭이 */
-  round: function (o) {
-    var g = new THREE.Group(); var L = [];
-    [1, -1].forEach(function (s) {
-      var e = new THREE.Group();
-      e.position.set(s * o.gap, 0, 0);
-      e.add(cyl(o.w, o.w, 0.12, o.color, 0, 0, 0, 8));
-      e.children[0].rotation.x = Math.PI / 2;
-      if (o.inner) e.add(cyl(o.w * 0.55, o.w * 0.55, 0.13, o.inner, 0, 0, 0.02, 8)),
-        e.children[1].rotation.x = Math.PI / 2;
-      g.add(e); L.push(e);
-    });
-    g.userData.ears = L;
-    return g;
-  }
-};
-
-/* ── 부속 ────────────────────────────────────────── */
-PARTS.extra = {
-  /* 뿔 — 형태로 종을 가른다 */
-  hornSpiral: function (o) {   /* 무플론: 크게 말린 나선 */
-    var g = new THREE.Group();
-    [1, -1].forEach(function (s) {
-      var h = new THREE.Group(); h.position.set(s * o.gap, 0, 0);
-      for (var i = 0; i < 6; i++) {
-        var a = i * 0.9;
-        h.add(box(o.w, o.w, o.w, o.color,
-          s * Math.sin(a) * o.r * 0.5, Math.cos(a) * o.r * 0.4 + o.r * 0.3, -Math.sin(a) * o.r * 0.45));
-      }
-      g.add(h);
-    });
-    return g;
-  },
-  hornBack: function (o) {     /* 염소·산양: 뒤로 굽음 */
-    var g = new THREE.Group();
-    [1, -1].forEach(function (s) {
-      var h = new THREE.Group(); h.position.set(s * o.gap, 0, 0);
-      for (var i = 0; i < 4; i++)
-        h.add(box(o.w * (1 - i * 0.12), o.w * (1 - i * 0.12), o.w, o.color,
-          0, o.len * (i * 0.24), -o.len * (i * 0.2)));
-      g.add(h);
-    });
-    return g;
-  },
-  hornShort: function (o) {    /* 보어염소: 짧은 뿔 */
-    var g = new THREE.Group();
-    [1, -1].forEach(function (s) {
-      g.add(cone(o.w, o.len, o.color, s * o.gap, o.len / 2, -o.w, 5));
-    });
-    return g;
-  },
-  antler: function (o) {       /* 꽃사슴: 가지뿔 */
-    var g = new THREE.Group();
-    [1, -1].forEach(function (s) {
-      var h = new THREE.Group(); h.position.set(s * o.gap, 0, 0); h.rotation.z = s * 0.24;
-      h.add(box(o.w, o.len, o.w, o.color, 0, o.len / 2, 0));
-      h.add(box(o.w * 0.8, o.len * 0.5, o.w * 0.8, o.color, s * o.len * 0.22, o.len * 0.82, 0));
-      h.add(box(o.w * 0.8, o.len * 0.4, o.w * 0.8, o.color, 0, o.len * 0.9, -o.len * 0.22));
-      g.add(h);
-    });
-    return g;
-  },
-  crest: function (o) {        /* 앵무 볏 */
-    var g = new THREE.Group();
-    [-1, 0, 1].forEach(function (i) {
-      var c = box(o.w, o.len, o.w * 0.8, o.color, i * o.gap, o.len / 2, 0);
-      c.rotation.x = -0.32; g.add(c);
-    });
-    return g;
-  },
-  wings: function (o) {        /* 날개 (애니메이션 대상) */
-    var g = new THREE.Group(); var W = [];
-    [1, -1].forEach(function (s) {
-      var w = new THREE.Group(); w.position.set(s * o.gap, 0, 0);
-      w.add(box(o.w, o.len, o.d, o.color, 0, -o.len / 2, 0));
-      if (o.tip) w.add(box(o.w * 1.02, o.len * 0.34, o.d * 0.9, o.tip, 0, -o.len - o.len * 0.14, -0.02));
-      g.add(w); W.push(w);
-    });
-    g.userData.wings = W;
-    return g;
-  },
-  quills: function (o) {       /* 등가시: 고슴도치·호저 */
-    var g = new THREE.Group();
-    for (var i = 0; i < (o.count || 12); i++) {
-      var x = (Math.random() - 0.5) * o.w, z = (Math.random() - 0.5) * o.d;
-      var q = cone(o.r, o.len, o.color, x, 0, z, 4);
-      q.rotation.x = -0.3 + Math.random() * 0.6; q.rotation.z = (Math.random() - 0.5) * 0.6;
-      g.add(q);
-    }
-    return g;
-  },
-  dewlap: function (o) {       /* 목주름: 이구아나·테구 */
-    var g = new THREE.Group();
-    g.add(box(o.w, o.len, o.d, o.color, 0, -o.len / 2, 0));
-    return g;
-  },
-  spots: function (o) {        /* 반점: 꽃사슴 */
-    var g = new THREE.Group();
-    (o.at || []).forEach(function (p) {
-      g.add(box(o.size, 0.05, o.size, o.color, p[0], p[1], p[2]));
-    });
-    return g;
-  },
-  fins: function (o) {         /* 지느러미: 물고기 */
-    var g = new THREE.Group();
-    /* 등지느러미 */
-    if (o.dorsal) g.add(box(0.08, o.h, o.d, o.color, 0, o.h / 2, o.dz || 0));
-    /* 가슴지느러미 */
-    [1, -1].forEach(function (s) {
-      var f = box(0.07, o.h * 0.5, o.d * 0.5, o.color, s * o.gap, 0, 0);
-      f.rotation.z = s * 0.4; g.add(f);
-    });
-    /* 꼬리지느러미 */
-    if (o.caudal) g.add(box(0.08, o.h * 1.2, o.d * 0.7, o.color, 0, 0, o.cz));
-    return g;
-  },
-  patagium: function (o) {     /* 비막: 슈가글라이더 */
-    var g = new THREE.Group();
-    [1, -1].forEach(function (s) {
-      var m = box(o.w, 0.07, o.d, o.color, s * o.gap, 0, 0);
-      m.rotation.z = s * 0.28; g.add(m);
-    });
-    return g;
-  },
-  pouchEye: function (o) {     /* 눈가 줄무늬: 슈가글라이더·페럿 */
-    var g = new THREE.Group();
-    g.add(box(o.w, o.h, 0.06, o.color, 0, 0, o.z || 0));
-    return g;
-  }
-};
-
-ZZL.PARTS = PARTS;
-
-/* ============================================================
-   BUILD — 조립 엔진
-   spec을 받아 {root, update, react, rest, parts} 를 돌려준다.
-   parts 는 퍼즐용 부위별 그룹 참조 (개별 렌더/하이라이트에 사용)
-   ============================================================ */
-ZZL.build = function (spec) {
-  var root = new THREE.Group();
-  var body = new THREE.Group();
-  root.add(body);
-
-  var parts = {};   /* 부위명 -> Group (퍼즐 단위) */
-  var eyes = [];
-  var anim = spec.anim || {};
-
-  /* 몸통 */
-  var b = spec.body;
-  var bodyG = PARTS.body[b.type](b);
-  bodyG.position.set(0, b.y, b.z || 0);
-  body.add(bodyG);
-  parts.body = bodyG;
-
-  /* 목 + 머리
-     머리 좌표는 몸통 공간의 절대값으로 해석한다.
-     목이 있는 종만 목 끝을 기준으로 상대 배치한다. */
-  var headHost = body, headBaseY = 0, headBaseZ = 0;
-  if (spec.neck) {
-    var n = spec.neck;
-    var neckG = PARTS.neck[n.type](n);
-    neckG.position.set(0, n.y, n.z);
-    body.add(neckG);
-    parts.neck = neckG;
-    headHost = neckG; headBaseY = 0; headBaseZ = 0;
-  }
-  var h = spec.head;
-  var headPivot = new THREE.Group();
-  headPivot.position.set(0, headBaseY + h.y, headBaseZ + h.z);
-  headHost.add(headPivot);
-  var headG = PARTS.head[h.type](h);
-  headPivot.add(headG);
-  parts.head = headG;
-  if (headG.userData.jaw) parts.jaw = headG.userData.jaw;
-
-  /* 눈 */
-  if (spec.eyes) {
-    var e = spec.eyes;
-    [1, -1].forEach(function (s) {
-      var eye = pixEye(e.size, e.dark);
-      eye.position.set(s * e.gap, e.y, e.z);
-      if (e.side) eye.rotation.y = s * (Math.PI / 2);
-      else if (e.turn) eye.rotation.y = s * e.turn;
-      headG.add(eye); eyes.push(eye);
-    });
-  }
-
-  /* 귀 */
-  if (spec.ears) {
-    var earG = PARTS.ears[spec.ears.type](spec.ears);
-    earG.position.set(0, spec.ears.y, spec.ears.z || 0);
-    headG.add(earG);
-    parts.ears = earG;
-  }
-
-  /* 다리 */
-  if (spec.legs) {
-    var lg = PARTS.legs[spec.legs.type](spec.legs);
-    lg.position.set(0, spec.legs.y, 0);
-    body.add(lg);
-    parts.legs = lg;
-  }
-
-  /* 꼬리 */
-  if (spec.tail) {
-    var t = spec.tail;
-    var tg = PARTS.tail[t.type](t);
-    tg.position.set(0, t.y, t.z);
-    body.add(tg);
-    parts.tail = tg;
-  }
-
-  /* 부속 */
-  var extras = {};
-  (spec.extras || []).forEach(function (x) {
-    var g = PARTS.extra[x.type](x);
-    g.position.set(x.x || 0, x.y, x.z || 0);
-    var host = x.on === 'head' ? headG : (x.on === 'neck' && parts.neck ? parts.neck : body);
-    host.add(g);
-    extras[x.name || x.type] = g;
-    if (x.puzzle !== false) parts[x.name || x.type] = g;
-  });
-
-  root.scale.setScalar(spec.scale || 1);
-
-  /* 접지 정렬 — 조립 결과의 최저점을 y=0 에 맞춘다.
-     사양에 미세한 높이 오차가 있어도 발이 뜨거나 파묻히지 않는다. */
-  if (spec.groundAlign !== false) {
-    root.updateMatrixWorld(true);
-    var bb = new THREE.Box3().setFromObject(root);
-    if (isFinite(bb.min.y)) body.position.y -= bb.min.y / (spec.scale || 1);
-  }
-
-  /* 측정값 — 카메라 프레이밍과 퍼즐 배치에 사용 */
-  root.updateMatrixWorld(true);
-  var mb = new THREE.Box3().setFromObject(root);
-  var msz = new THREE.Vector3(), mct = new THREE.Vector3();
-  mb.getSize(msz); mb.getCenter(mct);
-
-  /* ── 애니메이션 ── */
-  var jaw = parts.jaw;
-  var wings = extras.wings && extras.wings.userData.wings;
-  var earList = parts.ears && parts.ears.userData.ears;
-  var tailSegs = parts.tail && parts.tail.userData.segs;
-  var neckG2 = parts.neck;
-
-  var bodyRestY = bodyG.position.y;
-
-  function update(t) {
-    if (root.userData.assembling) return;   /* 조립 연출 중에는 기본 모션 정지 */
-    var bob = anim.bob === undefined ? 0.04 : anim.bob;
-    bodyG.position.y = bodyRestY + Math.sin(t * (anim.bobSpeed || 1.6)) * bob;
-
-    if (anim.headTurn !== false) {
-      headPivot.rotation.y = Math.sin(t * (anim.turnSpeed || 0.45)) * (anim.headTurn || 0.28);
-    }
-    if (anim.headBob) {
-      var c = (t * anim.headBob.rate) % 1;
-      var k = c < 0.24 ? Math.max(0, Math.sin(c / 0.24 * Math.PI * 3)) * anim.headBob.amt : 0;
-      headPivot.rotation.x = -k;
-      if (extras.dewlap) extras.dewlap.scale.set(1, 1 + k * 0.4, 1 + k * 1.2);
-    }
-    if (anim.jerk) {   /* 앵무 특유의 끊기는 목 동작 */
-      var j = (t * anim.jerk) % 1;
-      headPivot.rotation.z = j < 0.13 ? 0.3 : (j < 0.26 ? -0.24 : 0);
-    }
-    if (neckG2 && anim.neckSway) {
-      neckG2.rotation.x = Math.sin(t * 0.85) * anim.neckSway;
-      neckG2.rotation.z = Math.sin(t * 0.6) * anim.neckSway * 0.8;
-    }
-    if (jaw && anim.jaw) {
-      var jc = (t * anim.jaw) % 1;
-      jaw.rotation.x = jc < 0.13 ? Math.sin(jc / 0.13 * Math.PI) * 0.36 : 0;
-    }
-    if (wings && anim.flap) {
-      var f = ((t * anim.flap) % 1) < 0.09 ? Math.abs(Math.sin(t * 20)) * 0.5 : 0;
-      wings[0].rotation.z = -0.08 - f; wings[1].rotation.z = 0.08 + f;
-    }
-    if (earList && anim.earTwitch) {
-      var tw = ((t * 0.33) % 1) < 0.07 ? Math.sin(t * 24) * 0.26 : 0;
-      earList[0].rotation.z += 0; /* 기준 회전 유지 */
-      earList[0].rotation.x = tw; earList[1].rotation.x = -tw * 0.7;
-    }
-    if (tailSegs && anim.tailWave) {
-      for (var i = 0; i < tailSegs.length; i++)
-        tailSegs[i].rotation.y = Math.sin(t * 1.6 - i * 0.6) * (anim.tailWave + i * 0.02);
-    }
-    var bl = ((t * (anim.blink || 0.5)) % 1) < 0.05 ? 0.1 : 1;
-    for (var k2 = 0; k2 < eyes.length; k2++) eyes[k2].userData.white.scale.y = bl;
-  }
-
-  function react(k) {
-    root.position.y = Math.abs(Math.sin(k * Math.PI * 2)) * (anim.hop || 0.45);
-    if (wings) { wings[0].rotation.z = -0.95; wings[1].rotation.z = 0.95; }
-    if (jaw) jaw.rotation.x = 0.5;
-  }
-  function rest() { root.position.y = 0; }
-
-  return {
-    root: root, update: update, react: react, rest: rest,
-    parts: parts, spec: spec,
-    size: msz, center: mct, footR: Math.max(msz.x, msz.z) / 2
-  };
-};
-
-/* ============================================================
-   ASSEMBLY — 조립 연출
-   부품이 제각각 흩어진 자리에서 튀어나왔다가(뿅) 한꺼번에
-   빨려들어와 제자리에 꽂히는(척) 연출.
-
-     var A = ZZL.assembly(model, { onLand: function(name,i){ ... } });
-     A.play();
-     // 프레임마다
-     if (!A.done) A.update(performance.now());
-
-   onLand 는 부품이 제자리에 꽂히는 순간 호출된다 → 효과음 2번 연결점.
-   ============================================================ */
-var EPS = 1e-6;
-
-function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
-function easeInCubic(x) { return x * x * x; }
-function easeOutBack(x, s) {          /* 지나쳤다가 되돌아오는 착지감 */
-  s = s === undefined ? 1.9 : s;
-  var c = s + 1, p = x - 1;
-  return 1 + c * p * p * p + s * p * p;
-}
-function easeInBack(x, s) {           /* 반대로 살짝 물러섰다 튀어나가는 도약감 */
-  s = s === undefined ? 1.5 : s;
-  return (s + 1) * x * x * x - s * x * x;
-}
-
-ZZL.assembly = function (model, opts) {
-  opts = opts || {};
-  var order = ZZL.puzzleOrder(model.spec);
-  var root = model.root;
-
-  /* 타이밍 (ms) — 전체 약 1.9초 */
-  var POP_STAGGER = opts.popStagger || 85;    /* 뿅뿅뿅 간격 — 짧게 겹쳐야 경쾌하다 */
-  var POP_DUR     = opts.popDur     || 260;
-  var HOLD        = opts.hold       || 230;   /* 다 튀어나온 뒤 잠깐 떠 있는 시간 */
-  var FLY_STAGGER = opts.flyStagger || 55;
-  var FLY_DUR     = opts.flyDur     || 620;
-  var SNAP_DUR    = opts.snapDur    || 150;   /* 꽂힌 직후 눌렸다 펴지는 시간 */
-
-  var reach = opts.reach || 0.30;             /* 흩어지는 거리 (모델 크기 배수) */
-  var span = Math.max(model.size.x, model.size.y, model.size.z);
-
-  /* 모델 중심 — 흩어짐의 기준점.
-     각 부품의 제자리를 기준으로 흩뿌리면 원래 벌어진 부품일수록 더 멀리 날아가
-     한쪽으로 몰린 것처럼 보인다. 중심 기준으로 잡아야 "모여든다"는 인상이 난다. */
-  root.updateMatrixWorld(true);
-  var bb0 = new THREE.Box3().setFromObject(root);
-  var centerW = bb0.getCenter(new THREE.Vector3());
-
-  /* 반경은 축마다 따로 잡는다. 가장 긴 축 하나로 잡으면
-     악어처럼 길고 낮은 동물이 세로로 화면을 벗어난다. */
-  var flat = Math.max(model.size.x, model.size.z);
-  var Rx = flat * reach * 0.92;
-  var Ry = model.size.y * reach;
-  var Rz = model.size.z * reach * 0.7;
-
-  /* 부품별 상태 준비 */
-  var items = [];
-  var names = order.filter(function (n) { return !!model.parts[n]; });
-  var N = names.length;
-  var GOLDEN = Math.PI * (3 - Math.sqrt(5));
-  var seed = Math.random() * Math.PI * 2;
-
-  names.forEach(function (name, i) {
-    var g = model.parts[name];
-    var home = {
-      pos: g.position.clone(),
-      quat: g.quaternion.clone(),
-      scl: g.scale.clone()
-    };
-
-    /* 방향을 고르게 분배한다 (황금각). 무작위로 뽑으면 한쪽에 뭉친다. */
-    var y = 1 - 2 * ((i + 0.5) / N);
-    var rr = Math.sqrt(Math.max(0, 1 - y * y));
-    var a = GOLDEN * i + seed;
-    var jit = 0.88 + (i % 3) * 0.09;
-
-    var startW = centerW.clone().add(new THREE.Vector3(
-      Math.cos(a) * rr * Rx * jit,
-      y * Ry * jit,
-      Math.sin(a) * rr * Rz * jit
-    ));
-    var from = g.parent.worldToLocal(startW.clone());
-
-    var axis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-    var spin = new THREE.Quaternion().setFromAxisAngle(axis, (Math.random() * 1.4 + 0.7) * (Math.random() < 0.5 ? -1 : 1));
-    var away = home.quat.clone().multiply(spin);
-
-    /* 계층 깊이 — 부모가 먼저 자리를 잡아야 자연스럽다 */
-    var depth = 0, pnode = g.parent;
-    while (pnode && pnode !== root) { depth++; pnode = pnode.parent; }
-
-    items.push({
-      name: name, g: g, home: home, from: from, away: away, depth: depth,
-      popAt: i * POP_STAGGER, flyAt: 0, landed: false,
-      wob: Math.random() * Math.PI * 2
-    });
-  });
-
-  var popEnd = (items.length ? (items.length - 1) * POP_STAGGER : 0) + POP_DUR;
-  var flyBase = popEnd + HOLD;
-  /* 얕은 부품(몸통 쪽)부터 합체 */
-  var flyOrder = items.slice().sort(function (a, b) { return a.depth - b.depth; });
-  flyOrder.forEach(function (it, i) { it.flyAt = flyBase + i * FLY_STAGGER; });
-  var lastLand = flyBase + (items.length ? (items.length - 1) * FLY_STAGGER : 0) + FLY_DUR + SNAP_DUR;
-
-  /* ── 완성 임팩트 ─────────────────────────────
-     ① 실루엣이 하얗게 번쩍  ② 빛무리가 퍼짐  ③ 충격파 고리
-     ④ 불꽃이 사방으로  ⑤ 몸이 부풀었다 되돌아옴 */
-  var FIN_DUR = opts.finaleDur || 820;
-  var total = lastLand + FIN_DUR;
-  var baseScale = model.spec.scale || 1;
-
-  var flashMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-  var shots = [];
-  root.traverse(function (o) { if (o.isMesh) shots.push({ m: o, orig: o.material }); });
-
-  var fx = new THREE.Group();
-  fx.visible = false;
-  root.add(fx);
-  var fxCenter = root.worldToLocal(centerW.clone());
-
-  /* 빛무리 */
-  var halo = null;
-  try {
-    var hc = document.createElement('canvas');
-    hc.width = hc.height = 128;
-    var hx = hc.getContext('2d');
-    var grd = hx.createRadialGradient(64, 64, 4, 64, 64, 64);
-    grd.addColorStop(0, 'rgba(255,255,255,1)');
-    grd.addColorStop(0.35, 'rgba(255,242,196,0.72)');
-    grd.addColorStop(1, 'rgba(255,220,150,0)');
-    hx.fillStyle = grd; hx.fillRect(0, 0, 128, 128);
-    halo = new THREE.Mesh(
-      new THREE.PlaneGeometry(span * 2.8, span * 2.8),
-      new THREE.MeshBasicMaterial({
-        map: new THREE.CanvasTexture(hc), transparent: true, opacity: 0,
-        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
-      })
-    );
-    halo.position.copy(fxCenter);
-    fx.add(halo);
-  } catch (e) { halo = null; }
-
-  /* 충격파 고리 2겹 */
-  var rings = [];
-  [[0xFFF0BE, 0.05, 0.06], [0xFFFFFF, 0.028, null]].forEach(function (q, i) {
-    var rm = new THREE.MeshBasicMaterial({
-      color: q[0], transparent: true, opacity: 0,
-      blending: THREE.AdditiveBlending, depthWrite: false
-    });
-    var rg = new THREE.Mesh(new THREE.TorusGeometry(span * 0.5, span * q[1], 6, 32), rm);
-    rg.rotation.x = Math.PI / 2;
-    rg.position.set(0, q[2] === null ? fxCenter.y : q[2], 0);
-    fx.add(rg); rings.push(rg);
-  });
-
-  /* 불꽃 */
-  var sparkMat = new THREE.MeshBasicMaterial({
-    color: 0xFFE9A8, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false
-  });
-  var sparks = [], SPARK_N = 16;
-  for (var si = 0; si < SPARK_N; si++) {
-    var sp = new THREE.Mesh(new THREE.BoxGeometry(span * 0.06, span * 0.06, span * 0.06), sparkMat);
-    var sa = (si / SPARK_N) * Math.PI * 2;
-    sp.userData.dir = new THREE.Vector3(
-      Math.cos(sa), (si % 3 - 1) * 0.55, Math.sin(sa) * 0.6).normalize();
-    fx.add(sp); sparks.push(sp);
-  }
-
-  function setFlash(on) {
-    for (var i = 0; i < shots.length; i++) shots[i].m.material = on ? flashMat : shots[i].orig;
-  }
-  function clearFx() {
-    fx.visible = false;
-    setFlash(false);
-    if (halo) halo.material.opacity = 0;
-    rings.forEach(function (r) { r.material.opacity = 0; });
-    sparkMat.opacity = 0;
-    root.scale.setScalar(baseScale);
-  }
-
-  var t0 = 0, running = false;
-  var api = { done: true, duration: total };
-
-  api.play = function () {
-    t0 = performance.now();
-    running = true; api.done = false;
-    root.userData.assembling = true;
-    clearFx();
-    items.forEach(function (it) {
-      it.landed = false;
-      it.g.visible = false;
-      it.g.scale.set(EPS, EPS, EPS);
-    });
-    /* 첫 프레임 잔상 방지 */
-    api.update(t0);
-  };
-
-  api.stop = function () {   /* 즉시 완성 상태로 */
-    running = false; api.done = true;
-    root.userData.assembling = false;
-    clearFx();
-    items.forEach(function (it) {
-      it.g.visible = true;
-      it.g.position.copy(it.home.pos);
-      it.g.quaternion.copy(it.home.quat);
-      it.g.scale.copy(it.home.scl);
-    });
-  };
-
-  api.update = function (now) {
-    if (!running) return;
-    var e = now - t0;
-
-    for (var i = 0; i < items.length; i++) {
-      var it = items[i], g = it.g;
-
-      /* ① 아직 등장 전 */
-      if (e < it.popAt) { g.visible = false; continue; }
-      g.visible = true;
-
-      /* ② 뿅 — 중심 주위의 제 자리에서 튀어나옴 */
-      if (e < it.popAt + POP_DUR) {
-        var p = (e - it.popAt) / POP_DUR;
-        var s = easeOutBack(p, 2.6);
-        g.position.copy(it.from);
-        g.quaternion.copy(it.away);
-        g.scale.set(it.home.scl.x * s, it.home.scl.y * s, it.home.scl.z * s);
-        continue;
-      }
-
-      /* ③ 대기 — 제자리에서 살짝 흔들리며 떠 있음 */
-      if (e < it.flyAt) {
-        var w = (e * 0.006) + it.wob;
-        g.position.copy(it.from);
-        g.position.y += Math.sin(w) * span * 0.018;
-        g.quaternion.copy(it.away);
-        g.scale.copy(it.home.scl);
-        continue;
-      }
-
-      /* ④ 합체 — 살짝 물러섰다가 중심으로 빨려들어옴 */
-      if (e < it.flyAt + FLY_DUR) {
-        var f = (e - it.flyAt) / FLY_DUR;
-        var k = f < 0.25
-          ? -easeInBack(f / 0.25, 1.6) * 0.16
-          : easeOutBack((f - 0.25) / 0.75, 1.5);
-        g.position.lerpVectors(it.from, it.home.pos, k);
-        g.quaternion.copy(it.away);
-        if (f >= 0.25) g.quaternion.slerp(it.home.quat, easeOutCubic((f - 0.25) / 0.75));
-        var st = 1 + Math.sin(Math.min(f / 0.25, 1) * Math.PI) * 0.1;
-        g.scale.set(it.home.scl.x / st, it.home.scl.y * st, it.home.scl.z / st);
-        continue;
-      }
-
-      /* ⑤ 착지 — 눌렸다 펴짐 */
-      if (!it.landed) {
-        it.landed = true;
-        if (opts.onLand) opts.onLand(it.name, i);
-      }
-      var q = Math.min((e - it.flyAt - FLY_DUR) / SNAP_DUR, 1);
-      var sq = 1 - Math.sin(q * Math.PI) * 0.14;
-      g.position.copy(it.home.pos);
-      g.quaternion.copy(it.home.quat);
-      g.scale.set(it.home.scl.x / sq, it.home.scl.y * sq, it.home.scl.z / sq);
-    }
-
-    /* ⑥ 완성 임팩트 */
-    if (e >= lastLand) {
-      var fe = e - lastLand, u = Math.min(fe / FIN_DUR, 1);
-      fx.visible = true;
-
-      /* 하얀 섬광 — 아주 짧게, 대신 강하게 */
-      setFlash(fe < 110);
-
-      /* 빛무리: 확 커졌다 사라짐 */
-      if (halo) {
-        halo.material.opacity = Math.max(0, 1 - u) * (fe < 60 ? fe / 60 : 1) * 0.95;
-        var hs = 0.35 + easeOutCubic(u) * 1.25;
-        halo.scale.set(hs, hs, hs);
-      }
-
-      /* 충격파 고리: 시차를 두고 두 겹 */
-      rings.forEach(function (rg, i) {
-        var d = i * 0.14;
-        var v = Math.min(Math.max((u - d) / (1 - d), 0), 1);
-        var rs = 0.35 + easeOutCubic(v) * 2.5;
-        rg.scale.set(rs, rs, 1);
-        rg.material.opacity = (1 - v) * (1 - v) * 0.95;
-      });
-
-      /* 불꽃: 바깥으로 튀며 작아짐 */
-      var sv = Math.min(u / 0.72, 1);
-      sparkMat.opacity = (1 - sv) * 0.95;
-      for (var k2 = 0; k2 < sparks.length; k2++) {
-        var d2 = span * (0.25 + easeOutCubic(sv) * 1.15);
-        sparks[k2].position.copy(fxCenter).addScaledVector(sparks[k2].userData.dir, d2);
-        var ss = Math.max(0.05, 1 - sv);
-        sparks[k2].scale.set(ss, ss, ss);
-      }
-
-      /* 몸이 부풀었다 되돌아옴 */
-      var pop2 = fe < 320 ? Math.sin((fe / 320) * Math.PI) * 0.16 : 0;
-      root.scale.setScalar(baseScale * (1 + pop2));
-    }
-
-    if (e >= total) {
-      running = false; api.done = true;
-      root.userData.assembling = false;
-      items.forEach(function (it) {
-        it.g.visible = true;
-        it.g.position.copy(it.home.pos);
-        it.g.quaternion.copy(it.home.quat);
-        it.g.scale.copy(it.home.scl);
-      });
-      clearFx();
-      if (opts.onComplete) opts.onComplete();
-    }
-  };
-
-  return api;
-};
-
-/* ── 퍼즐 지원: 부위 표시/숨김 ───────────────────── */
-ZZL.setPartVisible = function (model, name, v) {
-  if (model.parts[name]) model.parts[name].visible = v;
-};
-ZZL.puzzleOrder = function (spec) {
-  return spec.puzzle || ['head', 'body', 'legs', 'tail', 'ears'];
-};
-
-global.ZZL = ZZL;
-})(typeof window !== 'undefined' ? window : globalThis);
-
-/* ============================================================
-   ZZL SPECIES SPEC  v1.0 — Phase 1 (12종)
-   각 항목은 ZZL.build(spec.model) 로 3D 모델이 된다.
-
-   필드
-     id      동물ID (마스터 시트와 일치)
-     kname   국명 / ename 영명
-     zone    게임 구역
-     n       개체수 (출현 가중치에 사용)
-     parts   퍼즐 부위 수 (3~5)
-     tell    식별 포인트 — 퍼즐 오답 조각 구성 기준
-     rivals  같은 구역 근연종 (오답 조각 출처)
-     model   조립 사양
-   ============================================================ */
-(function (global) {
-'use strict';
-
-var S = [
-
-/* ── 알파카 ─────────────────────────────────────── */
-{
-  id: 'A001', kname: '알파카', ename: 'Alpaca', zone: '알파카 빌리지', n: 13,
-  parts: 4, tell: '뭉친 털 + 앞머리 + 짧은 삼각 귀',
-  rivals: ['라마'],
-  model: {
-    scale: 0.92,
-    body: { type: 'quad', w: 1.44, h: 1.16, d: 1.9, y: 1.5, color: 0xF6E9CE, dark: 0xE0CBA2, sc: 2, sr: 3 },
-    neck: { type: 'long', w: 0.56, h: 1.0, y: 2.0, z: 0.72, color: 0xD8B588, collar: 0xF6E9CE },
-    head: { type: 'muzzle', w: 0.86, h: 0.76, d: 0.92, color: 0xD8B588, y: 1.16, z: 0.06,
-            muzzle: { w: 0.52, h: 0.42, d: 0.36 }, nose: 0x453A2F, mouth: true },
-    eyes: { size: 0.22, gap: 0.24, y: 0.02, z: 0.47 },
-    ears: { type: 'point', w: 0.1, len: 0.4, gap: 0.28, y: 0.42, spread: 0.2, color: 0xD8B588 },
-    legs: { type: 'post', pos: [[0.46, 0.52], [-0.46, 0.52], [0.42, -0.56], [-0.42, -0.56]],
-            r: 0.145, len: 0.86, y: 0.92, color: 0xD8B588, foot: 'hoof', footColor: 0x453A2F },
-    tail: { type: 'tuft', w: 0.3, y: 1.9, z: -1.0, color: 0xF6E9CE },
-    extras: [{ type: 'crest', name: 'fringe', w: 0.3, len: 0.3, gap: 0.3, on: 'head', y: 0.42, z: 0.3,
-               color: 0xE0CBA2, puzzle: false }],
-    anim: { bob: 0.04, headTurn: 0.28, neckSway: 0.05, earTwitch: true, blink: 0.52 },
-    puzzle: ['head', 'body', 'legs', 'ears']
-  }
-},
-
-/* ── 라마 ───────────────────────────────────────── */
-{
-  id: 'A002', kname: '라마', ename: 'Llama', zone: '오솔길 빌리지', n: 1,
-  parts: 5, tell: '바나나형 큰 귀 + 더 긴 목 + 털이 없는 매끈한 머리',
-  rivals: ['알파카'],
-  model: {
-    scale: 0.86,
-    body: { type: 'quad', w: 1.34, h: 1.06, d: 2.0, y: 1.62, color: 0xE8D8B8, dark: 0xD2BE96, sc: 2, sr: 3 },
-    neck: { type: 'long', w: 0.5, h: 1.5, y: 2.05, z: 0.78, color: 0xE8D8B8 },
-    head: { type: 'muzzle', w: 0.74, h: 0.66, d: 1.0, color: 0xE8D8B8, y: 1.62, z: 0.1,
-            muzzle: { w: 0.46, h: 0.38, d: 0.42, color: 0xF6EEDC }, nose: 0x453A2F, mouth: true },
-    eyes: { size: 0.2, gap: 0.22, y: 0.04, z: 0.51 },
-    ears: { type: 'banana', w: 0.13, len: 0.62, gap: 0.24, y: 0.36, color: 0xE8D8B8 },
-    legs: { type: 'post', pos: [[0.44, 0.56], [-0.44, 0.56], [0.4, -0.6], [-0.4, -0.6]],
-            r: 0.14, len: 1.06, y: 1.06, color: 0xE8D8B8, foot: 'hoof', footColor: 0x453A2F },
-    tail: { type: 'tuft', w: 0.26, y: 2.0, z: -1.06, color: 0xE8D8B8 },
-    anim: { bob: 0.035, headTurn: 0.3, neckSway: 0.06, earTwitch: true, blink: 0.5 },
-    puzzle: ['head', 'neck', 'body', 'legs', 'ears']
-  }
-},
-
-/* ── 꽃사슴 ─────────────────────────────────────── */
-{
-  id: 'A003', kname: '꽃사슴', ename: 'Formosan sika deer', zone: '대동물 방목장', n: 4,
-  parts: 5, tell: '가지뿔 + 등의 흰 반점',
-  rivals: ['무플론', '산양', '면양'],
-  model: {
-    scale: 0.9,
-    body: { type: 'quad', w: 1.0, h: 0.92, d: 1.86, y: 1.42, color: 0xB98A54, dark: 0xA0743F,
-            belly: 0xEDE0C8, sc: 2, sr: 3 },
-    neck: { type: 'long', w: 0.42, h: 0.86, y: 1.8, z: 0.74, color: 0xB98A54 },
-    head: { type: 'muzzle', w: 0.6, h: 0.56, d: 0.88, color: 0xB98A54, y: 0.98, z: 0.12,
-            muzzle: { w: 0.4, h: 0.34, d: 0.34 }, nose: 0x2A2620, mouth: true },
-    eyes: { size: 0.17, gap: 0.2, y: 0.04, z: 0.45 },
-    ears: { type: 'point', w: 0.13, len: 0.42, gap: 0.3, y: 0.3, spread: 0.72, color: 0xB98A54 },
-    legs: { type: 'post', pos: [[0.34, 0.56], [-0.34, 0.56], [0.32, -0.6], [-0.32, -0.6]],
-            r: 0.11, len: 0.96, y: 0.96, color: 0xB98A54, foot: 'hoof', footColor: 0x2A2620 },
-    tail: { type: 'tuft', w: 0.2, y: 1.72, z: -1.0, color: 0xEDE0C8 },
-    extras: [
-      { type: 'antler', name: 'antler', w: 0.11, len: 0.66, gap: 0.2, on: 'head', y: 0.28, z: -0.06, color: 0x8E6B3E },
-      { type: 'spots', name: 'spots', size: 0.13, color: 0xF2E8D2, puzzle: false, y: 0.47,
-        at: [[0.3, 0, 0.5], [-0.3, 0, 0.5], [0.34, 0, 0], [-0.34, 0, 0], [0.28, 0, -0.5], [-0.28, 0, -0.5]] }
-    ],
-    anim: { bob: 0.035, headTurn: 0.34, neckSway: 0.06, earTwitch: true, blink: 0.46 },
-    puzzle: ['head', 'antler', 'body', 'legs', 'ears']
-  }
-},
-
-/* ── 일본원숭이 ─────────────────────────────────── */
-{
-  id: 'A004', kname: '일본원숭이', ename: 'Japanese Macaque', zone: '원숭이 빌리지', n: 5,
-  parts: 5, tell: '붉은 얼굴 + 아주 짧은 꼬리',
-  rivals: ['다람쥐원숭이'],
-  model: {
-    scale: 0.94,
-    body: { type: 'upright', w: 1.02, h: 1.2, d: 0.86, y: 1.16, color: 0xA08B6E, belly: 0xD8C8A8 },
-    neck: { type: 'short', w: 0.4, h: 0.24, y: 1.72, z: 0.06, color: 0xA08B6E },
-    head: { type: 'box', w: 0.86, h: 0.78, d: 0.78, color: 0xA08B6E, y: 0.34, z: 0.02,
-            studs: true, dark: 0x8A7658,
-            muzzle: { w: 0.5, h: 0.44, d: 0.3, color: 0xD9756A, y: -0.14 }, nose: 0x5A3A34 },
-    eyes: { size: 0.19, gap: 0.2, y: 0.1, z: 0.42 },
-    ears: { type: 'round', w: 0.15, gap: 0.48, y: 0.06, z: -0.02, color: 0xC49A88, inner: 0xA07C6C },
-    legs: { type: 'post', pos: [[0.36, 0.24], [-0.36, 0.24], [0.34, -0.3], [-0.34, -0.3]],
-            r: 0.14, len: 0.56, y: 0.6, color: 0xA08B6E, foot: 'paw', footColor: 0x8A7658 },
-    tail: { type: 'thin', r: 0.09, len: 0.4, count: 2, y: 1.06, z: -0.44, color: 0xA08B6E },
-    extras: [{ type: 'spots', name: 'face', size: 0.4, color: 0xD9756A, puzzle: false, y: 0.16,
-               at: [[0, 0, 0.4]] }],
-    anim: { bob: 0.05, bobSpeed: 1.9, headTurn: 0.42, turnSpeed: 0.6, blink: 0.62, hop: 0.4 },
-    puzzle: ['head', 'body', 'legs', 'ears', 'tail']
-  }
-},
-
-/* ── 토끼 ───────────────────────────────────────── */
-{
-  id: 'A005', kname: '토끼', ename: 'Rabbit', zone: '파충류 빌리지', n: 30,
-  parts: 3, tell: '아주 긴 귀 + 동그란 짧은 꼬리',
-  rivals: ['기니피그', '친칠라'],
-  model: {
-    scale: 1.15,
-    body: { type: 'quad', w: 0.86, h: 0.72, d: 1.14, y: 0.62, color: 0xF2EAD8, dark: 0xDED2B8,
-            belly: 0xFFFBF2, sc: 2, sr: 2, studs: true },
-    head: { type: 'box', w: 0.72, h: 0.62, d: 0.64, color: 0xF2EAD8, y: 0.98, z: 0.62,
-            muzzle: { w: 0.4, h: 0.3, d: 0.22 }, nose: 0xD48C96 },
-    eyes: { size: 0.19, gap: 0.22, y: 0.06, z: 0.34 },
-    ears: { type: 'long', w: 0.17, len: 0.86, gap: 0.17, y: 0.3, spread: 0.14,
-            color: 0xF2EAD8, inner: 0xE8B8BE },
-    legs: { type: 'post', pos: [[0.3, 0.34], [-0.3, 0.34], [0.32, -0.34], [-0.32, -0.34]],
-            r: 0.13, len: 0.26, y: 0.3, color: 0xF2EAD8, foot: 'paw', footColor: 0xDED2B8 },
-    tail: { type: 'tuft', w: 0.24, y: 0.66, z: -0.6, color: 0xFFFBF2 },
-    anim: { bob: 0.03, bobSpeed: 2.2, headTurn: 0.3, earTwitch: true, blink: 0.7, hop: 0.5 },
-    puzzle: ['head', 'body', 'ears']
-  }
-},
-
-/* ── 미어캣 ─────────────────────────────────────── */
-{
-  id: 'A006', kname: '미어캣', ename: 'Meerkat', zone: '파충류 빌리지', n: 7,
-  parts: 4, tell: '두 발로 선 자세 + 눈 주위 검은 무늬',
-  rivals: ['난쟁이몽구스', '프레리독'],
-  model: {
-    scale: 1.02,
-    body: { type: 'upright', w: 0.58, h: 1.24, d: 0.52, y: 1.02, color: 0xC9A876, belly: 0xE8D6B0 },
-    head: { type: 'snout', w: 0.56, h: 0.5, d: 0.48, color: 0xC9A876, y: 1.86, z: 0.04,
-            snoutLen: 0.32, snoutColor: 0xD8BC90, nose: 0x2A2A2E, mask: 0x3A3128 },
-    eyes: { size: 0.15, gap: 0.16, y: 0.06, z: 0.26 },
-    ears: { type: 'round', w: 0.1, gap: 0.3, y: 0.1, z: -0.06, color: 0x3A3128 },
-    legs: { type: 'post', pos: [[0.18, 0], [-0.18, 0]],
-            r: 0.1, len: 0.42, y: 0.42, color: 0xC9A876, foot: 'paw', footColor: 0xB08E5E },
-    tail: { type: 'thin', r: 0.09, len: 0.9, count: 3, y: 0.5, z: -0.28, color: 0xC9A876, stripe: 0xB08E5E },
-    anim: { bob: 0.025, bobSpeed: 1.4, headTurn: 0.5, turnSpeed: 0.7, blink: 0.6, hop: 0.35 },
-    puzzle: ['head', 'body', 'legs', 'tail']
-  }
-},
-
-/* ── 사막여우 ───────────────────────────────────── */
-{
-  id: 'A007', kname: '사막여우', ename: 'Fennec Fox', zone: '파충류 빌리지', n: 5,
-  parts: 4, tell: '몸에 비해 과장되게 큰 귀',
-  rivals: ['라쿤', '페럿'],
-  model: {
-    scale: 1.06,
-    body: { type: 'quad', w: 0.74, h: 0.6, d: 1.08, y: 0.66, color: 0xEBD5A8, dark: 0xD8BE8C,
-            belly: 0xFAF0DC, sc: 2, sr: 2, studs: true },
-    head: { type: 'snout', w: 0.64, h: 0.54, d: 0.56, color: 0xEBD5A8, y: 0.96, z: 0.6,
-            snoutLen: 0.34, snoutColor: 0xF6E8C8, nose: 0x2A2A2E },
-    eyes: { size: 0.17, gap: 0.18, y: 0.08, z: 0.3 },
-    ears: { type: 'big', w: 0.34, len: 0.74, gap: 0.24, y: 0.3, spread: 0.24,
-            color: 0xEBD5A8, inner: 0xF6E8C8 },
-    legs: { type: 'post', pos: [[0.26, 0.32], [-0.26, 0.32], [0.26, -0.32], [-0.26, -0.32]],
-            r: 0.1, len: 0.34, y: 0.36, color: 0xE0C79A, foot: 'paw', footColor: 0xD8BE8C },
-    tail: { type: 'bushy', w: 0.34, len: 0.9, rings: 4, y: 0.62, z: -0.52,
-            color: 0xEBD5A8, tip: 0x4A4038 },
-    anim: { bob: 0.03, bobSpeed: 1.8, headTurn: 0.36, earTwitch: true, blink: 0.66, hop: 0.42 },
-    puzzle: ['head', 'body', 'ears', 'tail']
-  }
-},
-
-/* ── 라쿤 ───────────────────────────────────────── */
-{
-  id: 'A008', kname: '라쿤', ename: 'Raccoon', zone: '양 분유 체험장', n: 4,
-  parts: 4, tell: '눈가 검은 마스크 + 고리 줄무늬 꼬리',
-  rivals: ['코아티', '페럿'],
-  model: {
-    scale: 1.0,
-    body: { type: 'quad', w: 0.86, h: 0.72, d: 1.16, y: 0.7, color: 0x8E8B84, dark: 0x6E6B66,
-            belly: 0xB8B4AA, sc: 2, sr: 2, studs: true },
-    head: { type: 'snout', w: 0.72, h: 0.6, d: 0.58, color: 0x9E9A92, y: 1.06, z: 0.64,
-            snoutLen: 0.3, snoutColor: 0xD8D2C6, nose: 0x2A2A2E, mask: 0x33302C },
-    eyes: { size: 0.17, gap: 0.2, y: 0.1, z: 0.31 },
-    ears: { type: 'round', w: 0.14, gap: 0.34, y: 0.28, z: -0.06, color: 0x9E9A92, inner: 0xD8D2C6 },
-    legs: { type: 'post', pos: [[0.3, 0.34], [-0.3, 0.34], [0.3, -0.36], [-0.3, -0.36]],
-            r: 0.12, len: 0.36, y: 0.4, color: 0x6E6B66, foot: 'paw', footColor: 0x4A4844 },
-    tail: { type: 'bushy', w: 0.36, len: 1.0, rings: 5, y: 0.72, z: -0.56,
-            color: 0x9E9A92, stripe: 0x3A3733 },
-    anim: { bob: 0.03, bobSpeed: 1.7, headTurn: 0.34, blink: 0.58, hop: 0.42 },
-    puzzle: ['head', 'body', 'legs', 'tail']
-  }
-},
-
-/* ── 에뮤 ───────────────────────────────────────── */
-{
-  id: 'A009', kname: '에뮤', ename: 'Emu', zone: '양 분유 체험장', n: 1,
-  parts: 4, tell: '아주 긴 다리 + 큰 몸 + 작은 머리',
-  rivals: ['거위', '오리'],
-  model: {
-    scale: 0.72,
-    body: { type: 'bird', w: 1.3, h: 1.5, d: 1.5, y: 2.0, color: 0x7A6B58, belly: 0x8E8070 },
-    neck: { type: 'long', w: 0.36, h: 1.5, y: 2.5, z: 0.36, color: 0x5E5348 },
-    head: { type: 'box', w: 0.46, h: 0.42, d: 0.56, color: 0x4A4238, y: 1.66, z: 0.04,
-            muzzle: { w: 0.22, h: 0.16, d: 0.3, color: 0x3A342C, y: -0.06 }, nose: 0x2A2620 },
-    eyes: { size: 0.15, gap: 0.19, y: 0.06, z: 0.28 },
-    legs: { type: 'bird', pos: [[0.32, 0], [-0.32, 0]],
-            r: 0.15, len: 1.3, y: 1.3, color: 0x6E6254 },
-    anim: { bob: 0.04, bobSpeed: 1.5, headTurn: 0.5, turnSpeed: 0.55, neckSway: 0.07, blink: 0.6, hop: 0.5 },
-    puzzle: ['head', 'neck', 'body', 'legs']
-  }
-},
-
-/* ── 청금강앵무 ─────────────────────────────────── */
-{
-  id: 'A010', kname: '청금강앵무새', ename: 'Blue-and-yellow Macaw', zone: '파충류 빌리지', n: 1,
-  parts: 5, tell: '대형 + 청·황 배색 + 아주 긴 꼬리',
-  rivals: ['할리퀸금강앵무새', '코뉴어', '아마존앵무새'],
-  model: {
-    scale: 0.92,
-    body: { type: 'bird', w: 1.08, h: 1.34, d: 0.92, y: 1.12, color: 0x3A6FD8, belly: 0xF0B62B },
-    head: { type: 'parrot', w: 0.98, h: 0.86, d: 0.9, color: 0x3A6FD8, dark: 0x27509E,
-            y: 2.16, z: 0.02, studs: true, face: 0xF7F0E2, beak: 0x2A2A2E },
-    eyes: { size: 0.2, gap: 0.36, y: 0.1, z: 0.46 },
-    legs: { type: 'bird', pos: [[0.24, 0.06], [-0.24, 0.06]],
-            r: 0.09, len: 0.32, y: 0.45, color: 0x5A5048 },
-    tail: { type: 'feather', w: 0.56, len: 1.1, y: 0.62, z: -0.44, tilt: -0.36,
-            color: 0x3A6FD8, dark: 0x27509E },
-    extras: [
-      { type: 'crest', name: 'crest', w: 0.16, len: 0.3, gap: 0.22, on: 'head', y: 0.44, z: -0.1, color: 0x27509E },
-      { type: 'wings', name: 'wings', w: 0.16, len: 0.92, d: 0.66, gap: 0.62, y: 1.6,
-        color: 0x27509E, tip: 0xF0B62B }
-    ],
-    anim: { bob: 0.035, bobSpeed: 2.0, headTurn: 0.4, turnSpeed: 0.6, jerk: 0.32,
-            flap: 0.26, blink: 0.65, hop: 0.55 },
-    puzzle: ['head', 'body', 'wings', 'tail', 'legs']
-  }
-},
-
-/* ── 바다악어 ───────────────────────────────────── */
-{
-  id: 'A011', kname: '바다악어', ename: 'Saltwater Crocodile', zone: '악어 빌리지', n: 1,
-  parts: 5, tell: '넓고 두꺼운 주둥이 (엘리게이터보다 뾰족)',
-  rivals: ['엘리게이터', '펄스가비알'],
-  model: {
-    scale: 0.86,
-    body: { type: 'lowLong', w: 1.5, h: 0.95, d: 1.9, y: 1.02, color: 0x57B04A, dark: 0x3E8C36,
-            belly: 0xF3E4B0, studs: true },
-    head: { type: 'croc', w: 1.28, h: 0.92, d: 1.0, color: 0x57B04A, dark: 0x3E8C36,
-            y: 0.76, z: 1.42, snout: { w: 1.0, h: 0.42, d: 1.15 }, teeth: 4, studs: true },
-    eyes: { size: 0.26, gap: 0.38, y: 0.5, z: 0.33 },
-    legs: { type: 'sprawl', pos: [[0.72, 0.62], [-0.72, 0.62], [0.72, -0.6], [-0.72, -0.6]],
-            r: 0.19, len: 0.56, y: 0.55, color: 0x3E8C36 },
-    tail: { type: 'segment', w: 0.95, h: 0.72, len: 1.8, count: 3, y: 1.02, z: -1.0,
-            color: 0x57B04A, dark: 0x3E8C36, crest: 0x3E8C36 },
-    anim: { bob: 0.04, bobSpeed: 1.7, headTurn: 0.18, turnSpeed: 0.45,
-            jaw: 0.38, tailWave: 0.12, blink: 0.5, hop: 0.42 },
-    puzzle: ['head', 'body', 'legs', 'tail', 'jaw']
-  }
-},
-
-/* ── 설가타 ─────────────────────────────────────── */
-{
-  id: 'A012', kname: '설가타', ename: 'African Spurred Tortoise', zone: '거북이 빌리지 방사장', n: 19,
-  parts: 4, tell: '대형 돔 등딱지 + 굵은 기둥 다리',
-  rivals: ['레드풋 육지거북', '쿠터'],
-  model: {
-    scale: 1.0,
-    body: { type: 'shell', w: 2.2, h: 0.86, y: 0.92, color: 0xC9A05C, dark: 0xA07C42,
-            scutes: 7, top: true, seg: 8 },
-    neck: { type: 'fwd', w: 0.5, h: 0.5, y: 0.72, z: 0.86, color: 0xB8945A },
-    head: { type: 'turtle', w: 0.56, h: 0.5, d: 0.5, color: 0xB8945A, dark: 0x6A5638, y: 0.02, z: 0.46 },
-    eyes: { size: 0.14, gap: 0.19, y: 0.08, z: 0.3 },
-    legs: { type: 'column', pos: [[0.72, 0.62], [-0.72, 0.62], [0.72, -0.62], [-0.72, -0.62]],
-            r: 0.24, len: 0.5, y: 0.62, color: 0xB8945A, footColor: 0x8E7040 },
-    tail: { type: 'stub', r: 0.14, len: 0.3, y: 0.72, z: -1.0, color: 0xB8945A },
-    anim: { bob: 0.015, bobSpeed: 0.9, headTurn: 0.34, turnSpeed: 0.3,
-            headBob: { rate: 0.16, amt: 0.24 }, blink: 0.38, hop: 0.22 },
-    puzzle: ['head', 'body', 'legs', 'tail']
-  }
-}
-
+/* ═══════════════════════════════════════════════════════════
+   쥬쥬랜드 동물도감 v2  |  가이드맵 GPS 연동 버전
+   실제 guidemap.png 위에 동물 블록이 GPS 좌표에 등장
+   동물 이름 먼저 공개 → 조각 퍼즐 → 도감 등록 애니메이션
+═══════════════════════════════════════════════════════════ */
+var SP=ZZL_SPECIES, S=ZDX.save, SND=ZDX.sound;
+function $(id){return document.getElementById(id);}
+
+/* ── GCP + 어파인 변환 ──────────────────────────────── */
+var GCPs=[
+  [126.8538597,37.6903466,2487,2054],[126.8540339,37.6902809,2510,1839],
+  [126.8535053,37.6898443,3273,2218],[126.8543281,37.689641, 3258,1219],
+  [126.8537643,37.6902084,2694,2096],[126.8541615,37.690084, 2718,1637],
+  [126.8543509,37.6899381,2838,1380],[126.8549816,37.6897766,2835, 664],
+  [126.8553769,37.6901253,2232, 423],[126.8547496,37.6905664,1888,1249],
+  [126.8551222,37.6908717,1372,1004],[126.8546258,37.6911832,1159,1622],
+  [126.8547147,37.6913658, 906,1628],[126.8549892,37.691485,  637,1410],
+  [126.8551613,37.6910779,1115,1058],[126.8550951,37.691057, 1153,1118]
 ];
-
-global.ZZL_SPECIES = S;
-})(typeof window !== 'undefined' ? window : globalThis);
-
-/* ============================================================
-   ZZL SPECIES SPEC — Phase 2·3 (50종)
-   zzl-species.js 뒤에 로드된다. ZZL_SPECIES 배열에 이어 붙인다.
-
-   원형(archetype) 함수로 골격을 잡고 종별 차이만 인자로 준다.
-   부품 라이브러리와 같은 사상: 개별 동물용 일회성 코드를 만들지 않는다.
-   ============================================================ */
-(function (global) {
-'use strict';
-
-var S = global.ZZL_SPECIES || (global.ZZL_SPECIES = []);
-
-/* ══ 원형 ═══════════════════════════════════════ */
-
-/* 우제·기제류 — 뿔·귀·체구로 종을 가른다 */
-function hoof(p) {
-  var k = p.k || 1, c = p.c, d = p.d || c, f = p.f || c;
-  return {
-    scale: p.scale || 0.9,
-    body: { type: 'quad', w: 1.0 * k, h: 0.92 * k, d: 1.8 * k, y: 1.42 * k,
-            color: c, dark: d, belly: p.belly, sc: 2, sr: 3 },
-    neck: { type: 'long', w: 0.42 * k, h: (p.neck || 0.8) * k, y: 1.78 * k, z: 0.72 * k,
-            color: p.neckC || c, collar: p.collar },
-    head: { type: 'muzzle', w: 0.6 * k, h: 0.56 * k, d: 0.86 * k, color: f,
-            y: (p.neck || 0.8) * k + 0.14 * k, z: 0.12 * k,
-            muzzle: { w: 0.4 * k, h: 0.34 * k, d: 0.34 * k, color: p.muz || f },
-            nose: p.nose || 0x2A2620, mouth: true },
-    eyes: { size: 0.17 * k, gap: 0.2 * k, y: 0.04 * k, z: 0.44 * k },
-    ears: p.ears,
-    legs: { type: 'post',
-            pos: [[0.34 * k, 0.56 * k], [-0.34 * k, 0.56 * k], [0.32 * k, -0.6 * k], [-0.32 * k, -0.6 * k]],
-            r: 0.115 * k, len: (p.leg || 0.9) * k, y: 0.96 * k,
-            color: p.legC || f, foot: 'hoof', footColor: p.hoofC || 0x2A2620 },
-    tail: p.tail || { type: 'tuft', w: 0.2 * k, y: 1.68 * k, z: -0.98 * k, color: p.tailC || c },
-    extras: p.extras || [],
-    anim: { bob: .035, headTurn: .32, neckSway: .06, earTwitch: true, blink: .48 },
-    puzzle: p.puzzle
-  };
-}
-
-/* 소형 네발 포유류 — 꼬리·귀·주둥이로 종을 가른다 */
-function smallQuad(p) {
-  var k = p.k || 1, c = p.c, d = p.d || c;
-  return {
-    scale: p.scale || 1.05,
-    body: { type: 'quad', w: 0.8 * k, h: 0.66 * k, d: 1.1 * k, y: 0.66 * k,
-            color: c, dark: d, belly: p.belly, sc: 2, sr: 2, studs: p.studs !== false },
-    head: (p.snout === false)
-      ? { type: 'box', w: 0.68 * k, h: 0.6 * k, d: 0.6 * k, color: p.f || c,
-          y: 0.98 * k, z: 0.6 * k,
-          muzzle: { w: 0.38 * k, h: 0.28 * k, d: 0.2 * k, color: p.muz || p.f || c },
-          nose: p.nose || 0x2A2A2E }
-      : { type: 'snout', w: 0.64 * k, h: 0.56 * k, d: 0.56 * k, color: p.f || c,
-          y: 0.98 * k, z: 0.6 * k, snoutLen: (p.snoutLen || 0.32) * k,
-          snoutColor: p.muz || p.f || c, nose: p.nose || 0x2A2A2E, mask: p.mask },
-    eyes: { size: 0.17 * k, gap: 0.19 * k, y: 0.07 * k, z: 0.31 * k },
-    ears: p.ears,
-    legs: { type: 'post',
-            pos: [[0.28 * k, 0.32 * k], [-0.28 * k, 0.32 * k], [0.28 * k, -0.32 * k], [-0.28 * k, -0.32 * k]],
-            r: 0.11 * k, len: (p.leg || 0.32) * k, y: 0.36 * k,
-            color: p.legC || d, foot: 'paw', footColor: p.pawC || d },
-    tail: p.tail,
-    extras: p.extras || [],
-    anim: p.anim || { bob: .03, bobSpeed: 1.8, headTurn: .34, earTwitch: !!p.ears, blink: .62, hop: .42 },
-    puzzle: p.puzzle
-  };
-}
-
-/* 직립형 소형 포유류 */
-function upright(p) {
-  var k = p.k || 1, c = p.c;
-  return {
-    scale: p.scale || 1.02,
-    body: { type: 'upright', w: 0.58 * k, h: 1.2 * k, d: 0.52 * k, y: 1.0 * k,
-            color: c, belly: p.belly },
-    head: { type: 'snout', w: 0.56 * k, h: 0.5 * k, d: 0.48 * k, color: p.f || c,
-            y: 1.82 * k, z: 0.04 * k, snoutLen: (p.snoutLen || 0.3) * k,
-            snoutColor: p.muz || p.f || c, nose: 0x2A2A2E, mask: p.mask },
-    eyes: { size: 0.15 * k, gap: 0.16 * k, y: 0.06 * k, z: 0.26 * k },
-    ears: p.ears,
-    legs: { type: 'post', pos: [[0.18 * k, 0], [-0.18 * k, 0]],
-            r: 0.1 * k, len: 0.4 * k, y: 0.4 * k, color: c, foot: 'paw', footColor: p.d || c },
-    tail: p.tail,
-    anim: { bob: .025, bobSpeed: 1.4, headTurn: .5, turnSpeed: .7, blink: .6, hop: .35 },
-    puzzle: p.puzzle
-  };
-}
-
-/* 영장류 */
-function primate(p) {
-  var k = p.k || 1, c = p.c;
-  return {
-    scale: p.scale || 0.94,
-    body: { type: 'upright', w: 1.0 * k, h: 1.18 * k, d: 0.84 * k, y: 1.14 * k,
-            color: c, belly: p.belly },
-    neck: { type: 'short', w: 0.4 * k, h: 0.24 * k, y: 1.7 * k, z: 0.06 * k, color: c },
-    head: { type: 'box', w: 0.84 * k, h: 0.76 * k, d: 0.76 * k, color: c,
-            y: 0.34 * k, z: 0.02 * k, studs: true, dark: p.d || c,
-            muzzle: { w: 0.48 * k, h: 0.42 * k, d: 0.3 * k, color: p.face || c, y: -0.14 * k },
-            nose: p.nose || 0x5A3A34 },
-    eyes: { size: 0.19 * k, gap: 0.2 * k, y: 0.1 * k, z: 0.41 * k },
-    ears: { type: 'round', w: 0.14 * k, gap: 0.46 * k, y: 0.06 * k, z: -0.02 * k,
-            color: p.earC || c, inner: p.face || c },
-    legs: { type: 'post',
-            pos: [[0.35 * k, 0.24 * k], [-0.35 * k, 0.24 * k], [0.33 * k, -0.3 * k], [-0.33 * k, -0.3 * k]],
-            r: 0.13 * k, len: 0.54 * k, y: 0.58 * k, color: c, foot: 'paw', footColor: p.d || c },
-    tail: p.tail,
-    anim: { bob: .05, bobSpeed: 1.9, headTurn: .42, turnSpeed: .6, blink: .62, hop: .4 },
-    puzzle: p.puzzle
-  };
-}
-
-/* 앵무 — 크기 3단계 + 꼬리 길이로 종을 가른다 */
-function parrot(p) {
-  var k = p.k || 1, c = p.c, d = p.d || c;
-  return {
-    scale: p.scale || 0.92,
-    body: { type: 'bird', w: 1.06 * k, h: 1.3 * k, d: 0.9 * k, y: 1.1 * k,
-            color: c, belly: p.belly || c },
-    head: { type: 'parrot', w: 0.96 * k, h: 0.84 * k, d: 0.88 * k, color: p.headC || c,
-            dark: d, y: 2.12 * k, z: 0.02 * k, studs: true,
-            face: p.face, beak: p.beak || 0x2A2A2E },
-    eyes: { size: 0.19 * k, gap: 0.35 * k, y: 0.1 * k, z: 0.45 * k },
-    legs: { type: 'bird', pos: [[0.23 * k, 0.06 * k], [-0.23 * k, 0.06 * k]],
-            r: 0.09 * k, len: 0.32 * k, y: 0.44 * k, color: 0x5A5048 },
-    tail: { type: 'feather', w: 0.54 * k, len: (p.tailLen || 1.0) * k,
-            y: 0.6 * k, z: -0.44 * k, tilt: -0.36, color: p.tailC || c, dark: d },
-    extras: [
-      { type: 'crest', name: 'crest', w: 0.16 * k, len: 0.28 * k, gap: 0.2 * k,
-        on: 'head', y: 0.42 * k, z: -0.1 * k, color: d },
-      { type: 'wings', name: 'wings', w: 0.16 * k, len: 0.9 * k, d: 0.64 * k,
-        gap: 0.6 * k, y: 1.56 * k, color: d, tip: p.wingTip || c }
-    ],
-    anim: { bob: .035, bobSpeed: 2.0, headTurn: .4, turnSpeed: .6, jerk: .32,
-            flap: .26, blink: .65, hop: .55 },
-    puzzle: ['head', 'body', 'wings', 'tail', 'legs']
-  };
-}
-
-/* 오리·거위 */
-function waterfowl(p) {
-  var k = p.k || 1, c = p.c;
-  return {
-    scale: p.scale || 1.0,
-    body: { type: 'bird', w: 0.86 * k, h: 0.78 * k, d: 1.34 * k, y: 0.78 * k,
-            color: c, belly: p.belly },
-    neck: { type: 'long', w: 0.34 * k, h: (p.neck || 0.5) * k, y: 1.1 * k, z: 0.5 * k, color: p.neckC || c },
-    head: { type: 'duck', w: 0.52 * k, h: 0.46 * k, d: 0.56 * k, color: p.headC || c,
-            y: (p.neck || 0.5) * k + 0.2 * k, z: 0.04 * k, beak: p.beak || 0xE8A93C },
-    eyes: { size: 0.15 * k, gap: 0.2 * k, y: 0.08 * k, z: 0.28 * k },
-    legs: { type: 'bird', pos: [[0.22 * k, 0], [-0.22 * k, 0]],
-            r: 0.1 * k, len: 0.36 * k, y: 0.4 * k, color: p.footC || 0xE8A93C },
-    tail: { type: 'feather', w: 0.36 * k, len: 0.42 * k, y: 0.86 * k, z: -0.66 * k,
-            tilt: 0.3, color: c, dark: p.d || c },
-    anim: { bob: .03, bobSpeed: 1.6, headTurn: .4, neckSway: .07, blink: .55, hop: .4 },
-    puzzle: ['head', 'neck', 'body', 'legs']
-  };
-}
-
-/* 돔형 등딱지 거북 */
-function turtleDome(p) {
-  var k = p.k || 1, c = p.c;
-  return {
-    scale: p.scale || 1.0,
-    body: { type: 'shell', w: 2.0 * k, h: 0.8 * k, y: 0.88 * k,
-            color: c, dark: p.d || c, scutes: p.scutes || 6, top: true, seg: 8 },
-    neck: { type: 'fwd', w: 0.46 * k, h: 0.46 * k, y: 0.7 * k, z: 0.8 * k, color: p.f || c },
-    head: { type: 'turtle', w: 0.52 * k, h: 0.46 * k, d: 0.46 * k,
-            color: p.f || c, dark: 0x6A5638, y: 0.02 * k, z: 0.42 * k },
-    eyes: { size: 0.13 * k, gap: 0.18 * k, y: 0.08 * k, z: 0.28 * k },
-    legs: { type: 'column',
-            pos: [[0.66 * k, 0.56 * k], [-0.66 * k, 0.56 * k], [0.66 * k, -0.56 * k], [-0.66 * k, -0.56 * k]],
-            r: 0.22 * k, len: 0.46 * k, y: 0.6 * k, color: p.f || c, footColor: p.d || c },
-    tail: { type: 'stub', r: 0.13 * k, len: 0.28 * k, y: 0.7 * k, z: -0.92 * k, color: p.f || c },
-    anim: { bob: .015, bobSpeed: .9, headTurn: .34, turnSpeed: .3,
-            headBob: { rate: .16, amt: .22 }, blink: .38, hop: .22 },
-    puzzle: ['head', 'body', 'legs', 'tail']
-  };
-}
-
-/* 납작 등딱지 거북 (수생) */
-function turtleFlat(p) {
-  var k = p.k || 1, c = p.c;
-  return {
-    scale: p.scale || 1.05,
-    body: { type: 'shellFlat', w: 1.7 * k, h: 0.44 * k, d: 1.9 * k, y: 0.6 * k,
-            color: c, dark: p.d || c, rows: p.rows || 3 },
-    neck: { type: 'fwd', w: 0.4 * k, h: (p.neck || 0.42) * k, y: 0.56 * k, z: 0.94 * k, color: p.f || c },
-    head: { type: 'turtle', w: (p.headW || 0.5) * k, h: 0.4 * k, d: 0.44 * k,
-            color: p.f || c, dark: 0x4A4030, y: 0, z: 0.4 * k },
-    eyes: { size: 0.12 * k, gap: 0.17 * k, y: 0.07 * k, z: 0.26 * k },
-    legs: { type: 'sprawl',
-            pos: [[0.72 * k, 0.6 * k], [-0.72 * k, 0.6 * k], [0.72 * k, -0.6 * k], [-0.72 * k, -0.6 * k]],
-            r: 0.14 * k, len: 0.34 * k, y: 0.5 * k, color: p.f || c },
-    tail: { type: 'stub', r: 0.11 * k, len: (p.tailLen || 0.4) * k, y: 0.56 * k, z: -1.0 * k, color: p.f || c },
-    anim: { bob: .018, bobSpeed: 1.1, headTurn: .34, turnSpeed: .35,
-            headBob: { rate: .18, amt: .2 }, blink: .4, hop: .24 },
-    puzzle: ['head', 'body', 'legs', 'tail']
-  };
-}
-
-/* 악어 — 주둥이 형태가 곧 종 구분 */
-function crocodile(p) {
-  var k = p.k || 1, c = p.c, d = p.d || c;
-  return {
-    scale: p.scale || 0.86,
-    body: { type: 'lowLong', w: 1.46 * k, h: 0.92 * k, d: 1.86 * k, y: 1.0 * k,
-            color: c, dark: d, belly: p.belly, studs: true },
-    head: { type: 'croc', w: 1.24 * k, h: 0.88 * k, d: 0.98 * k, color: c, dark: d,
-            y: 0.74 * k, z: 1.4 * k,
-            snout: { w: (p.snoutW || 1.0) * k, h: (p.snoutH || 0.4) * k, d: (p.snoutD || 1.15) * k },
-            teeth: p.teeth || 4, studs: true },
-    eyes: { size: 0.25 * k, gap: 0.37 * k, y: 0.48 * k, z: 0.32 * k },
-    legs: { type: 'sprawl',
-            pos: [[0.7 * k, 0.6 * k], [-0.7 * k, 0.6 * k], [0.7 * k, -0.58 * k], [-0.7 * k, -0.58 * k]],
-            r: 0.18 * k, len: 0.54 * k, y: 0.54 * k, color: d },
-    tail: { type: 'segment', w: 0.92 * k, h: 0.7 * k, len: 1.76 * k, count: 3,
-            y: 1.0 * k, z: -0.98 * k, color: c, dark: d, crest: d },
-    anim: { bob: .04, bobSpeed: 1.7, headTurn: .18, turnSpeed: .45,
-            jaw: .38, tailWave: .12, blink: .5, hop: .42 },
-    puzzle: ['head', 'body', 'legs', 'tail', 'jaw']
-  };
-}
-
-/* 도마뱀 */
-function lizard(p) {
-  var k = p.k || 1, c = p.c, d = p.d || c;
-  return {
-    scale: p.scale || 1.0,
-    body: { type: 'lowLong', w: 0.86 * k, h: 0.52 * k, d: 1.4 * k, y: 0.62 * k,
-            color: c, dark: d, belly: p.belly, crest: p.crest, studs: p.studs },
-    head: { type: 'box', w: 0.68 * k, h: 0.44 * k, d: 0.62 * k, color: c,
-            y: 0.7 * k, z: 0.96 * k,
-            muzzle: { w: 0.46 * k, h: 0.32 * k, d: 0.34 * k, color: c, y: -0.04 * k },
-            nose: d },
-    eyes: { size: 0.14 * k, gap: 0.34 * k, y: 0.12 * k, z: 0.2 * k, side: p.sideEye },
-    legs: { type: 'sprawl',
-            pos: [[0.5 * k, 0.44 * k], [-0.5 * k, 0.44 * k], [0.5 * k, -0.44 * k], [-0.5 * k, -0.44 * k]],
-            r: 0.12 * k, len: 0.36 * k, y: 0.5 * k, color: d },
-    tail: { type: 'segment', w: (p.tailW || 0.6) * k, h: (p.tailH || 0.4) * k,
-            len: (p.tailLen || 1.5) * k, count: 4, y: 0.62 * k, z: -0.7 * k,
-            color: c, dark: d, crest: p.crest },
-    extras: p.extras || [],
-    anim: { bob: .02, bobSpeed: 1.2, headTurn: .3, turnSpeed: .4,
-            headBob: p.bobHead ? { rate: .2, amt: .24 } : null, tailWave: .1, blink: .42, hop: .3 },
-    puzzle: p.puzzle || ['head', 'body', 'legs', 'tail']
-  };
-}
-
-/* 뱀 — 굵기가 곧 종 구분. 몸통과 꼬리를 나눠 3부위를 만든다 */
-function snake(p) {
-  var k = p.k || 1, c = p.c, d = p.d || c;
-  var th = (p.thick || 0.62) * k;
-  var seg = 0.62 * k;
-  var frontN = p.count || 3;
-  var y = th * 0.5;
-  return {
-    scale: p.scale || 1.0,
-    body: { type: 'serpent', w: th, h: th * 0.8, seg: seg, count: frontN,
-            y: y, z: 0, color: c, dark: d, tipColor: null },
-    head: { type: 'snake', w: th * 1.05, h: th * 0.66, d: 0.5 * k,
-            color: p.headC || c, dark: d, y: y, z: 0.3 * k, tongue: 0xD8506A },
-    eyes: { size: 0.11 * k, gap: th * 0.42, y: 0.06 * k, z: 0.2 * k, turn: 0.5 },
-    tail: { type: 'segment', w: th * 0.92, h: th * 0.74, len: (p.tailLen || 2.0) * k,
-            count: 4, y: y, z: -seg * frontN, color: c, dark: d },
-    anim: { bob: .02, bobSpeed: 1.1, headTurn: .32, turnSpeed: .4,
-            tailWave: .18, blink: .34, hop: .26 },
-    puzzle: ['head', 'body', 'tail']
-  };
-}
-
-/* 개구리·도롱뇽 */
-function frogling(p) {
-  var k = p.k || 1, c = p.c;
-  return {
-    scale: p.scale || 1.25,
-    body: { type: 'frog', w: 0.82 * k, h: 0.56 * k, d: 0.92 * k, y: 0.5 * k,
-            color: c, belly: p.belly, dots: p.dots },
-    head: { type: 'frog', w: 0.8 * k, h: 0.4 * k, d: 0.6 * k, color: c,
-            dark: p.d || 0x2A3A28, y: 0.78 * k, z: 0.5 * k },
-    eyes: { size: 0.2 * k, gap: 0.28 * k, y: 0.24 * k, z: 0.14 * k, turn: 0.7 },
-    legs: { type: 'frog', fw: 0.3 * k, fz: 0.36 * k, bw: 0.42 * k, bz: -0.24 * k,
-            r: 0.11 * k, len: 0.4 * k, y: 0.5 * k, color: c, web: p.web || c },
-    anim: { bob: .03, bobSpeed: 1.3, headTurn: .26, turnSpeed: .35, blink: .3, hop: .55 },
-    puzzle: ['head', 'body', 'legs']
-  };
-}
-
-/* 물고기 */
-function fishy(p) {
-  var k = p.k || 1, c = p.c;
-  return {
-    scale: p.scale || 1.0,
-    body: { type: 'fish', w: 0.44 * k, h: 0.56 * k, d: 2.2 * k, y: 1.1 * k,
-            color: c, belly: p.belly },
-    head: { type: 'fish', w: 0.42 * k, h: 0.5 * k, d: 0.5 * k, color: c,
-            dark: p.d || c, y: 1.1 * k, z: 1.36 * k, snoutLen: 1.1 * k },
-    eyes: { size: 0.14 * k, gap: 0.23 * k, y: 0.08 * k, z: 0, side: true },
-    extras: [{ type: 'fins', name: 'fins', h: 0.4 * k, d: 0.6 * k, gap: 0.26 * k,
-               dorsal: true, dz: -0.6 * k, caudal: true, cz: -1.34 * k,
-               color: p.finC || c, y: 1.1 * k }],
-    anim: { bob: .06, bobSpeed: 1.8, headTurn: .16, turnSpeed: .5, blink: .001 },
-    puzzle: ['head', 'body', 'fins']
-  };
-}
-
-/* ══ 종 사양 ═══════════════════════════════════ */
-function add(a) { S.push(a); }
-
-/* ── 대동물 방목장 ─────────────────────────── */
-add({ id: 'A013', kname: '면양', ename: 'Sheep', zone: '대동물 방목장', n: 21, parts: 4,
-  tell: '두꺼운 양털 몸통 + 옆으로 말린 뿔', rivals: ['자넨', '보어염소', '무플론'],
-  model: hoof({ c: 0xF2ECDC, d: 0xDCD2BC, f: 0xE6DAC2, k: 0.95, neck: 0.5, leg: 0.8,
-    ears: { type: 'point', w: 0.11, len: 0.3, gap: 0.3, y: 0.2, spread: 1.1, color: 0xE6DAC2 },
-    extras: [{ type: 'hornSpiral', name: 'horn', w: 0.12, r: 0.42, gap: 0.26, on: 'head', y: 0.12, color: 0xC9B896 }],
-    puzzle: ['head', 'horn', 'body', 'legs'] }) });
-
-add({ id: 'A014', kname: '자넨', ename: 'Saanen Goat', zone: '대동물 방목장', n: 1, parts: 4,
-  tell: '뿔이 없고 순백 + 길게 늘어진 귀', rivals: ['면양', '보어염소', '흑염소'],
-  model: hoof({ c: 0xFAF6EC, d: 0xE4DCCC, f: 0xFAF6EC, k: 0.92, neck: 0.62,
-    ears: { type: 'long', w: 0.13, len: 0.44, gap: 0.28, y: 0.18, spread: 1.3, color: 0xFAF6EC },
-    tail: { type: 'tuft', w: 0.16, y: 1.6, z: -0.92, color: 0xFAF6EC },
-    puzzle: ['head', 'body', 'legs', 'ears'] }) });
-
-add({ id: 'A015', kname: '보어염소', ename: 'Boer Goat', zone: '대동물 방목장', n: 4, parts: 4,
-  tell: '흰 몸 + 갈색 머리 + 짧고 굵은 뿔', rivals: ['자넨', '흑염소', '면양'],
-  model: hoof({ c: 0xF4EEE0, d: 0xDED4C0, f: 0xA85C34, muz: 0xC07848, k: 0.92, neck: 0.6,
-    ears: { type: 'long', w: 0.14, len: 0.42, gap: 0.28, y: 0.16, spread: 1.35, color: 0xA85C34 },
-    extras: [{ type: 'hornShort', name: 'horn', w: 0.1, len: 0.34, gap: 0.2, on: 'head', y: 0.2, color: 0x6A5236 }],
-    puzzle: ['head', 'horn', 'body', 'ears'] }) });
-
-add({ id: 'A016', kname: '흑염소', ename: 'Korean Black Goat', zone: '대동물 방목장', n: 2, parts: 4,
-  tell: '전신 검정 + 뒤로 곧게 뻗은 뿔', rivals: ['자넨', '보어염소', '산양'],
-  model: hoof({ c: 0x33302C, d: 0x22201D, f: 0x33302C, k: 0.9, neck: 0.6, nose: 0x141312,
-    ears: { type: 'point', w: 0.11, len: 0.34, gap: 0.26, y: 0.18, spread: 1.0, color: 0x33302C },
-    extras: [{ type: 'hornBack', name: 'horn', w: 0.11, len: 0.46, gap: 0.18, on: 'head', y: 0.2, color: 0x6A5C48 }],
-    puzzle: ['head', 'horn', 'body', 'legs'] }) });
-
-add({ id: 'A017', kname: '무플론', ename: 'Mouflon', zone: '대동물 방목장', n: 2, parts: 5,
-  tell: '머리 옆으로 크게 말려 감긴 나선뿔', rivals: ['면양', '산양', '흑염소'],
-  model: hoof({ c: 0x8A6440, d: 0x6E4E30, f: 0x9C7248, belly: 0xE8DCC4, k: 0.95, neck: 0.6,
-    ears: { type: 'point', w: 0.1, len: 0.28, gap: 0.3, y: 0.16, spread: 1.2, color: 0x9C7248 },
-    extras: [{ type: 'hornSpiral', name: 'horn', w: 0.14, r: 0.54, gap: 0.24, on: 'head', y: 0.14, color: 0xB09468 }],
-    puzzle: ['head', 'horn', 'body', 'legs', 'ears'] }) });
-
-add({ id: 'A018', kname: '산양', ename: 'Dall Sheep', zone: '대동물 방목장', n: 10, parts: 5,
-  tell: '굵고 뒤로 크게 휜 뿔 + 흰 몸', rivals: ['무플론', '면양', '흑염소'],
-  model: hoof({ c: 0xF0EAD8, d: 0xD8D0BA, f: 0xF0EAD8, k: 0.98, neck: 0.62,
-    ears: { type: 'point', w: 0.1, len: 0.28, gap: 0.3, y: 0.16, spread: 1.1, color: 0xF0EAD8 },
-    extras: [{ type: 'hornBack', name: 'horn', w: 0.16, len: 0.6, gap: 0.2, on: 'head', y: 0.16, color: 0xB8A278 }],
-    puzzle: ['head', 'horn', 'body', 'legs', 'ears'] }) });
-
-add({ id: 'A019', kname: '미니나귀', ename: 'Miniature Donkey', zone: '대동물 방목장', n: 1, parts: 4,
-  tell: '몸에 비해 아주 긴 귀 + 회색', rivals: ['미니말'],
-  model: hoof({ c: 0x9A948A, d: 0x7C766C, f: 0xA69F94, belly: 0xD8D2C6, k: 1.0, neck: 0.66, leg: 0.94,
-    ears: { type: 'long', w: 0.15, len: 0.72, gap: 0.22, y: 0.22, spread: 0.24, color: 0x9A948A, inner: 0xC9C2B4 },
-    tail: { type: 'thin', r: 0.07, len: 0.5, count: 2, y: 1.6, z: -0.94, color: 0x4A443C },
-    puzzle: ['head', 'body', 'legs', 'ears'] }) });
-
-add({ id: 'A020', kname: '미니말', ename: 'Miniature Horse', zone: '대동물 방목장', n: 3, parts: 4,
-  tell: '짧고 둥근 귀 + 목 갈기', rivals: ['미니나귀'],
-  model: hoof({ c: 0x8C5E36, d: 0x6E4728, f: 0x9C6A3E, k: 1.0, neck: 0.7, leg: 0.96,
-    ears: { type: 'point', w: 0.1, len: 0.24, gap: 0.24, y: 0.22, spread: 0.3, color: 0x8C5E36 },
-    tail: { type: 'bushy', w: 0.24, len: 0.7, rings: 3, y: 1.62, z: -0.96, color: 0x3A2C1E },
-    extras: [{ type: 'crest', name: 'mane', w: 0.14, len: 0.3, gap: 0.0, on: 'neck', y: 0.5, z: -0.2, color: 0x3A2C1E, puzzle: false }],
-    puzzle: ['head', 'body', 'legs', 'ears'] }) });
-
-/* ── 오솔길 빌리지 ─────────────────────────── */
-add({ id: 'A021', kname: '제넷', ename: 'Genet', zone: '오솔길 빌리지', n: 2, parts: 5,
-  tell: '가늘고 긴 몸 + 검은 고리 줄무늬 꼬리', rivals: ['페럿', '라쿤'],
-  model: smallQuad({ c: 0xD8C9A8, d: 0xB8A684, f: 0xE0D3B6, k: 1.0, snoutLen: 0.34,
-    belly: 0xF2E9D4, nose: 0x2A2A2E,
-    ears: { type: 'round', w: 0.14, gap: 0.3, y: 0.26, z: -0.04, color: 0xD8C9A8, inner: 0xEFE4CC },
-    tail: { type: 'bushy', w: 0.26, len: 1.3, rings: 6, y: 0.68, z: -0.56, color: 0xE4D8BC, stripe: 0x38332C },
-    puzzle: ['head', 'body', 'legs', 'tail', 'ears'] }) });
-
-add({ id: 'A022', kname: '다람쥐원숭이', ename: 'Squirrel Monkey', zone: '오솔길 빌리지', n: 2, parts: 5,
-  tell: '흰 얼굴 가면 + 몸보다 훨씬 긴 꼬리', rivals: ['일본원숭이'],
-  model: primate({ c: 0xC2A85E, d: 0x9C8442, face: 0xF4EEDC, earC: 0xF4EEDC,
-    belly: 0xE8DCB4, k: 0.78, scale: 1.0,
-    tail: { type: 'thin', r: 0.08, len: 1.5, count: 5, y: 0.9, z: -0.38, color: 0xC2A85E, stripe: 0x8A7238 },
-    puzzle: ['head', 'body', 'legs', 'tail', 'ears'] }) });
-
-/* ── 파충류 빌리지 · 포유류 ────────────────── */
-add({ id: 'A023', kname: '기니피그', ename: 'Guinea Pig', zone: '파충류 빌리지', n: 30, parts: 3,
-  tell: '귀도 꼬리도 거의 없는 통짜 몸', rivals: ['토끼', '친칠라', '데구'],
-  model: smallQuad({ c: 0xD8A868, d: 0xB8894E, f: 0xE8C08A, k: 0.9, snout: false,
-    belly: 0xF2E4C8, leg: 0.2, scale: 1.15,
-    ears: { type: 'round', w: 0.12, gap: 0.28, y: 0.24, z: -0.04, color: 0xC9946A },
-    puzzle: ['head', 'body', 'ears'] }) });
-
-add({ id: 'A024', kname: '친칠라', ename: 'Chinchilla', zone: '파충류 빌리지', n: 11, parts: 4,
-  tell: '동그란 큰 귀 + 풍성한 붓 꼬리', rivals: ['토끼', '기니피그', '데구'],
-  model: smallQuad({ c: 0xB4B2B8, d: 0x94929A, f: 0xC2C0C6, k: 0.85, snout: false,
-    belly: 0xE8E6EA, leg: 0.22, scale: 1.15,
-    ears: { type: 'round', w: 0.24, gap: 0.3, y: 0.3, z: -0.02, color: 0xB4B2B8, inner: 0xD8C4C8 },
-    tail: { type: 'bushy', w: 0.28, len: 0.6, rings: 3, y: 0.66, z: -0.5, color: 0xA8A6AE },
-    puzzle: ['head', 'body', 'ears', 'tail'] }) });
-
-add({ id: 'A025', kname: '데구', ename: 'Degu', zone: '파충류 빌리지', n: 2, parts: 4,
-  tell: '가는 꼬리 끝에만 붓처럼 털', rivals: ['친칠라', '기니피그', '프레리독'],
-  model: smallQuad({ c: 0xA8895E, d: 0x8A6E46, f: 0xB89A6C, k: 0.72, snoutLen: 0.24,
-    belly: 0xE0CFAA, leg: 0.2, scale: 1.2,
-    ears: { type: 'round', w: 0.15, gap: 0.24, y: 0.26, z: -0.04, color: 0xA8895E, inner: 0xD4B892 },
-    tail: { type: 'thin', r: 0.07, len: 0.8, count: 3, y: 0.62, z: -0.48, color: 0xA8895E },
-    puzzle: ['head', 'body', 'ears', 'tail'] }) });
-
-add({ id: 'A026', kname: '고슴도치', ename: 'Amur Hedgehog', zone: '파충류 빌리지', n: 6, parts: 3,
-  tell: '등을 덮은 짧은 가시', rivals: ['말레이호저', '기니피그'],
-  model: smallQuad({ c: 0xC9B08A, d: 0xA8906C, f: 0xE4D6BC, k: 0.78, snoutLen: 0.3,
-    leg: 0.16, scale: 1.2, studs: false,
-    extras: [{ type: 'quills', name: 'quills', w: 0.6, d: 0.9, r: 0.06, len: 0.3,
-               count: 22, on: 'body', y: 0.3, color: 0x6E5C44 }],
-    puzzle: ['head', 'body', 'quills'] }) });
-
-add({ id: 'A027', kname: '페럿', ename: 'Ferret', zone: '파충류 빌리지', n: 3, parts: 4,
-  tell: '아주 긴 몸통 + 눈가 검은 무늬', rivals: ['제넷', '난쟁이몽구스'],
-  model: smallQuad({ c: 0xE0D2B4, d: 0xB8A684, f: 0xF0E6CE, k: 0.82, snoutLen: 0.3,
-    mask: 0x4A4038, leg: 0.2, scale: 1.1,
-    ears: { type: 'round', w: 0.11, gap: 0.26, y: 0.24, z: -0.04, color: 0xE0D2B4 },
-    tail: { type: 'bushy', w: 0.22, len: 0.8, rings: 4, y: 0.62, z: -0.48, color: 0xB8A684 },
-    puzzle: ['head', 'body', 'legs', 'tail'] }) });
-
-add({ id: 'A028', kname: '슈가글라이더', ename: 'Sugar Glider', zone: '파충류 빌리지', n: 3, parts: 4,
-  tell: '앞뒤 다리를 잇는 비막 + 등 검은 줄', rivals: ['데구', '주머니여우'],
-  model: smallQuad({ c: 0xB0B4BA, d: 0x8E9298, f: 0xE4E6E8, k: 0.66, snoutLen: 0.26,
-    belly: 0xF0F0F0, leg: 0.18, scale: 1.25,
-    ears: { type: 'round', w: 0.16, gap: 0.24, y: 0.28, z: -0.02, color: 0xB0B4BA, inner: 0xD8C0C4 },
-    tail: { type: 'bushy', w: 0.2, len: 0.9, rings: 4, y: 0.6, z: -0.46, color: 0xA0A4AA, tip: 0x3A3A40 },
-    extras: [{ type: 'patagium', name: 'patagium', w: 0.34, d: 0.9, gap: 0.42,
-               on: 'body', y: -0.02, color: 0xA8ACB2 }],
-    puzzle: ['head', 'body', 'patagium', 'tail'] }) });
-
-add({ id: 'A029', kname: '주머니여우', ename: 'Common Brushtail Possum', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '분홍 코 + 덤불처럼 굵은 검은 꼬리', rivals: ['슈가글라이더', '페럿'],
-  model: smallQuad({ c: 0x9A9690, d: 0x7A766F, f: 0xB0ACA4, k: 0.92, snoutLen: 0.3,
-    belly: 0xDCD6C8, nose: 0xD48C96, leg: 0.24, scale: 1.05,
-    ears: { type: 'round', w: 0.2, gap: 0.3, y: 0.3, z: -0.04, color: 0x9A9690, inner: 0xE0BEC2 },
-    tail: { type: 'bushy', w: 0.34, len: 1.0, rings: 4, y: 0.66, z: -0.52, color: 0x38352F },
-    puzzle: ['head', 'body', 'ears', 'tail'] }) });
-
-add({ id: 'A030', kname: '프레리독', ename: 'Prairie Dog', zone: '파충류 빌리지', n: 2, parts: 4,
-  tell: '통통한 몸 + 아주 짧은 꼬리 (미어캣과 대조)', rivals: ['미어캣', '난쟁이몽구스', '데구'],
-  model: upright({ c: 0xCBA870, f: 0xD9BC8A, belly: 0xEBDCBC, k: 0.9, snoutLen: 0.24, scale: 1.1,
-    ears: { type: 'round', w: 0.1, gap: 0.26, y: 0.12, z: -0.06, color: 0xB08E58 },
-    tail: { type: 'tuft', w: 0.2, y: 0.5, z: -0.3, color: 0xB08E58 },
-    puzzle: ['head', 'body', 'legs', 'tail'] }) });
-
-add({ id: 'A031', kname: '난쟁이몽구스', ename: 'Dwarf Mongoose', zone: '파충류 빌리지', n: 3, parts: 3,
-  tell: '네 발로 선 가늘고 낮은 몸 (미어캣은 두 발)', rivals: ['미어캣', '페럿', '프레리독'],
-  model: smallQuad({ c: 0x8A7256, d: 0x6E5A42, f: 0x9C8464, k: 0.66, snoutLen: 0.28,
-    leg: 0.2, scale: 1.2,
-    ears: { type: 'round', w: 0.1, gap: 0.22, y: 0.2, z: -0.06, color: 0x6E5A42 },
-    tail: { type: 'thin', r: 0.08, len: 0.72, count: 3, y: 0.6, z: -0.46, color: 0x8A7256 },
-    puzzle: ['head', 'body', 'tail'] }) });
-
-/* ── 기타 구역 ─────────────────────────────── */
-add({ id: 'A032', kname: '코아티', ename: 'Coati', zone: '기타', n: 1, parts: 5,
-  tell: '위로 들린 아주 긴 코 + 고리 꼬리', rivals: ['라쿤', '제넷'],
-  model: smallQuad({ c: 0x8A6A4A, d: 0x6C5038, f: 0xA88462, k: 1.0, snoutLen: 0.58,
-    muz: 0xD8C4A8, belly: 0xC9B08A, leg: 0.3, scale: 1.0,
-    ears: { type: 'round', w: 0.12, gap: 0.3, y: 0.26, z: -0.06, color: 0x8A6A4A },
-    tail: { type: 'thin', r: 0.13, len: 1.4, count: 5, y: 0.7, z: -0.54, color: 0xB8946C, stripe: 0x4A3828 },
-    puzzle: ['head', 'body', 'legs', 'tail', 'ears'] }) });
-
-add({ id: 'A033', kname: '말레이호저', ename: 'Crested Porcupine', zone: '기타', n: 1, parts: 3,
-  tell: '길고 뾰족한 흑백 가시가 등을 덮음', rivals: ['고슴도치'],
-  model: smallQuad({ c: 0x4A443C, d: 0x33302A, f: 0x5C554A, k: 1.15, snoutLen: 0.34,
-    leg: 0.28, scale: 0.92, studs: false,
-    extras: [{ type: 'quills', name: 'quills', w: 0.8, d: 1.2, r: 0.07, len: 0.9,
-               count: 26, on: 'body', y: 0.32, color: 0xF0EADC }],
-    puzzle: ['head', 'body', 'quills'] }) });
-
-/* ── 사랑새 빌리지 ─────────────────────────── */
-add({ id: 'A034', kname: '사랑앵무새', ename: 'Budgerigar', zone: '사랑새 빌리지', n: 142, parts: 3,
-  tell: '소형 + 길고 뾰족한 꼬리', rivals: ['모란앵무새', '코뉴어'],
-  model: parrot({ c: 0x86C93E, d: 0x6BA82E, headC: 0xF2DE3A, face: 0xF7F0E2,
-    belly: 0x9ED45A, beak: 0x8A8A80, k: 0.52, scale: 1.25, tailLen: 1.5, wingTip: 0x3E7A2E }) });
-
-add({ id: 'A035', kname: '모란앵무새', ename: 'Lovebird', zone: '사랑새 빌리지', n: 26, parts: 3,
-  tell: '소형 + 뭉툭하게 짧은 꼬리 (사랑앵무와 대조)', rivals: ['사랑앵무새', '코뉴어'],
-  model: parrot({ c: 0x4CA83E, d: 0x3A8630, headC: 0xE8724A, face: 0xF2C44A,
-    belly: 0x6ABF4E, beak: 0xD8564A, k: 0.54, scale: 1.25, tailLen: 0.5, wingTip: 0x2E6A28 }) });
-
-/* ── 파충류 빌리지 · 앵무 ──────────────────── */
-add({ id: 'A036', kname: '할리퀸금강앵무새', ename: 'Red-and-green Macaw', zone: '파충류 빌리지', n: 1, parts: 5,
-  tell: '대형 + 적·녹 배색 (청금강과 대조)', rivals: ['청금강앵무새', '아마존앵무새'],
-  model: parrot({ c: 0xC8342E, d: 0x9E2622, headC: 0xC8342E, face: 0xF7F0E2,
-    belly: 0xC8342E, k: 1.0, tailLen: 1.15, wingTip: 0x2E7A4E }) });
-
-add({ id: 'A037', kname: '아마존앵무새', ename: 'Amazon Parrot', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '중형 + 전신 녹색 + 짧은 꼬리', rivals: ['뉴기니아', '코뉴어', '노랑머리카이큐'],
-  model: parrot({ c: 0x4E9E3E, d: 0x3C7C30, headC: 0x4E9E3E, face: 0xF2E8C8,
-    belly: 0x62B04E, beak: 0x9A9084, k: 0.78, tailLen: 0.55, wingTip: 0xE8B62E }) });
-
-add({ id: 'A038', kname: '뉴기니아', ename: 'Eclectus Parrot', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '중형 + 굵고 밝은 부리 + 단색 몸', rivals: ['아마존앵무새', '코뉴어'],
-  model: parrot({ c: 0xC0322E, d: 0x9A2624, headC: 0xC0322E, belly: 0x8A2A6E,
-    beak: 0xE8A32E, k: 0.8, tailLen: 0.6, wingTip: 0x2E4E9E }) });
-
-add({ id: 'A039', kname: '코뉴어', ename: 'Green-cheeked Conure', zone: '파충류 빌리지', n: 3, parts: 4,
-  tell: '중소형 + 녹색 몸에 긴 꼬리', rivals: ['아마존앵무새', '사랑앵무새', '노랑머리카이큐'],
-  model: parrot({ c: 0x5AA84A, d: 0x448A38, headC: 0x4A423E, face: 0x8A5C4A,
-    belly: 0xA84A3E, beak: 0x38342E, k: 0.62, scale: 1.1, tailLen: 1.2, wingTip: 0x2E5A9E }) });
-
-add({ id: 'A040', kname: '노랑머리카이큐', ename: 'White-bellied Caique', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '중소형 + 흰 배 + 주황빛 머리', rivals: ['코뉴어', '아마존앵무새'],
-  model: parrot({ c: 0x4E9E3E, d: 0x3C7C30, headC: 0xE8942E, face: 0xF7F0E2,
-    belly: 0xF7F2E2, beak: 0xC9C2B4, k: 0.62, scale: 1.1, tailLen: 0.55, wingTip: 0x3C7C30 }) });
-
-/* ── 호숫가 ────────────────────────────────── */
-add({ id: 'A041', kname: '오리', ename: 'Duck', zone: '호숫가', n: 8, parts: 3,
-  tell: '납작 부리 + 짧은 목', rivals: ['거위', '에뮤'],
-  model: waterfowl({ c: 0xE8E2D2, d: 0xC9C2B0, neckC: 0xE8E2D2, headC: 0x3E7A4E,
-    belly: 0xF4F0E4, beak: 0xE8A93C, k: 0.95, neck: 0.42, scale: 1.05 }) });
-
-add({ id: 'A042', kname: '거위', ename: 'Goose', zone: '호숫가', n: 1, parts: 4,
-  tell: '오리보다 크고 목이 길다', rivals: ['오리', '에뮤'],
-  model: waterfowl({ c: 0xF4F0E6, d: 0xD8D2C2, neckC: 0xF4F0E6, headC: 0xF4F0E6,
-    belly: 0xFAF8F0, beak: 0xE87A3C, footC: 0xE87A3C, k: 1.15, neck: 1.15, scale: 0.95 }) });
-
-/* ── 악어 빌리지 ───────────────────────────── */
-add({ id: 'A043', kname: '엘리게이터', ename: 'American Alligator', zone: '악어 빌리지', n: 2, parts: 5,
-  tell: 'U자로 뭉툭한 넓은 주둥이 (바다악어보다 둥글다)', rivals: ['바다악어', '펄스가비알'],
-  model: crocodile({ c: 0x3E4A3A, d: 0x2C362A, belly: 0xD8D2B0,
-    snoutW: 1.08, snoutH: 0.42, snoutD: 0.95, teeth: 3, k: 0.98 }) });
-
-add({ id: 'A044', kname: '펄스가비알', ename: 'Gharial', zone: '악어 빌리지', n: 1, parts: 5,
-  tell: '젓가락처럼 가늘고 아주 긴 주둥이', rivals: ['바다악어', '엘리게이터'],
-  model: crocodile({ c: 0x6E7A5E, d: 0x54603E, belly: 0xE4DCBC,
-    snoutW: 0.34, snoutH: 0.26, snoutD: 2.0, teeth: 6, k: 0.94 }) });
-
-/* ── 거북이 빌리지 카페 ────────────────────── */
-add({ id: 'A045', kname: '레드풋 육지거북', ename: 'Red-footed Tortoise', zone: '거북이 빌리지 카페', n: 1, parts: 4,
-  tell: '중형 돔 등딱지 + 다리의 붉은 반점', rivals: ['설가타', '커먼머스크터틀'],
-  model: turtleDome({ c: 0x3E3A34, d: 0xC94A2E, f: 0x4A443A, k: 0.72, scutes: 6, scale: 1.15 }) });
-
-add({ id: 'A046', kname: '커먼머스크터틀', ename: 'Common musk turtle', zone: '거북이 빌리지 카페', n: 2, parts: 3,
-  tell: '아주 작고 높이 솟은 돔 등딱지', rivals: ['쿠터', '레드풋 육지거북'],
-  model: turtleDome({ c: 0x4A443A, d: 0x36322A, f: 0x5C5648, k: 0.5, scutes: 5, scale: 1.4 }) });
-
-add({ id: 'A047', kname: '쿠터', ename: 'River cooter', zone: '거북이 빌리지 카페', n: 26, parts: 4,
-  tell: '납작한 유선형 등딱지 + 머리의 노란 줄무늬', rivals: ['늑대거북', '커먼머스크터틀', '악어거북'],
-  model: turtleFlat({ c: 0x3A5A3E, d: 0x2A4430, f: 0x4A7048, k: 0.86, rows: 3, scale: 1.1 }) });
-
-add({ id: 'A048', kname: '늑대거북', ename: 'Snapping Turtle', zone: '거북이 빌리지 카페', n: 4, parts: 4,
-  tell: '몸에 비해 큰 머리 + 톱니 달린 긴 꼬리', rivals: ['악어거북', '쿠터', '마타마타거북'],
-  model: turtleFlat({ c: 0x4A4238, d: 0x33302A, f: 0x5C5448, k: 0.95,
-    headW: 0.72, neck: 0.5, tailLen: 0.8, rows: 3 }) });
-
-add({ id: 'A049', kname: '악어거북', ename: 'Alligator snapping turtle', zone: '거북이 빌리지 카페', n: 2, parts: 5,
-  tell: '등딱지 위 세 줄로 솟은 돌기', rivals: ['늑대거북', '쿠터'],
-  model: turtleFlat({ c: 0x3E3830, d: 0x2A2620, f: 0x504838, k: 1.0,
-    headW: 0.76, neck: 0.46, tailLen: 0.85, rows: 4 }) });
-
-add({ id: 'A050', kname: '마타마타거북', ename: 'Mata Mata', zone: '거북이 빌리지 카페', n: 1, parts: 5,
-  tell: '납작한 삼각 머리 + 목에 늘어진 술 장식', rivals: ['늑대거북', '쿠터'],
-  model: turtleFlat({ c: 0x6E5C42, d: 0x503E2C, f: 0x7C6A4E, k: 0.92,
-    headW: 0.9, neck: 0.62, tailLen: 0.5, rows: 3 }) });
-
-add({ id: 'A051', kname: '긴코민물꼬치고기', ename: 'Longnose gar', zone: '거북이 빌리지 카페', n: 1, parts: 3,
-  tell: '가늘고 긴 몸 + 바늘처럼 뾰족한 주둥이', rivals: [],
-  model: fishy({ c: 0x5C6E5A, d: 0x445243, belly: 0xE0DCC4, finC: 0x6E8068, k: 1.0, scale: 0.95 }) });
-
-/* ── 파충류 빌리지 · 파충류 ────────────────── */
-add({ id: 'A052', kname: '그린아나콘다', ename: 'Green Anaconda', zone: '파충류 빌리지', n: 1, parts: 3,
-  tell: '세 뱀 중 가장 굵다 + 올리브 녹색', rivals: ['레틱 파이톤', '레드테일보아'],
-  model: snake({ c: 0x5A6E3E, d: 0x44542E, headC: 0x6A7E4A, thick: 0.86, count: 3, tailLen: 2.0, k: 1.0, scale: 0.86 }) });
-
-add({ id: 'A053', kname: '레틱 파이톤', ename: 'Reticulated Python', zone: '파충류 빌리지', n: 1, parts: 3,
-  tell: '중간 굵기 + 그물 무늬 + 가장 길다', rivals: ['그린아나콘다', '레드테일보아'],
-  model: snake({ c: 0xC9A96E, d: 0x6E5A38, headC: 0xD8BC84, thick: 0.6, count: 4, tailLen: 2.5, k: 1.0, scale: 0.8 }) });
-
-add({ id: 'A054', kname: '레드테일보아', ename: 'Boa Constrictor', zone: '파충류 빌리지', n: 1, parts: 3,
-  tell: '가장 가늘고 꼬리 쪽이 붉다', rivals: ['그린아나콘다', '레틱 파이톤'],
-  model: snake({ c: 0xB09A78, d: 0x8A7454, headC: 0xC0AC8A, thick: 0.44, count: 3, tailLen: 2.0, k: 1.0, scale: 1.0 }) });
-
-add({ id: 'A055', kname: '테구', ename: 'Tegu', zone: '파충류 빌리지', n: 1, parts: 5,
-  tell: '대형 + 굵은 꼬리 + 흑백 밴드 + 목주름', rivals: ['사바나모니터', '비어디 드래곤'],
-  model: lizard({ c: 0x3E3A36, d: 0xE0DCD2, k: 1.15, tailW: 0.62, tailH: 0.44, tailLen: 1.8,
-    belly: 0xC9C4B8, bobHead: true,
-    extras: [{ type: 'dewlap', name: 'dewlap', w: 0.34, len: 0.28, d: 0.3,
-               on: 'head', y: -0.3, z: 0.36, color: 0x54504A }],
-    puzzle: ['head', 'body', 'legs', 'tail', 'dewlap'] }) });
-
-add({ id: 'A056', kname: '사바나모니터', ename: 'Savannah Monitor', zone: '파충류 빌리지', n: 1, parts: 5,
-  tell: '넓적한 몸통 + 강한 발톱 + 굵은 목', rivals: ['테구', '비어디 드래곤'],
-  model: lizard({ c: 0x9A8A62, d: 0x7A6C48, k: 1.1, tailW: 0.5, tailH: 0.36, tailLen: 1.9,
-    belly: 0xD8CCA8, studs: true, sideEye: false,
-    puzzle: ['head', 'body', 'legs', 'tail'] }) });
-
-add({ id: 'A057', kname: '비어디 드래곤', ename: 'Bearded Dragon', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '턱 아래와 옆구리를 두른 가시', rivals: ['테구', '레오파드게코', '사바나모니터'],
-  model: lizard({ c: 0xC9A464, d: 0xA88448, k: 0.9, tailW: 0.4, tailH: 0.28, tailLen: 1.2,
-    belly: 0xE8D8B0, crest: 0xA88448, bobHead: true,
-    extras: [{ type: 'quills', name: 'beard', w: 0.5, d: 0.3, r: 0.05, len: 0.2,
-               count: 10, on: 'head', y: -0.2, color: 0x8A6C3E }],
-    puzzle: ['head', 'beard', 'body', 'tail'] }) });
-
-add({ id: 'A058', kname: '레오파드게코', ename: 'Leopard gecko', zone: '파충류 빌리지', n: 3, parts: 4,
-  tell: '통통하게 부푼 꼬리 + 표범 반점', rivals: ['크레스티드게코', '비어디 드래곤'],
-  model: lizard({ c: 0xE8CE7A, d: 0x9A7E3E, k: 0.62, tailW: 0.52, tailH: 0.44, tailLen: 0.9,
-    belly: 0xF4E8C0, scale: 1.3,
-    puzzle: ['head', 'body', 'legs', 'tail'] }) });
-
-add({ id: 'A059', kname: '크레스티드게코', ename: 'Crested gecko', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '눈 위로 솟은 속눈썹 모양 볏', rivals: ['레오파드게코', '비어디 드래곤'],
-  model: lizard({ c: 0xB07A4A, d: 0x8A5C34, k: 0.6, tailW: 0.3, tailH: 0.24, tailLen: 1.0,
-    belly: 0xD8B48A, scale: 1.3,
-    extras: [{ type: 'crest', name: 'crest', w: 0.1, len: 0.2, gap: 0.2,
-               on: 'head', y: 0.24, z: 0.1, color: 0xC9915E }],
-    puzzle: ['head', 'crest', 'body', 'tail'] }) });
-
-/* ── 파충류 빌리지 · 양서류 ────────────────── */
-add({ id: 'A060', kname: '화이트트리프록', ename: "White's Tree Frog", zone: '파충류 빌리지', n: 1, parts: 3,
-  tell: '매끈한 청록색 + 크고 둥근 발판', rivals: ['츄비프록', '파이어벨리뉴트'],
-  model: frogling({ c: 0x5EA87E, belly: 0xE0EED8, web: 0x7CBE96, k: 1.0 }) });
-
-add({ id: 'A061', kname: '츄비프록', ename: 'Chubby frog', zone: '파충류 빌리지', n: 1, parts: 3,
-  tell: '통통한 갈색 몸에 굵은 크림색 줄', rivals: ['화이트트리프록', '파이어벨리뉴트'],
-  model: frogling({ c: 0x8A5A38, belly: 0xE8D8B8, web: 0x9A6A44, dots: 0xD8B884, k: 0.95, scale: 1.3 }) });
-
-add({ id: 'A062', kname: '파이어벨리뉴트', ename: 'Fire-bellied Newt', zone: '파충류 빌리지', n: 2, parts: 4,
-  tell: '도롱뇽 몸매 + 주황색 배 + 긴 꼬리', rivals: ['화이트트리프록', '츄비프록'],
-  model: lizard({ c: 0x2E332C, d: 0xE86A2E, k: 0.5, tailW: 0.26, tailH: 0.34, tailLen: 1.1,
-    belly: 0xE86A2E, scale: 1.35,
-    puzzle: ['head', 'body', 'legs', 'tail'] }) });
-
-})(typeof window !== 'undefined' ? window : globalThis);
-
-/* ============================================================
-   ZZL DEX APP  v1.0
-   쥬쥬랜드 동물도감 — 수집형 게임 본체
-
-   의존: three.js r128, zzl-parts.js, zzl-species.js, zzl-species2.js
-   기획: zzl-dogam-plan-v2.md + v3-revision.md
-
-   구조
-     ZDX.zones     구역 마스터 (실좌표)
-     ZDX.save      진행 저장 (localStorage → 없으면 메모리)
-     ZDX.sound     Web Audio 합성 효과음 (외부 음원 없음)
-     ZDX.thumbs    3D → 2D 썸네일 캐시 (도감 목록·퍼즐 조각)
-     ZDX.app       화면 전환·조우·퍼즐 로직
-   ============================================================ */
-(function (global) {
-'use strict';
-
-var ZDX = {};
-
-/* ══ 구역 마스터 ══════════════════════════════
-   좌표는 원본 동물 리스트 실측값.
-   파충류관 + 소동물 빌리지는 같은 건물 층 구분이라 하나로 합쳤다. */
-ZDX.zones = [
-  { name: '파충류 빌리지',      lon: 126.8551391, lat: 37.6900442, gap: 45 },
-  { name: '대동물 방목장',      lon: 126.8552881, lat: 37.6897889, gap: 30 },
-  { name: '거북이 빌리지 카페', lon: 126.8550938, lat: 37.6911538, gap: 30 },
-  { name: '오솔길 빌리지',      lon: 126.8553185, lat: 37.6903786, gap: 0 },
-  { name: '악어 빌리지',        lon: 126.8547149, lat: 37.6906056, gap: 0 },
-  { name: '호숫가',             lon: 126.8544686, lat: 37.6903647, gap: 0 },
-  { name: '양 분유 체험장',     lon: 126.8548843, lat: 37.6915665, gap: 0 },
-  { name: '사랑새 빌리지',      lon: 126.8552734, lat: 37.6902112, gap: 0 },
-  { name: '기타',               lon: 126.8548195, lat: 37.6897747, gap: 0 },
-  { name: '알파카 빌리지',      lon: 126.8544674, lat: 37.6912988, gap: 0 },
-  { name: '원숭이 빌리지',      lon: 126.8547835, lat: 37.6913813, gap: 0 },
-  { name: '거북이 빌리지 방사장', lon: 126.8548991, lat: 37.6914150, gap: 0 }
-];
-ZDX.RADIUS = 15;   /* m. 겹침 허용 — 규칙 7-A.
-                      부지가 75×198m로 좁아 22m면 한자리에서 대부분의 구역에 걸린다.
-                      GPS 오차(5~15m)는 흡수하면서 '가야 만난다'는 감각은 남기는 값. */
-
-ZDX.dist = function (lo1, la1, lo2, la2) {
-  var dx = (lo2 - lo1) * 111320 * Math.cos((la1 + la2) / 2 * Math.PI / 180);
-  var dy = (la2 - la1) * 110540;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
-/* ══ 저장 ══════════════════════════════════════
-   1차 localStorage, 막히면 메모리로 자동 강등.
-   운영에서는 여기에 복구 코드 서버 동기화를 붙인다 (기획 5장). */
-ZDX.save = (function () {
-  var KEY = 'zzl.dex.v1';
-  var mem = null, useLS = false;
-  try {
-    localStorage.setItem(KEY + '.t', '1');
-    localStorage.removeItem(KEY + '.t');
-    useLS = true;
-  } catch (e) { useLS = false; }
-
-  function blank() {
-    return { code: null, got: {}, visits: 1, sfx: true, bgm: false };
+function computeAffine(g){
+  var n=g.length,A=[],bx=[],by=[];
+  for(var i=0;i<n;i++){A.push([g[i][0],g[i][1],1]);bx.push(g[i][2]);by.push(g[i][3]);}
+  function ls(rows,rhs){
+    var AtA=[[0,0,0],[0,0,0],[0,0,0]],Atb=[0,0,0];
+    for(var i=0;i<rows.length;i++){for(var j=0;j<3;j++){Atb[j]+=rows[i][j]*rhs[i];for(var k=0;k<3;k++)AtA[j][k]+=rows[i][j]*rows[i][k];}}
+    function inv(m){var a=m[0][0],b=m[0][1],c=m[0][2],d=m[1][0],e=m[1][1],f=m[1][2],gg=m[2][0],h=m[2][1],ii=m[2][2];
+      var dt=a*(e*ii-f*h)-b*(d*ii-f*gg)+c*(d*h-e*gg);
+      return [[(e*ii-f*h)/dt,(c*h-b*ii)/dt,(b*f-c*e)/dt],[(f*gg-d*ii)/dt,(a*ii-c*gg)/dt,(c*d-a*f)/dt],[(d*h-e*gg)/dt,(b*gg-a*h)/dt,(a*e-b*d)/dt]];}
+    var inv_=inv(AtA),res=[0,0,0];
+    for(var i=0;i<3;i++)for(var j=0;j<3;j++)res[i]+=inv_[i][j]*Atb[j];
+    return res;
   }
-  function read() {
-    if (mem) return mem;
-    if (useLS) {
-      try {
-        var raw = localStorage.getItem(KEY);
-        mem = raw ? JSON.parse(raw) : blank();
-      } catch (e) { mem = blank(); }
-    } else mem = blank();
-    return mem;
-  }
-  function write() {
-    if (!useLS) return;
-    try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch (e) { useLS = false; }
-  }
-  function code() {
-    var C = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s = '';
-    for (var i = 0; i < 4; i++) s += C[Math.floor(Math.random() * C.length)];
-    return 'ZZL-' + s;
-  }
-  return {
-    persistent: function () { return useLS; },
-    get: read,
-    has: function (id) { return !!read().got[id]; },
-    count: function () { return Object.keys(read().got).length; },
-    add: function (id, grade) {
-      var d = read();
-      if (!d.got[id]) d.got[id] = { at: Date.now(), grade: grade, seen: 1 };
-      else d.got[id].seen++;
-      if (!d.code) d.code = code();
-      write();
-      return d.got[id];
+  var rx=ls(A,bx),ry=ls(A,by);
+  return{a:rx[0],b:rx[1],c:rx[2],d:ry[0],e:ry[1],f:ry[2]};
+}
+var affine=computeAffine(GCPs);
+var IMG_W=4492,IMG_H=3176,leafBounds=[[0,0],[IMG_H,IMG_W]];
+function gpsToNaturalPx(lng,lat){return{x:affine.a*lng+affine.b*lat+affine.c,y:affine.d*lng+affine.e*lat+affine.f};}
+function px2ll(nx,ny){return L.latLng(IMG_H-ny,nx);}
+function gpsToLeaflet(lng,lat){var p=gpsToNaturalPx(lng,lat);return px2ll(p.x,p.y);}
+
+/* ── Leaflet ─────────────────────────────────────── */
+var lmap=L.map('mapDiv',{crs:L.CRS.Simple,minZoom:-5,maxZoom:4,
+  zoomControl:false,attributionControl:false,bounceAtZoomLimits:false,zoomSnap:0,zoomDelta:0.5});
+L.imageOverlay('images/guidemap.png',leafBounds).addTo(lmap);
+lmap.fitBounds(leafBounds,{animate:false});
+lmap.setMaxBounds([[-200,-200],[IMG_H+200,IMG_W+200]]);
+
+var accCircle=L.circle([IMG_H/2,IMG_W/2],{radius:0,fillColor:'#7D9E7E',fillOpacity:0.07,
+  color:'#7D9E7E',opacity:0,weight:1.5,interactive:false}).addTo(lmap);
+function iconSz(z){return Math.round(Math.max(24,Math.min(46,24+z*4)));}
+function makeGpsIcon(z){var s=iconSz(z);return L.divIcon({className:'gps-icon',
+  html:'<div class="gps-icon-inner"></div><div class="gps-icon-ring"></div>',iconSize:[s,s],iconAnchor:[s/2,s/2]});}
+var gpsMarker=L.marker([IMG_H/2,IMG_W/2],{icon:makeGpsIcon(lmap.getZoom()),interactive:false,zIndexOffset:1000}).addTo(lmap);
+gpsMarker.setOpacity(0);
+lmap.on('zoomend',function(){gpsMarker.setIcon(makeGpsIcon(lmap.getZoom()));});
+function accPx(m){return m*Math.abs(affine.e)/111000;}
+function placeGPS(nx,ny,acc){var ll=px2ll(nx,ny);gpsMarker.setLatLng(ll).setOpacity(1);
+  accCircle.setLatLng(ll).setRadius(accPx(acc)).setStyle({opacity:0.18,fillOpacity:0.07});}
+function clearGPS(){gpsMarker.setOpacity(0);accCircle.setStyle({opacity:0,fillOpacity:0});}
+
+/* ── GPS 상태 ────────────────────────────────────── */
+var gpsBar=$('gpsBar'),gpsBarText=$('gpsBarText');
+function setStatus(s,t){gpsBar.className='gps-pill '+s;gpsBarText.textContent=t;}
+var PARK={latMin:37.688,latMax:37.693,lngMin:126.852,lngMax:126.857};
+function inPark(lng,lat){return lng>=PARK.lngMin&&lng<=PARK.lngMax&&lat>=PARK.latMin&&lat<=PARK.latMax;}
+var curLon=null,curLat=null;
+if('geolocation' in navigator){
+  setStatus('finding','위치 확인 중…');
+  navigator.geolocation.watchPosition(
+    function(pos){
+      var lng=pos.coords.longitude,lat=pos.coords.latitude,acc=pos.coords.accuracy;
+      if(!inPark(lng,lat)){clearGPS();setStatus('outside','공원 밖');return;}
+      var p=gpsToNaturalPx(lng,lat);placeGPS(p.x,p.y,acc);
+      setStatus('found','정확도 '+Math.round(acc)+'m');
+      if(curLon===null)lmap.panTo(px2ll(p.x,p.y));
+      curLon=lng;curLat=lat;recompute(lng,lat);
     },
-    reset: function () { mem = blank(); write(); },
-    set: function (k, v) { read()[k] = v; write(); }
-  };
-})();
+    function(err){setStatus('error',(['','위치 권한 거부','위치 불명','시간 초과'][err.code]||'위치 오류'));},
+    {enableHighAccuracy:true,maximumAge:5000,timeout:30000}
+  );
+}else{setStatus('error','위치 미지원');}
 
-/* ══ 음향 ══════════════════════════════════════
-   외부 음원 없이 Web Audio로 합성한다 (저작권·용량 문제 없음).
-   규칙 9-A: 소리를 꺼도 게임은 완전히 동작한다.
-   규칙 9-B: 동물 울음소리는 쓰지 않는다. */
-ZDX.sound = (function () {
-  var ctx = null, master = null, bgGain = null, bgTimer = null;
-
-  function ac() {
-    if (!ctx) {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ctx = new AC();
-      master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
-      bgGain = ctx.createGain(); bgGain.gain.value = 0.0; bgGain.connect(master);
-    }
-    if (ctx.state === 'suspended') ctx.resume();
-    return ctx;
-  }
-
-  function tone(freq, dur, type, vol, at, slide) {
-    var c = ac(); if (!c) return;
-    var t = c.currentTime + (at || 0);
-    var o = c.createOscillator(), g = c.createGain();
-    o.type = type || 'sine';
-    o.frequency.setValueAtTime(freq, t);
-    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol || 0.25, t + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(master);
-    o.start(t); o.stop(t + dur + 0.02);
-  }
-  function noise(dur, vol, at, hp) {
-    var c = ac(); if (!c) return;
-    var t = c.currentTime + (at || 0);
-    var n = Math.floor(c.sampleRate * dur);
-    var buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-    var s = c.createBufferSource(); s.buffer = buf;
-    var f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp || 1200;
-    var g = c.createGain(); g.gain.value = vol || 0.12;
-    s.connect(f); f.connect(g); g.connect(master);
-    s.start(t);
-  }
-
-  var on = function () { return ZDX.save.get().sfx; };
-
-  var SFX = {
-    /* 1 구역 진입 */
-    zone: function () { tone(523, .12, 'sine', .18); tone(784, .22, 'sine', .16, .1); },
-    /* 2 조각 정답 — 딸깍 */
-    snap: function () { noise(.05, .1, 0, 2600); tone(880, .07, 'square', .1); },
-    /* 3 조각 오답 — 중립적인 튕김 (규칙 9-C) */
-    miss: function () { tone(320, .12, 'sine', .12, 0, 250); },
-    /* 4 조립 완성 */
-    build: function () {
-      [523, 659, 784, 1047].forEach(function (f, i) { tone(f, .18, 'triangle', .16, i * .06); });
-    },
-    /* 5 채색 전환 */
-    paint: function () { noise(.3, .07, 0, 900); tone(1200, .3, 'sine', .08, 0, 2400); },
-    /* 6 도감 등록 — 도장 */
-    stamp: function () { tone(180, .18, 'sine', .3, 0, 90); noise(.09, .14, 0, 700); },
-    /* 7 변종·희귀 */
-    rare: function () {
-      [784, 988, 1175, 1568].forEach(function (f, i) { tone(f, .3, 'sine', .14, i * .08); });
-    },
-    /* 8 전 종 완주 */
-    fanfare: function () {
-      [523, 659, 784, 1047, 784, 1047, 1319].forEach(function (f, i) {
-        tone(f, .32, 'triangle', .18, i * .13);
-      });
-    },
-    /* 동물 등장 */
-    pop: function () { tone(660, .1, 'sine', .14, 0, 990); }
-  };
-
-  var api = {};
-  Object.keys(SFX).forEach(function (k) {
-    api[k] = function () { if (on()) try { SFX[k](); } catch (e) {} };
-  });
-
-  /* 배경음 — 잔잔한 아르페지오. 기본 꺼짐, 켜도 낮은 볼륨 */
-  var SCALE = [392, 440, 523, 587, 659, 784];
-  api.bgm = function (want) {
-    var c = ac(); if (!c) return;
-    if (want) {
-      bgGain.gain.setTargetAtTime(0.22, c.currentTime, .4);
-      if (bgTimer) return;
-      var i = 0;
-      bgTimer = setInterval(function () {
-        if (!ZDX.save.get().bgm) return;
-        var f = SCALE[(i * 3 + Math.floor(i / 6)) % SCALE.length];
-        var t = c.currentTime;
-        var o = c.createOscillator(), g = c.createGain();
-        o.type = 'sine'; o.frequency.value = f * (i % 12 < 6 ? 1 : 0.5);
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(.09, t + .3);
-        g.gain.exponentialRampToValueAtTime(.0001, t + 1.6);
-        o.connect(g); g.connect(bgGain);
-        o.start(t); o.stop(t + 1.7);
-        i++;
-      }, 720);
-    } else {
-      bgGain.gain.setTargetAtTime(0, c.currentTime, .3);
-    }
-  };
-  api.unlock = function () { ac(); };
-  return api;
-})();
-
-/* ══ 썸네일 ════════════════════════════════════
-   도감 목록과 퍼즐 조각은 2D 이미지로 쓴다 (기획 10장 저사양 대응).
-   3D 모델을 오프스크린에서 한 번 렌더해 dataURL로 캐시. */
-ZDX.thumbs = (function () {
-  var R = null, scene = null, cam = null, cache = {};
-
-  function init() {
-    if (R) return;
-    var cv = document.createElement('canvas');
-    cv.width = cv.height = 220;
-    R = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
-    R.setPixelRatio(1);
-    if (THREE.sRGBEncoding) R.outputEncoding = THREE.sRGBEncoding;
-    scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight(0xEAF4F8, 0x8E8560, 1.0));
-    var k = new THREE.DirectionalLight(0xFFF8E8, 1.0); k.position.set(4, 7, 6); scene.add(k);
-    var r2 = new THREE.DirectionalLight(0xC6DCFF, .35); r2.position.set(-4, 2, -3); scene.add(r2);
-    cam = new THREE.PerspectiveCamera(32, 1, .1, 200);
-  }
-
-  function frame(obj, turn) {
-    var b = new THREE.Box3().setFromObject(obj);
-    var s = new THREE.Vector3(), c = new THREE.Vector3();
-    b.getSize(s); b.getCenter(c);
-    var m = Math.max(s.x, s.y, s.z) * 1.25;
-    var d = (m / 2) / Math.tan(cam.fov * Math.PI / 360);
-    var a = turn === undefined ? -0.6 : turn;
-    cam.position.set(c.x + Math.sin(a) * d, c.y + m * 0.22, c.z + Math.cos(a) * d);
-    cam.lookAt(c);
-  }
-
-  return {
-    /* 종 전체 썸네일. silhouette=true 면 단색 실루엣 */
-    species: function (spec, silhouette) {
-      init();
-      var key = spec.id + (silhouette ? ':sil' : ':full');
-      if (cache[key]) return cache[key];
-      var m = ZZL.build(spec.model);
-      var swap = [];
-      if (silhouette) {
-        var sm = new THREE.MeshBasicMaterial({ color: 0xB9B3A2 });
-        m.root.traverse(function (o) { if (o.isMesh) { swap.push([o, o.material]); o.material = sm; } });
-      }
-      scene.add(m.root);
-      frame(m.root);
-      R.render(scene, cam);
-      var url = R.domElement.toDataURL('image/png');
-      scene.remove(m.root);
-      swap.forEach(function (q) { q[0].material = q[1]; });
-      cache[key] = url;
-      return url;
-    },
-    /* 부위 하나만 떼어 렌더 — 퍼즐 선택지 */
-    part: function (spec, partName) {
-      init();
-      var key = spec.id + ':p:' + partName;
-      if (cache[key]) return cache[key];
-      var m = ZZL.build(spec.model);
-      var g = m.parts[partName];
-      if (!g) return null;
-      var parent = g.parent;
-      scene.add(g);                 /* 잠시 떼어내 단독 렌더 */
-      g.position.set(0, 0, 0);
-      g.quaternion.identity();
-      frame(g, -0.5);
-      R.render(scene, cam);
-      var url = R.domElement.toDataURL('image/png');
-      scene.remove(g);
-      parent.add(g);
-      cache[key] = url;
-      return url;
-    }
-  };
-})();
-
-/* ══ 조우 로직 ═════════════════════════════════ */
-ZDX.encounter = (function () {
-  var lastAt = {};    /* 구역별 다음 출현 가능 시각 */
-  var pending = {};   /* 구역별 남은 대기(ms) — 이탈 시 보존, 규칙 C-3 */
-
-  return {
-    /* 구역의 미수집 종 중 하나를 가중치로 뽑는다 (규칙 C-4)
-       개체수가 많고 찾기 쉬운 종이 먼저 나온다 */
-    pick: function (zone, list) {
-      var pool = list.filter(function (s) {
-        return s.zone === zone && !ZDX.save.has(s.id);
-      });
-      if (!pool.length) return null;
-      var tot = 0;
-      pool.forEach(function (s) { s._w = Math.log(1 + (s.n || 1)) + 0.4; tot += s._w; });
-      var r = Math.random() * tot;
-      for (var i = 0; i < pool.length; i++) { r -= pool[i]._w; if (r <= 0) return pool[i]; }
-      return pool[pool.length - 1];
-    },
-    gap: function (zone) {
-      var z = ZDX.zones.filter(function (x) { return x.name === zone; })[0];
-      return z ? z.gap * 1000 : 0;
-    },
-    ready: function (zone) {
-      return !lastAt[zone] || Date.now() >= lastAt[zone];
-    },
-    remain: function (zone) {
-      return Math.max(0, (lastAt[zone] || 0) - Date.now());
-    },
-    arm: function (zone) {
-      var g = this.gap(zone);
-      if (g > 0) lastAt[zone] = Date.now() + g;
-    },
-    reset: function () { lastAt = {}; pending = {}; }
-  };
-})();
-
-/* ══ 퍼즐 ══════════════════════════════════════
-   규칙 4-A: 오답 조각은 같은 구역 근연종의 실제 부품을 쓴다.
-   무작위·엉터리 조각을 오답으로 쓰지 않는다. */
-ZDX.puzzle = {
-  /* 같은 자리에 붙는 부품끼리는 서로 오답이 될 수 있다.
-     꽃사슴의 가지뿔 문제라면 무플론의 나선뿔·흑염소의 뒤로 굽은 뿔이 오답이 된다.
-     "머리에 무엇이 달렸는가"를 묻게 되므로 오히려 관찰 유도에 맞다. */
-  SLOT: {
-    antler: 'headgear', horn: 'headgear', crest: 'headgear', beard: 'headgear',
-    quills: 'attach', patagium: 'attach', fins: 'attach', dewlap: 'attach'
-  },
-  slotOf: function (p) { return this.SLOT[p] || p; },
-
-  /* 어떤 종이 주어진 슬롯에서 내놓을 수 있는 부품 이름 */
-  partFor: function (spec, slot) {
-    var self = this;
-    var order = ZZL.puzzleOrder(spec.model);
-    for (var i = 0; i < order.length; i++) {
-      if (self.slotOf(order[i]) === slot) return order[i];
-    }
-    return null;
-  },
-
-  make: function (spec, all, parts) {
-    var self = this;
-    var order = ZZL.puzzleOrder(spec.model).slice(0, parts || 99);
-    var rivals = (spec.rivals || []).map(function (n) {
-      return all.filter(function (s) { return s.kname === n; })[0];
-    }).filter(Boolean);
-    /* 근연종이 부족하면 같은 구역의 다른 종으로 보충 */
-    all.forEach(function (s) {
-      if (rivals.length >= 4) return;
-      if (s.id !== spec.id && s.zone === spec.zone && rivals.indexOf(s) < 0) rivals.push(s);
-    });
-
-    return order.map(function (p) {
-      var slot = self.slotOf(p);
-      var wrong = [];
-      function tryAdd(s) {
-        if (wrong.length >= 2) return;
-        if (s.id === spec.id) return;
-        if (wrong.some(function (w) { return w.spec.id === s.id; })) return;
-        var part = self.partFor(s, slot);
-        if (part) wrong.push({ spec: s, part: part });
-      }
-      rivals.forEach(tryAdd);                                  /* ① 근연종 우선 */
-      all.forEach(function (s) { if (s.zone === spec.zone) tryAdd(s); });  /* ② 같은 구역 */
-      all.forEach(tryAdd);                                     /* ③ 그래도 모자라면 전체 */
-
-      var opts = [{ spec: spec, part: p, ok: true }]
-        .concat(wrong.map(function (w) { return { spec: w.spec, part: w.part, ok: false }; }));
-      for (var j = opts.length - 1; j > 0; j--) {
-        var k = Math.floor(Math.random() * (j + 1));
-        var t = opts[j]; opts[j] = opts[k]; opts[k] = t;
-      }
-      return { part: p, slot: slot, options: opts };
-    });
-  },
-  grade: function (misses, reduced) {
-    if (reduced || misses >= 3) return '브론즈';
-    if (misses === 0) return '골드';
-    return '실버';
-  }
-};
-
-global.ZDX = ZDX;
-})(typeof window !== 'undefined' ? window : globalThis);
-
-</script>
-<script>
-(function(){
-'use strict';
-var SP=window.ZZL_SPECIES, S=ZDX.save, SND=ZDX.sound;
-var $=function(id){return document.getElementById(id);};
-
-/* ── 3D 무대 (모달 공용) ── */
-var cv=document.createElement('canvas');
-var R=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
-R.setPixelRatio(Math.min(devicePixelRatio,2));
-var sc=new THREE.Scene();
-var cam=new THREE.PerspectiveCamera(34,1,.1,120);
-sc.add(new THREE.HemisphereLight(0xE8F2F6,0x8E8560,.95));
-var kl=new THREE.DirectionalLight(0xFFF8E8,1.02); kl.position.set(5,9,6); sc.add(kl);
-var rl=new THREE.DirectionalLight(0xC6DCFF,.36); rl.position.set(-5,3,-4); sc.add(rl);
-var pod=new THREE.Group();
-pod.add(new THREE.Mesh(new THREE.CylinderGeometry(3.05,3.25,.34,26),
-  new THREE.MeshStandardMaterial({color:0xC9CBA8,roughness:.94,flatShading:true})));
-pod.children[0].position.y=-.17;
-sc.add(pod);
-var cur=null, curA=null, rotY=-.55, rotT=-.55, vel=0, drag=false, lastX=0, idle=0;
-
-function show3D(spec){
-  if(cur){ sc.remove(cur.root); }
-  cur=ZZL.build(spec.model); sc.add(cur.root);
-  curA=ZZL.assembly(cur,{
-    onLand:function(){ SND.snap(); },
-    onComplete:function(){ var f=$('flash'); if(f){f.classList.remove('on');void f.offsetWidth;f.classList.add('on');} SND.build(); }
-  });
-  rotY=rotT=-.55; vel=0;
-  var R0=Math.max(cur.footR*1.45,1.2);
-  pod.scale.setScalar(R0/3.05);
-  fit();
-  return cur;
-}
-function fit(){
-  if(!cur)return;
-  var w=cv.clientWidth||300,h=cv.clientHeight||240;
-  R.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
-  var hh=cur.size.y*1.5, ww=Math.max(cur.size.x*1.2,(cur.footR*1.45)*2.1);
-  var vF=cam.fov*Math.PI/180, hF=2*Math.atan(Math.tan(vF/2)*cam.aspect);
-  var d=Math.max((hh/2)/Math.tan(vF/2),(ww/2)/Math.tan(hF/2));
-  cam.position.set(0,cur.center.y+cur.size.y*.26,d);
-  cam.lookAt(0,cur.center.y,0);
-}
-cv.addEventListener('pointerdown',function(e){cv.setPointerCapture(e.pointerId);drag=true;lastX=e.clientX;vel=0;});
-cv.addEventListener('pointermove',function(e){if(!drag)return;var d=e.clientX-lastX;lastX=e.clientX;rotT+=d*.011;vel=d*.011;idle=performance.now();});
-cv.addEventListener('pointerup',function(){drag=false;idle=performance.now();});
-var clock=new THREE.Clock();
-(function loop(){
-  requestAnimationFrame(loop);
-  if(!cur||!cv.parentNode)return;
-  var t=clock.getElapsedTime(), now=performance.now();
-  if(!drag){rotT+=vel;vel*=.93;if(now-idle>2600)rotT+=.0032;}
-  rotY+=(rotT-rotY)*.16;
-  cur.update(t);
-  if(curA&&!curA.done)curA.update(now);
-  cur.root.rotation.y=rotY; pod.rotation.y=rotY*.12;
-  R.render(sc,cam);
-})();
-
-/* ── 지도 ── */
-var Z=ZDX.zones;
-var lo0=Math.min.apply(null,Z.map(function(z){return z.lon;}));
-var lo1=Math.max.apply(null,Z.map(function(z){return z.lon;}));
-var la0=Math.min.apply(null,Z.map(function(z){return z.lat;}));
-var la1=Math.max.apply(null,Z.map(function(z){return z.lat;}));
-var PAD=42, W=300, H=306;
-/* 부지는 약 75m x 198m로 세로가 길다.
-   가로·세로를 각각 늘리면 실제 배치가 왜곡되므로 등방(等方) 투영을 쓴다. */
-var mW=ZDX.dist(lo0,la0,lo1,la0), mH=ZDX.dist(lo0,la0,lo0,la1);
-var scale=Math.min((W-PAD*2)/mW,(H-PAD*2)/mH);      /* px per meter */
-var offX=(W-mW*scale)/2, offY=(H-mH*scale)/2;
-function px(lon){ return offX+ZDX.dist(lo0,la0,lon,la0)*scale; }
-function py(lat){ return H-offY-ZDX.dist(lo0,la0,lo0,lat)*scale; }
-var Rpx=ZDX.RADIUS*scale;
-
-var me={lon:null,lat:null}, inZones=[], watchId=null;
-
-function zoneSpecies(name){ return SP.filter(function(s){return s.zone===name;}); }
-function zoneLeft(name){ return zoneSpecies(name).filter(function(s){return !S.has(s.id);}).length; }
-
-function drawMap(){
-  var svg=$('map'), out='';
-  Z.forEach(function(z){
-    var x=px(z.lon), y=py(z.lat), inz=inZones.indexOf(z.name)>=0;
-    var left=zoneLeft(z.name), tot=zoneSpecies(z.name).length;
-    out+='<circle class="zoneC'+(inz?' in':'')+'" cx="'+x+'" cy="'+y+'" r="'+Rpx.toFixed(1)+'"/>';
-    out+='<circle class="zoneDot'+(inz?' in':'')+'" cx="'+x+'" cy="'+y+'" r="3"/>';
-    out+='<text class="zoneT'+(inz?' in':'')+'" x="'+x+'" y="'+(y-8)+'" text-anchor="middle">'+z.name+'</text>';
-    out+='<text class="zoneN" x="'+x+'" y="'+(y+15)+'" text-anchor="middle">'+(tot-left)+'/'+tot+'</text>';
-  });
-  if(me.lon!==null){
-    var mx=px(me.lon), my=py(me.lat);
-    out+='<circle class="meR" cx="'+mx+'" cy="'+my+'" r="'+(Rpx*0.5).toFixed(1)+'"/>';
-    out+='<circle class="me" cx="'+mx+'" cy="'+my+'" r="5"/>';
-  }
-  svg.innerHTML=out;
-}
-
-function recompute(){
+/* ── 구역 감지 ───────────────────────────────────── */
+var inZones=[],zoneBadge=$('zoneBadge');
+function recompute(lng,lat){
   var was=inZones.slice();
-  inZones=[];
-  if(me.lon!==null){
-    Z.forEach(function(z){
-      if(ZDX.dist(me.lon,me.lat,z.lon,z.lat)<=ZDX.RADIUS) inZones.push(z.name);
-    });
-  }
-  inZones.forEach(function(n){
-    if(was.indexOf(n)<0){ SND.zone(); toast(n+'에 도착했어요'); }
-  });
-  drawMap(); drawZoneList();
+  inZones=ZDX.zones.filter(function(z){return ZDX.dist(lng,lat,z.lon,z.lat)<=ZDX.RADIUS;}).map(function(z){return z.name;});
+  inZones.forEach(function(n){if(was.indexOf(n)<0){SND.zone();toast(n+' 구역에 도착했어요');}});
+  if(inZones.length){zoneBadge.textContent=inZones.join(' · ');zoneBadge.classList.add('on');}
+  else zoneBadge.classList.remove('on');
   tryEncounter();
 }
 
-function setMe(lon,lat){ me.lon=lon; me.lat=lat; recompute(); }
-
-/* ── 구역 목록 (GPS 없이도 테스트 가능) ── */
-function drawZoneList(){
-  var el=$('zlist'); el.innerHTML='';
-  Z.forEach(function(z){
-    var b=document.createElement('button');
-    var left=zoneLeft(z.name);
-    b.className=(inZones.indexOf(z.name)>=0?'here ':'')+(left===0?'done':'');
-    b.innerHTML=z.name+'<i>'+left+'</i>';
-    b.onclick=function(){ SND.unlock(); setMe(z.lon,z.lat); };
-    el.appendChild(b);
+/* ── 동물 마커 ───────────────────────────────────── */
+var animalMarkers={};
+function spawnAnimal(spec){
+  if(animalMarkers[spec.id])return;
+  var zone=ZDX.zones.filter(function(z){return z.name===spec.zone;})[0];
+  if(!zone)return;
+  var img=ZDX.thumbs.species(spec,false);
+  var icon=L.divIcon({
+    className:'animal-pin',
+    html:'<div class="animal-pin-label">'+spec.kname+'</div><img src="'+img+'" alt="'+spec.kname+'">',
+    iconSize:[88,88],iconAnchor:[44,88]
   });
+  var ll=gpsToLeaflet(zone.lon,zone.lat);
+  var m=L.marker(ll,{icon:icon,zIndexOffset:500}).addTo(lmap);
+  m.on('click',function(){SND.unlock();openEncounter(spec);});
+  animalMarkers[spec.id]=m;
+  lmap.panTo(ll);
+  SND.pop();
+  toast(spec.kname+'가 나타났어요! 탭해서 잡아보세요 👆');
 }
+function removeAnimalMarker(id){if(animalMarkers[id]){animalMarkers[id].remove();delete animalMarkers[id];}}
 
-/* ── GPS ── */
-$('gbtn').onclick=function(){
-  SND.unlock();
-  if(!navigator.geolocation){ $('gtxt').textContent='이 기기에서는 위치를 쓸 수 없어요'; return; }
-  if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId=null;
-    $('gdot').classList.remove('on'); $('gtxt').textContent='위치 끔'; this.textContent='위치 켜기'; return; }
-  $('gtxt').textContent='위치 확인 중…';
-  var self=this;
-  watchId=navigator.geolocation.watchPosition(function(p){
-    $('gdot').classList.add('on');
-    $('gtxt').textContent='위치 확인됨 (오차 약 '+Math.round(p.coords.accuracy)+'m)';
-    self.textContent='위치 끄기';
-    setMe(p.coords.longitude,p.coords.latitude);
-  },function(){
-    $('gtxt').textContent='위치를 가져오지 못했어요. 아래에서 구역을 골라 체험해보세요.';
-  },{enableHighAccuracy:true,maximumAge:3000,timeout:12000});
-};
-
-/* ── 조우 ── */
-var busy=false, timers={};
+/* ── 조우 타이머 ─────────────────────────────────── */
+var busy=false,timers={};
 function tryEncounter(){
   if(busy||!inZones.length)return;
   for(var i=0;i<inZones.length;i++){
@@ -2844,193 +385,227 @@ function tryEncounter(){
     if(!ZDX.encounter.ready(zn))continue;
     var pick=ZDX.encounter.pick(zn,SP);
     if(!pick)continue;
-    ZDX.encounter.arm(zn);
-    openEncounter(pick);
-    return;
+    ZDX.encounter.arm(zn);spawnAnimal(pick);return;
   }
 }
-setInterval(function(){ if(!busy) tryEncounter(); },2000);
+setInterval(function(){if(!busy)tryEncounter();},2000);
 
-/* ── 화면 ── */
-function toast(m){
-  var t=$('toast'); t.textContent=m; t.classList.add('on');
-  clearTimeout(timers.t); timers.t=setTimeout(function(){t.classList.remove('on');},2300);
+/* ── Three.js 공유 캔버스 ─────────────────────────── */
+var cv=document.createElement('canvas');
+var R3=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+R3.setPixelRatio(Math.min(window.devicePixelRatio,2));
+if(THREE.sRGBEncoding)R3.outputEncoding=THREE.sRGBEncoding;
+var sc=new THREE.Scene();
+sc.add(new THREE.HemisphereLight(0xE8F2F6,0x8E8560,.95));
+var kl=new THREE.DirectionalLight(0xFFF8E8,1.02);kl.position.set(5,9,6);sc.add(kl);
+var rl=new THREE.DirectionalLight(0xC6DCFF,.36);rl.position.set(-5,3,-4);sc.add(rl);
+var pod=new THREE.Group();
+pod.add(new THREE.Mesh(new THREE.CylinderGeometry(3.05,3.25,.34,26),
+  new THREE.MeshStandardMaterial({color:0xC9CBA8,roughness:.94,flatShading:true})));
+pod.children[0].position.y=-.17;sc.add(pod);
+var cam3=new THREE.PerspectiveCamera(34,1,.1,120);
+var cur=null,curA=null,rotY=-.55,rotT=-.55,vel=0,drag=false,lastX=0,idle3=0;
+
+function show3D(spec,playAnim){
+  if(cur)sc.remove(cur.root);
+  cur=ZZL.build(spec.model);sc.add(cur.root);
+  curA=ZZL.assembly(cur,{
+    onLand:function(){SND.snap();},
+    onComplete:function(){var f=$('flash');if(f){f.classList.remove('on');void f.offsetWidth;f.classList.add('on');}SND.build();}
+  });
+  rotY=rotT=-.55;vel=0;
+  pod.scale.setScalar(Math.max(cur.footR*1.45,1.2)/3.05);
+  fit3D();if(playAnim)curA.play();return cur;
 }
-function closeModal(){ $('modal').hidden=true; $('sheet').innerHTML=''; busy=false; drawAll(); }
-function openSheet(html){ $('sheet').innerHTML=html; $('modal').hidden=false; }
+function fit3D(){
+  if(!cur)return;
+  var w=cv.clientWidth||300,h=cv.clientHeight||260;
+  R3.setSize(w,h,false);cam3.aspect=w/h;cam3.updateProjectionMatrix();
+  var hh=cur.size.y*1.5,ww=Math.max(cur.size.x*1.2,(cur.footR*1.45)*2.1);
+  var vF=cam3.fov*Math.PI/180,hF=2*Math.atan(Math.tan(vF/2)*cam3.aspect);
+  var d=Math.max((hh/2)/Math.tan(vF/2),(ww/2)/Math.tan(hF/2));
+  cam3.position.set(0,cur.center.y+cur.size.y*.26,d);cam3.lookAt(0,cur.center.y,0);
+}
+cv.addEventListener('pointerdown',function(e){cv.setPointerCapture(e.pointerId);drag=true;lastX=e.clientX;vel=0;});
+cv.addEventListener('pointermove',function(e){if(!drag)return;var d=e.clientX-lastX;lastX=e.clientX;rotT+=d*.011;vel=d*.011;idle3=performance.now();});
+cv.addEventListener('pointerup',function(){drag=false;idle3=performance.now();});
+var clk=new THREE.Clock();
+(function loop(){
+  requestAnimationFrame(loop);
+  if(!cur||!cv.parentNode)return;
+  var t=clk.getElapsedTime(),now=performance.now();
+  if(!drag){rotT+=vel;vel*=.93;if(now-idle3>2600)rotT+=.0032;}
+  rotY+=(rotT-rotY)*.16;
+  cur.update(t);if(curA&&!curA.done)curA.update(now);
+  cur.root.rotation.y=rotY;pod.rotation.y=rotY*.12;
+  R3.render(sc,cam3);
+})();
 
-/* 조우 → 퍼즐 */
+/* ── 화면 유틸 ───────────────────────────────────── */
+function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');
+  clearTimeout(timers.t);timers.t=setTimeout(function(){t.classList.remove('on');},3200);}
+function closeModal(){$('modal').hidden=true;$('sheet').innerHTML='';busy=false;updateProgress();}
+function openSheet(html){$('sheet').innerHTML=html;$('modal').hidden=false;}
+function updateProgress(){var c=S.count();$('dexBtn').textContent='도감 '+c+'/'+SP.length;$('dexCnt').textContent=c+' / '+SP.length;}
+var PMAP={head:'머리',body:'몸통',legs:'다리',tail:'꼬리',ears:'귀',neck:'목',
+  wings:'날개',jaw:'아래턱',horn:'뿔',antler:'뿔',crest:'볏',beard:'턱수염',
+  quills:'등가시',patagium:'비막',fins:'지느러미',dewlap:'목주름'};
+function PNAME(p){return PMAP[p]||p;}
+
+/* ── 조우 → 퍼즐 ──────────────────────────────── */
 function openEncounter(spec){
-  busy=true;
-  SND.pop();
+  removeAnimalMarker(spec.id);
+  busy=true;SND.pop();
   var steps=ZDX.puzzle.make(spec,SP);
-  var step=0, misses=0, reduced=false;
-  var sil=ZDX.thumbs.species(spec,true);
+  var step=0,misses=0,reduced=false;
 
   function render(){
     var st=steps[step];
-    var html=''
-     +'<div class="stage"><div class="stag">'+spec.zone+'</div>'
-     +'<div class="sil"><img src="'+sil+'"></div></div>'
-     +'<div class="qhead"><b>'+(step===0?'동물이 나타났어요!':'좋아요, 계속!')+'</b>'
-     +'<span>'+(step+1)+' / '+steps.length+'</span></div>'
-     +'<div class="qtip">눈앞의 동물을 보고 <b>'+PARTKO(st.part)+'</b> 조각을 골라주세요.</div>'
-     +'<div class="opts" id="opts"></div>'
-     +'<div class="qbar"><button class="x" id="qx">나중에</button>'
-     +'<button class="e" id="qe">'+(reduced?'조각을 줄였어요':'조각 줄이기')+'</button></div>';
-    openSheet(html);
+    openSheet(
+      '<div class="stage" id="stg"><div class="stag">'+spec.zone+'</div></div>'
+      +'<div class="qhead">'
+      +'<b class="kname-big">'+(step===0?spec.kname+'가 나타났어요!':'좋아요, 계속!')+'</b>'
+      +'<span>'+(step+1)+' / '+steps.length+'</span>'
+      +'</div>'
+      +'<div class="qtip">눈앞의 동물을 보고 <b>'+PNAME(st.part)+'</b> 조각을 골라주세요.</div>'
+      +'<div class="opts" id="opts"></div>'
+      +'<div class="qbar">'
+      +'<button class="x" id="qx">나중에</button>'
+      +'<button class="e" id="qe">'+(reduced?'조각을 줄였어요':'조각 줄이기')+'</button>'
+      +'</div>'
+    );
+    $('stg').appendChild(cv);show3D(spec,false);setTimeout(fit3D,0);
     var wrap=$('opts');
-    st.options.forEach(function(o,i){
-      var b=document.createElement('button');
-      b.className='opt';
+    st.options.forEach(function(o){
+      var b=document.createElement('button');b.className='opt';
       var img=document.createElement('img');
-      img.src=ZDX.thumbs.part(o.spec,o.part)||sil;
+      img.src=ZDX.thumbs.part(o.spec,o.part)||ZDX.thumbs.species(o.spec,true);
       b.appendChild(img);
       b.onclick=function(){
         if(o.ok){
-          b.classList.add('yes'); SND.snap();
-          step++;
-          if(step>=steps.length) setTimeout(finish,260);
-          else setTimeout(render,260);
+          b.classList.add('yes');SND.snap();step++;
+          if(step>=steps.length)setTimeout(finish,260);else setTimeout(render,260);
         }else{
-          misses++; SND.miss();
-          b.classList.remove('no'); void b.offsetWidth; b.classList.add('no');
-          if(misses===2) toast('힌트: 실루엣을 다시 보세요');
-          if(misses>=3) toast(spec.zone+'의 안내판을 확인해보세요');
+          misses++;SND.miss();b.classList.remove('no');void b.offsetWidth;b.classList.add('no');
+          if(misses===2)toast('힌트: 주변 안내판을 확인해보세요');
+          if(misses>=3)toast(spec.zone+' 안내판을 찾아보세요');
         }
       };
       wrap.appendChild(b);
     });
-    $('qx').onclick=function(){ closeModal(); };
+    $('qx').onclick=function(){closeModal();};
     $('qe').onclick=function(){
-      if(reduced)return;
-      reduced=true;
+      if(reduced)return;reduced=true;
       steps=steps.slice(0,Math.max(3,steps.length-2));
-      if(step>=steps.length) step=steps.length-1;
-      render();
+      if(step>=steps.length)step=steps.length-1;render();
     };
   }
 
   function finish(){
     var grade=ZDX.puzzle.grade(misses,reduced);
     S.add(spec.id,grade);
-    SND.paint(); setTimeout(function(){SND.stamp();},420);
-    if(S.count()===SP.length) setTimeout(function(){SND.fanfare();},900);
-    openCard(spec,true,grade);
+    $('modal').hidden=true;$('sheet').innerHTML='';
+    playRegistration(spec,grade,function(){openCard(spec,true,grade);});
   }
   render();
 }
 
-var PARTKO_MAP={head:'머리',body:'몸통',legs:'다리',tail:'꼬리',ears:'귀',neck:'목',
-  wings:'날개',jaw:'아래턱',horn:'뿔',antler:'뿔',crest:'볏',beard:'턱수염',
-  quills:'등가시',patagium:'비막',fins:'지느러미',dewlap:'목주름'};
-function PARTKO(p){ return PARTKO_MAP[p]||p; }
+/* ── 도감 등록 애니메이션 ──────────────────────── */
+function playRegistration(spec,grade,onComplete){
+  SND.paint();setTimeout(function(){SND.stamp();},400);
+  if(S.count()===SP.length)setTimeout(function(){SND.fanfare();},900);
+  var img=ZDX.thumbs.species(spec,false);
+  var no='#'+spec.id.replace('A','').replace(/^0+/,'').padStart(3,'0');
+  var ra=$('regAnim');
+  ra.innerHTML=''
+    +'<div class="reg-card">'
+    +'<div class="reg-no">'+no+'</div>'
+    +'<div class="reg-img"><img src="'+img+'" alt="'+spec.kname+'"></div>'
+    +'<div class="reg-name">'+spec.kname+'</div>'
+    +'<div class="reg-ename">'+spec.ename+'</div>'
+    +'<div class="reg-grade '+grade+'">'+grade+'</div>'
+    +'<div class="reg-prog">'+S.count()+' / '+SP.length+' 수집</div>'
+    +'</div>';
+  ra.classList.add('show');
+  setTimeout(function(){ra.classList.remove('show');ra.innerHTML='';onComplete();},2900);
+}
 
-/* 카드 상세 */
+/* ── 카드 상세 ───────────────────────────────── */
 function openCard(spec,fresh,grade){
   busy=true;
   var got=S.get().got[spec.id];
   var g=grade||(got&&got.grade)||'';
-  openSheet(''
-   +'<div class="stage" id="stg"><div class="stag">'+spec.id+'</div><div class="flash" id="flash"></div></div>'
-   +'<div class="body">'
-   +'<div class="nameline"><span class="kname">'+spec.kname+'</span>'
-   +'<span class="ename">'+spec.ename.toUpperCase()+'</span></div>'
-   +'<div class="meta"><span class="chip z">'+spec.zone+'</span>'
-   +'<span class="chip">'+spec.n+'마리</span>'
-   +(g?'<span class="chip g">'+g+'</span>':'')+'</div>'
-   +'<dl class="rows">'
-   +'<div class="row"><dt>관찰 포인트</dt><dd>'+spec.tell+'</dd></div>'
-   +'<div class="row"><dt>헷갈리는 친구</dt><dd>'+((spec.rivals||[]).join(' · ')||'없음')+'</dd></div>'
-   +'<div class="row"><dt>생태</dt><dd class="pend">출처 확인 후 공개됩니다</dd></div>'
-   +'<div class="row"><dt>보전 등급</dt><dd class="pend">출처 확인 후 공개됩니다</dd></div>'
-   +'</dl></div>'
-   +'<div class="src">생태·보전 항목은 1차 출처 확인 전이라 비워둡니다.<br>'
-   +'관찰 포인트는 형태 관찰 기준이며 사육사 감수 예정입니다.</div>'
-   +'<div class="foot"><button class="go" id="ok">'+(fresh?'도감에 넣기':'닫기')+'</button></div>');
-  $('stg').appendChild(cv);
-  var m=show3D(spec);
-  setTimeout(fit,0);
-  if(fresh){ curA.play(); }
-  $('ok').onclick=function(){
-    if(fresh) toast(spec.kname+' 등록! '+S.count()+' / '+SP.length);
-    closeModal();
-  };
+  var info=(window.ZZL_INFO&&ZZL_INFO[spec.id])||{};
+  var eco=info.eco?'<dd>'+info.eco+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
+  var iucn=info.iucn?'<dd>'+info.iucn+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
+  var sname=info.sname?'<dd><em>'+info.sname+'</em></dd>':'<dd class="pend">—</dd>';
+  openSheet(
+    '<div class="stage" id="stg"><div class="stag">'+spec.id+'</div><div class="flash" id="flash"></div></div>'
+    +'<div class="body">'
+    +'<div class="nameline"><span class="kname">'+spec.kname+'</span><span class="ename">'+spec.ename.toUpperCase()+'</span></div>'
+    +'<div class="meta">'
+    +'<span class="chip z">'+spec.zone+'</span>'
+    +'<span class="chip">'+spec.n+'마리</span>'
+    +(g?'<span class="chip g '+g+'">'+g+'</span>':'')
+    +'</div>'
+    +'<dl class="rows">'
+    +'<div class="row"><dt>학명</dt>'+sname+'</div>'
+    +'<div class="row"><dt>관찰 포인트</dt><dd>'+spec.tell+'</dd></div>'
+    +'<div class="row"><dt>헷갈리는 친구</dt><dd>'+((spec.rivals||[]).join(' · ')||'없음')+'</dd></div>'
+    +'<div class="row"><dt>생태</dt>'+eco+'</div>'
+    +'<div class="row"><dt>보전 등급</dt>'+iucn+'</div>'
+    +'</dl>'
+    +'</div>'
+    +'<p class="src-note">생태·보전 항목은 1차 출처 확인 전 공개 보류 / 사육사 감수 예정</p>'
+    +'<div class="foot"><button class="go" id="ok">'+(fresh?'도감에 등록!':'닫기')+'</button></div>'
+  );
+  $('stg').appendChild(cv);show3D(spec,fresh);setTimeout(fit3D,0);
+  $('ok').onclick=function(){if(fresh)toast(spec.kname+' 등록! '+S.count()+' / '+SP.length);closeModal();};
 }
 
-/* ── 도감 ── */
+/* ── 도감 화면 ───────────────────────────────── */
+$('dexBtn').onclick=function(){SND.unlock();showDex();};
+$('dexClsBtn').onclick=function(){$('dexOverlay').hidden=true;};
+function showDex(){drawGrid();$('dexOverlay').hidden=false;}
 function drawGrid(){
-  var el=$('grid'); el.innerHTML='';
+  var el=$('grid');el.innerHTML='';
   SP.forEach(function(s){
     var has=S.has(s.id);
-    var b=document.createElement('button');
-    b.className='cell'+(has?'':' locked');
-    var img=document.createElement('img');
-    img.loading='lazy';
-    b.appendChild(img);
-    var nm=document.createElement('b'); nm.textContent=has?s.kname:'???';
-    b.appendChild(nm);
-    var no=document.createElement('u'); no.textContent=s.id.slice(1); b.appendChild(no);
-    if(has){
-      var gd=document.createElement('span');
-      gd.className='gr '+(S.get().got[s.id].grade||'브론즈'); b.appendChild(gd);
-    }
-    /* 썸네일은 화면에 들어올 때 생성 (62종 한꺼번에 렌더하지 않는다) */
-    var io=new IntersectionObserver(function(en){
-      if(en[0].isIntersecting){
-        img.src=ZDX.thumbs.species(s,!has);
-        io.disconnect();
-      }
-    },{rootMargin:'120px'});
+    var b=document.createElement('button');b.className='cell'+(has?'':' locked');
+    var img=document.createElement('img');img.loading='lazy';b.appendChild(img);
+    var nm=document.createElement('b');nm.textContent=has?s.kname:'???';b.appendChild(nm);
+    var no=document.createElement('u');no.textContent=s.id.slice(1);b.appendChild(no);
+    if(has){var gd=document.createElement('span');gd.className='gr '+(S.get().got[s.id].grade||'브론즈');b.appendChild(gd);}
+    var io=new IntersectionObserver(function(en){if(en[0].isIntersecting){img.src=ZDX.thumbs.species(s,!has);io.disconnect();}});
     io.observe(b);
-    b.onclick=function(){
-      if(has) openCard(s,false);
-      else toast(s.zone+'에 가면 만날 수 있어요');
-    };
+    if(has)b.onclick=function(){$('dexOverlay').hidden=true;openCard(s,false);};
     el.appendChild(b);
   });
 }
 
-function drawAll(){
-  var n=S.count();
-  $('prog').textContent=n+' / '+SP.length;
-  $('dexN').textContent=n+'종 수집';
-  $('dexS').textContent=Math.round(n/SP.length*100)+'%';
-  $('dexBar').style.width=(n/SP.length*100)+'%';
-  drawMap(); drawZoneList();
-  var code=S.get().code;
-  $('note1').innerHTML='ZZL FIELD GUIDE · '+SP.length+'종'+(code?' · 내 도감 '+code:'');
-  $('note2').innerHTML=S.persistent()
-    ? '진행은 이 브라우저에 저장됩니다'+(code?' · 복구 코드 '+code:'')
-    : '※ 이 미리보기에서는 저장이 되지 않습니다';
+/* ── 줌 / 테스트 ─────────────────────────────── */
+$('zoomInBtn').onclick=function(){lmap.zoomIn();};
+$('zoomOutBtn').onclick=function(){lmap.zoomOut();};
+
+var TEST=new URLSearchParams(location.search).has('test');
+if(TEST){
+  var tp=$('testPanel');tp.style.display='flex';
+  setStatus('outside','TEST MODE — 구역 선택');
+  var activeT=null;
+  tp.querySelectorAll('button').forEach(function(btn){
+    btn.onclick=function(){
+      SND.unlock();
+      var lng=parseFloat(btn.dataset.lon),lat=parseFloat(btn.dataset.lat);
+      var p=gpsToNaturalPx(lng,lat);
+      placeGPS(p.x,p.y,8);setStatus('found','TEST · '+btn.textContent);
+      lmap.panTo(px2ll(p.x,p.y));
+      if(activeT)activeT.classList.remove('active');btn.classList.add('active');activeT=btn;
+      curLon=lng;curLat=lat;recompute(lng,lat);
+    };
+  });
 }
 
-/* ── 탭·설정 ── */
-$('tabs').addEventListener('click',function(e){
-  var b=e.target.closest('button'); if(!b)return;
-  var v=+b.dataset.v;
-  Array.prototype.forEach.call(this.children,function(x){
-    x.setAttribute('aria-pressed',String(+x.dataset.v===v));});
-  $('paneMap').hidden=v!==0; $('paneDex').hidden=v!==1;
-  SND.unlock();
-  if(v===1) drawGrid();
-});
-$('bSfx').onclick=function(){
-  var v=!S.get().sfx; S.set('sfx',v);
-  this.setAttribute('aria-pressed',String(v));
-  SND.unlock(); if(v) SND.zone();
-};
-$('bBgm').onclick=function(){
-  var v=!S.get().bgm; S.set('bgm',v);
-  this.setAttribute('aria-pressed',String(v));
-  SND.unlock(); SND.bgm(v);
-};
-$('modal').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
-
-$('bSfx').setAttribute('aria-pressed',String(S.get().sfx));
-$('bBgm').setAttribute('aria-pressed',String(S.get().bgm));
-drawAll(); drawGrid();
-})();
+updateProgress();
 </script>
 </body>
 </html>
