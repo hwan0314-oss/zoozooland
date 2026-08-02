@@ -87,6 +87,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0B0A;color:#fff;
 
 .stage{position:relative;background:#0d0d0d;flex-shrink:0}
 .stage canvas{display:block;width:100%;height:260px}
+.sil-img{display:block;width:100%;height:260px;object-fit:contain}
 @media(min-height:700px){.stage canvas{height:300px}}
 .stag{position:absolute;top:10px;left:14px;font-family:monospace;font-size:0.45rem;
   color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:0.12em}
@@ -326,11 +327,12 @@ var gpsBar=$('gpsBar'),gpsBarText=$('gpsBarText');
 function setStatus(s,t){gpsBar.className='gps-pill '+s;gpsBarText.textContent=t;}
 var PARK={latMin:37.688,latMax:37.693,lngMin:126.852,lngMax:126.857};
 function inPark(lng,lat){return lng>=PARK.lngMin&&lng<=PARK.lngMax&&lat>=PARK.latMin&&lat<=PARK.latMax;}
-var curLon=null,curLat=null;
+var curLon=null,curLat=null,testOverride=false;
 if('geolocation' in navigator){
   setStatus('finding','위치 확인 중…');
   navigator.geolocation.watchPosition(
     function(pos){
+      if(testOverride)return;
       var lng=pos.coords.longitude,lat=pos.coords.latitude,acc=pos.coords.accuracy;
       if(!inPark(lng,lat)){clearGPS();setStatus('outside','공원 밖');return;}
       var p=gpsToNaturalPx(lng,lat);placeGPS(p.x,p.y,acc);
@@ -355,8 +357,9 @@ function recompute(lng,lat){
 }
 
 /* ── 동물 마커 ───────────────────────────────────── */
-var animalMarkers={};
+var animalMarkers={},pendingAnimal=false;
 function spawnAnimal(spec){
+  if(pendingAnimal)return;
   if(animalMarkers[spec.id])return;
   var zone=ZDX.zones.filter(function(z){return z.name===spec.zone;})[0];
   if(!zone)return;
@@ -370,11 +373,15 @@ function spawnAnimal(spec){
   var m=L.marker(ll,{icon:icon,zIndexOffset:500}).addTo(lmap);
   m.on('click',function(){SND.unlock();openEncounter(spec);});
   animalMarkers[spec.id]=m;
+  pendingAnimal=true;
   lmap.panTo(ll);
   SND.pop();
   toast(spec.kname+'가 나타났어요! 탭해서 잡아보세요 👆');
 }
-function removeAnimalMarker(id){if(animalMarkers[id]){animalMarkers[id].remove();delete animalMarkers[id];}}
+function removeAnimalMarker(id){
+  if(animalMarkers[id]){animalMarkers[id].remove();delete animalMarkers[id];}
+  pendingAnimal=false;
+}
 
 /* ── 조우 타이머 ─────────────────────────────────── */
 var busy=false,timers={};
@@ -459,10 +466,11 @@ function openEncounter(spec){
   var steps=ZDX.puzzle.make(spec,SP);
   var step=0,misses=0,reduced=false;
 
+  var silSrc=ZDX.thumbs.species(spec,true);
   function render(){
     var st=steps[step];
     openSheet(
-      '<div class="stage" id="stg"><div class="stag">'+spec.zone+'</div></div>'
+      '<div class="stage" id="stg"><div class="stag">'+spec.zone+'</div><img class="sil-img" src="'+silSrc+'"></div>'
       +'<div class="qhead">'
       +'<b class="kname-big">'+(step===0?spec.kname+'가 나타났어요!':'좋아요, 계속!')+'</b>'
       +'<span>'+(step+1)+' / '+steps.length+'</span>'
@@ -474,7 +482,6 @@ function openEncounter(spec){
       +'<button class="e" id="qe">'+(reduced?'조각을 줄였어요':'조각 줄이기')+'</button>'
       +'</div>'
     );
-    $('stg').appendChild(cv);show3D(spec,false);setTimeout(fit3D,0);
     var wrap=$('opts');
     st.options.forEach(function(o){
       var b=document.createElement('button');b.className='opt';
@@ -505,7 +512,7 @@ function openEncounter(spec){
     var grade=ZDX.puzzle.grade(misses,reduced);
     S.add(spec.id,grade);
     $('modal').hidden=true;$('sheet').innerHTML='';
-    playRegistration(spec,grade,function(){openCard(spec,true,grade);});
+    playRegistration(spec,grade,function(){busy=false;updateProgress();showDex();});
   }
   render();
 }
@@ -594,7 +601,7 @@ if(TEST){
   var activeT=null;
   tp.querySelectorAll('button').forEach(function(btn){
     btn.onclick=function(){
-      SND.unlock();
+      SND.unlock();testOverride=true;
       var lng=parseFloat(btn.dataset.lon),lat=parseFloat(btn.dataset.lat);
       var p=gpsToNaturalPx(lng,lat);
       placeGPS(p.x,p.y,8);setStatus('found','TEST · '+btn.textContent);
