@@ -2,8 +2,8 @@
   "today_date": "2026-08-03 (월)",
   "prev_date": "2025-08-04 (월)",
   "today_weather": {
-    "desc": "대체로맑음",
-    "tmax": "34",
+    "desc": "맑음",
+    "tmax": "35",
     "tmin": "24"
   },
   "prev_weather": {
@@ -278,5 +278,5 @@
       }
     }
   ],
-  "generated_at": "2026-08-03 15:01 KST"
+  "generated_at": "2026-08-03 19:01 KST"
 }
