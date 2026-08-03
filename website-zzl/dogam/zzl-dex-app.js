@@ -344,6 +344,9 @@ ZDX.puzzle = {
   make: function (spec, all, parts) {
     var self = this;
     var order = ZZL.puzzleOrder(spec.model).slice(0, parts || 99);
+    order = order.filter(function (p) {
+      return p === 'head' || p === 'body' || spec.model[p] !== undefined;
+    });
     var rivals = (spec.rivals || []).map(function (n) {
       return all.filter(function (s) { return s.kname === n; })[0];
     }).filter(Boolean);

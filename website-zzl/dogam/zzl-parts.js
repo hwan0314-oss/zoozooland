@@ -1167,7 +1167,7 @@ ZZL.setPartVisible = function (model, name, v) {
   if (model.parts[name]) model.parts[name].visible = v;
 };
 ZZL.puzzleOrder = function (spec) {
-  return spec.puzzle || ['head', 'body', 'legs', 'tail', 'ears'];
+  return ['head', 'body', 'legs'];
 };
 
 global.ZZL = ZZL;
