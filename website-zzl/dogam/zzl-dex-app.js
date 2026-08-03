@@ -258,23 +258,75 @@ ZDX.thumbs = (function () {
       cache[key] = url;
       return url;
     },
-    /* 부위 하나만 떼어 렌더 — 퍼즐 선택지 */
+    /* 부위 하나만 떼어 렌더 — 퍼즐 선택지
+       head: neckG 통째로 분리 (목+머리+귀+뿔 등 head-attached extras 포함)
+       body: bodyContainer에서 목·다리만 숨기고 렌더 (꼬리·body extras 포함)
+       legs: 기존 단독 분리 방식 */
     part: function (spec, partName) {
       init();
       var key = spec.id + ':p:' + partName;
       if (cache[key]) return cache[key];
       var m = ZZL.build(spec.model);
-      var g = m.parts[partName];
-      if (!g) return null;
-      var parent = g.parent;
-      scene.add(g);                 /* 잠시 떼어내 단독 렌더 */
-      g.position.set(0, 0, 0);
-      g.quaternion.identity();
-      frame(g, -0.5);
-      R.render(scene, cam);
-      var url = R.domElement.toDataURL('image/png');
-      scene.remove(g);
-      parent.add(g);
+      var g, parent, url;
+
+      if (partName === 'head') {
+        /* neck 그룹 자체가 head·ears·head-extras의 상위 → 통째로 분리 */
+        g = m.parts.neck || m.parts.head.parent;
+        parent = g.parent;
+        scene.add(g);
+        g.position.set(0, 0, 0);
+        g.quaternion.identity();
+        frame(g, -0.5);
+        R.render(scene, cam);
+        url = R.domElement.toDataURL('image/png');
+        scene.remove(g);
+        parent.add(g);
+
+      } else if (partName === 'body') {
+        /* body 컨테이너에서 머리(목)·다리만 가리고 렌더
+           꼬리·quills·fins 등 body-attached extras는 자동 포함 */
+        var bodyContainer = m.parts.body.parent;
+        var headGroup = m.parts.neck || m.parts.head.parent;
+        headGroup.visible = false;
+        if (m.parts.legs) m.parts.legs.visible = false;
+        parent = bodyContainer.parent;
+        scene.add(bodyContainer);
+        bodyContainer.position.set(0, 0, 0);
+        bodyContainer.quaternion.identity();
+        bodyContainer.updateMatrixWorld(true);
+        /* 카메라는 몸통+꼬리 영역에 맞춤 (invisible 목·다리 제외) */
+        var b = new THREE.Box3();
+        b.expandByObject(m.parts.body);
+        if (m.parts.tail) b.expandByObject(m.parts.tail);
+        if (b.isEmpty()) b.setFromObject(m.parts.body);
+        var sz = new THREE.Vector3(), ct = new THREE.Vector3();
+        b.getSize(sz); b.getCenter(ct);
+        var mSz = Math.max(sz.x, sz.y, sz.z) * 1.25;
+        var d = (mSz / 2) / Math.tan(cam.fov * Math.PI / 360);
+        cam.position.set(ct.x + Math.sin(-0.5) * d, ct.y + mSz * 0.22, ct.z + Math.cos(-0.5) * d);
+        cam.lookAt(ct);
+        R.render(scene, cam);
+        url = R.domElement.toDataURL('image/png');
+        scene.remove(bodyContainer);
+        parent.add(bodyContainer);
+        headGroup.visible = true;
+        if (m.parts.legs) m.parts.legs.visible = true;
+
+      } else {
+        /* 다리 등 단순 부위: 기존 단독 분리 방식 */
+        g = m.parts[partName];
+        if (!g) { cache[key] = null; return null; }
+        parent = g.parent;
+        scene.add(g);
+        g.position.set(0, 0, 0);
+        g.quaternion.identity();
+        frame(g, -0.5);
+        R.render(scene, cam);
+        url = R.domElement.toDataURL('image/png');
+        scene.remove(g);
+        parent.add(g);
+      }
+
       cache[key] = url;
       return url;
     }
