@@ -87,8 +87,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0B0A;color:#fff;
 
 .stage{position:relative;background:#0d0d0d;flex-shrink:0}
 .stage canvas{display:block;width:100%;height:260px}
+.stage-full{flex:1;flex-shrink:1;display:flex;flex-direction:column;justify-content:center}
 .sil-img{display:block;width:100%;height:260px;object-fit:contain;filter:brightness(0.28) saturate(0)}
 @media(min-height:700px){.stage canvas{height:300px}}
+.quiz-panel{background:#0d0d0d}
 .stag{position:absolute;top:10px;left:14px;font-family:monospace;font-size:0.45rem;
   color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:0.12em}
 .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
@@ -107,11 +109,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0B0A;color:#fff;
 .opt.yes{border-color:#7D9E7E;background:rgba(125,158,126,0.1)}
 .opt.no{border-color:rgba(255,70,70,0.45);animation:shk 0.28s}
 @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-.qbar{display:flex;gap:8px;padding:8px 18px 20px}
-.qbar button{flex:1;height:44px;border:1px solid rgba(255,255,255,0.12);
+.qbar{padding:10px 18px 24px}
+.qbar button{display:block;width:100%;height:44px;border:1px solid rgba(255,255,255,0.12);
   background:transparent;color:rgba(255,255,255,0.4);font-size:0.68rem;cursor:pointer}
-.qbar button.x:hover{color:rgba(255,80,80,0.65);border-color:rgba(255,80,80,0.25)}
-.qbar button.e{color:rgba(255,200,0,0.55);border-color:rgba(255,200,0,0.2)}
+.qbar button:active{color:rgba(255,80,80,0.65);border-color:rgba(255,80,80,0.25)}
 
 .body{padding:16px 18px}
 .nameline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
@@ -496,15 +497,14 @@ function openEncounter(spec){
     var st=steps[step];
     openSheet(
       '<div class="stage" id="stg"><div class="stag">'+spec.zone+'</div><img class="sil-img" src="'+silSrc+'"></div>'
+      +'<div class="quiz-panel">'
       +'<div class="qhead">'
       +'<b class="kname-big">'+(step===0?spec.kname+'가 나타났어요!':'좋아요, 계속!')+'</b>'
       +'<span>'+(step+1)+' / '+steps.length+'</span>'
       +'</div>'
       +'<div class="qtip">눈앞의 동물을 보고 <b>'+PNAME(st.part)+'</b> 조각을 골라주세요.</div>'
       +'<div class="opts" id="opts"></div>'
-      +'<div class="qbar">'
-      +'<button class="x" id="qx">나중에</button>'
-      +'<button class="e" id="qe">'+(reduced?'조각을 줄였어요':'조각 줄이기')+'</button>'
+      +'<div class="qbar"><button class="x" id="qx">나중에</button></div>'
       +'</div>'
     );
     var wrap=$('opts');
@@ -526,18 +526,18 @@ function openEncounter(spec){
       wrap.appendChild(b);
     });
     $('qx').onclick=function(){closeModal();};
-    $('qe').onclick=function(){
-      if(reduced)return;reduced=true;
-      steps=steps.slice(0,Math.max(3,steps.length-2));
-      if(step>=steps.length)step=steps.length-1;render();
-    };
   }
 
   function finish(){
     var grade=ZDX.puzzle.grade(misses,reduced);
     S.add(spec.id,grade);
-    /* 3D assembly 씬으로 전환 */
-    openSheet('<div class="stage" id="stg"><div class="stag">'+spec.zone+'</div><div class="flash" id="flash"></div></div>');
+    var info=(window.ZZL_INFO&&ZZL_INFO[spec.id])||{};
+    var eco=info.eco?'<dd>'+info.eco+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
+    var iucn=info.iucn?'<dd>'+info.iucn+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
+    var sname=info.sname?'<dd><em>'+info.sname+'</em></dd>':'<dd class="pend">—</dd>';
+
+    /* Phase 1: 조립 애니메이션 — 스테이지가 전체화면 차지, 캔버스는 수직 중앙 정렬 */
+    openSheet('<div class="stage stage-full" id="stg"><div class="stag">'+spec.zone+'</div><div class="flash" id="flash"></div></div>');
     $('stg').appendChild(cv);
     if(cur)sc.remove(cur.root);
     cur=ZZL.build(spec.model); sc.add(cur.root);
@@ -549,9 +549,33 @@ function openEncounter(spec){
         var f=$('flash');
         if(f){f.classList.remove('on');void f.offsetWidth;f.classList.add('on');}
         SND.build();
+        /* Phase 2: 조립 완료 → 동물 설명과 함께 표시, 닫기 버튼 없이 3초 후 자동 전환 */
         setTimeout(function(){
-          $('modal').hidden=true;$('sheet').innerHTML='';
-          playRegistration(spec,grade,function(){busy=false;updateProgress();showDex(spec.id);});
+          $('sheet').innerHTML=
+            '<div class="stage" id="stg"><div class="stag">'+spec.zone+'</div><div class="flash" id="flash"></div></div>'
+            +'<div class="body">'
+            +'<div class="nameline"><span class="kname">'+spec.kname+'</span><span class="ename">'+spec.ename.toUpperCase()+'</span></div>'
+            +'<div class="meta">'
+            +'<span class="chip z">'+spec.zone+'</span>'
+            +'<span class="chip">'+spec.n+'마리</span>'
+            +'<span class="chip g '+grade+'">'+grade+'</span>'
+            +'</div>'
+            +'<dl class="rows">'
+            +'<div class="row"><dt>학명</dt>'+sname+'</div>'
+            +'<div class="row"><dt>관찰 포인트</dt><dd>'+spec.tell+'</dd></div>'
+            +'<div class="row"><dt>헷갈리는 친구</dt><dd>'+((spec.rivals||[]).join(' · ')||'없음')+'</dd></div>'
+            +'<div class="row"><dt>생태</dt>'+eco+'</div>'
+            +'<div class="row"><dt>CITES 등재</dt>'+iucn+'</div>'
+            +'</dl>'
+            +'</div>'
+            +'<p class="src-note">생태·보전 항목은 1차 출처 확인 전 공개 보류 / 사육사 감수 예정</p>';
+          $('stg').appendChild(cv);
+          fit3D();
+          /* 3초 후 도감으로 자동 전환 */
+          setTimeout(function(){
+            $('modal').hidden=true;$('sheet').innerHTML='';
+            playRegistration(spec,grade,function(){busy=false;updateProgress();showDex(spec.id);});
+          },3000);
         },700);
       }
     });
