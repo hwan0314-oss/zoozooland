@@ -293,9 +293,13 @@ var GCPs=[
   [126.8547147,37.6913658, 906,1628],[126.8549892,37.691485,  637,1410],
   [126.8551613,37.6910779,1115,1058],[126.8550951,37.691057, 1153,1118]
 ];
+var AFFINE_LON0,AFFINE_LAT0;
 function computeAffine(g){
+  var sLon=0,sLat=0;
+  for(var i=0;i<g.length;i++){sLon+=g[i][0];sLat+=g[i][1];}
+  AFFINE_LON0=sLon/g.length; AFFINE_LAT0=sLat/g.length;
   var n=g.length,A=[],bx=[],by=[];
-  for(var i=0;i<n;i++){A.push([g[i][0],g[i][1],1]);bx.push(g[i][2]);by.push(g[i][3]);}
+  for(var i=0;i<n;i++){A.push([g[i][0]-AFFINE_LON0,g[i][1]-AFFINE_LAT0,1]);bx.push(g[i][2]);by.push(g[i][3]);}
   function ls(rows,rhs){
     var AtA=[[0,0,0],[0,0,0],[0,0,0]],Atb=[0,0,0];
     for(var i=0;i<rows.length;i++){for(var j=0;j<3;j++){Atb[j]+=rows[i][j]*rhs[i];for(var k=0;k<3;k++)AtA[j][k]+=rows[i][j]*rows[i][k];}}
@@ -311,7 +315,7 @@ function computeAffine(g){
 }
 var affine=computeAffine(GCPs);
 var IMG_W=4492,IMG_H=3176,leafBounds=[[0,0],[IMG_H,IMG_W]];
-function gpsToNaturalPx(lng,lat){return{x:affine.a*lng+affine.b*lat+affine.c,y:affine.d*lng+affine.e*lat+affine.f};}
+function gpsToNaturalPx(lng,lat){return{x:affine.a*(lng-AFFINE_LON0)+affine.b*(lat-AFFINE_LAT0)+affine.c,y:affine.d*(lng-AFFINE_LON0)+affine.e*(lat-AFFINE_LAT0)+affine.f};}
 function px2ll(nx,ny){return L.latLng(IMG_H-ny,nx);}
 function gpsToLeaflet(lng,lat){var p=gpsToNaturalPx(lng,lat);return px2ll(p.x,p.y);}
 
@@ -596,7 +600,7 @@ function openCard(spec,fresh,grade){
     +'<div class="row"><dt>관찰 포인트</dt><dd>'+spec.tell+'</dd></div>'
     +'<div class="row"><dt>헷갈리는 친구</dt><dd>'+((spec.rivals||[]).join(' · ')||'없음')+'</dd></div>'
     +'<div class="row"><dt>생태</dt>'+eco+'</div>'
-    +'<div class="row"><dt>보전 등급</dt>'+iucn+'</div>'
+    +'<div class="row"><dt>CITES 등재</dt>'+iucn+'</div>'
     +'</dl>'
     +'</div>'
     +'<p class="src-note">생태·보전 항목은 1차 출처 확인 전 공개 보류 / 사육사 감수 예정</p>'
