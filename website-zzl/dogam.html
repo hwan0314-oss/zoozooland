@@ -368,13 +368,16 @@ function recompute(lng,lat){
   var was=inZones.slice();
   inZones=ZDX.zones.filter(function(z){return ZDX.dist(lng,lat,z.lon,z.lat)<=ZDX.RADIUS;}).map(function(z){return z.name;});
   inZones.forEach(function(n){if(was.indexOf(n)<0){SND.zone();toast(n+' 구역에 도착했어요');}});
+  if(pendingAnimal&&pendingZone&&inZones.length>0&&inZones.indexOf(pendingZone)<0){
+    removeAnimalMarker(pendingId);
+  }
   if(inZones.length){zoneBadge.textContent=inZones.join(' · ');zoneBadge.classList.add('on');}
   else zoneBadge.classList.remove('on');
   tryEncounter();
 }
 
 /* ── 동물 마커 ───────────────────────────────────── */
-var animalMarkers={},pendingAnimal=false;
+var animalMarkers={},pendingAnimal=false,pendingId=null,pendingZone=null;
 function spawnAnimal(spec){
   if(pendingAnimal)return;
   if(animalMarkers[spec.id])return;
@@ -394,13 +397,15 @@ function spawnAnimal(spec){
   m.on('click',function(){SND.unlock();openEncounter(spec);});
   animalMarkers[spec.id]=m;
   pendingAnimal=true;
+  pendingId=spec.id;
+  pendingZone=spec.zone;
   lmap.panTo(ll);
   SND.pop();
   toast(spec.kname+'가 나타났어요! 탭해서 잡아보세요 👆');
 }
 function removeAnimalMarker(id){
   if(animalMarkers[id]){animalMarkers[id].remove();delete animalMarkers[id];}
-  pendingAnimal=false;
+  pendingAnimal=false;pendingId=null;pendingZone=null;
 }
 
 /* ── 조우 타이머 ─────────────────────────────────── */
