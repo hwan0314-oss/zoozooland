@@ -865,7 +865,7 @@ function easeInBack(x, s) {           /* 반대로 살짝 물러섰다 튀어나
 
 ZZL.assembly = function (model, opts) {
   opts = opts || {};
-  var order = ZZL.puzzleOrder(model.spec);
+  var order = Object.keys(model.parts);
   var root = model.root;
 
   /* 타이밍 (ms) — 전체 약 1.9초 */
