@@ -37,14 +37,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0B0A;color:#fff;
 .gps-pill.found #gpsBarText{color:rgba(125,158,126,0.75)}
 @keyframes dotblink{0%,100%{opacity:1}50%{opacity:0.25}}
 
-.ov-back{position:fixed;top:14px;left:14px;z-index:20;display:flex;align-items:center;
-  height:36px;padding:0 12px;background:rgba(10,11,10,0.78);backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);color:rgba(255,255,255,0.45);text-decoration:none;
-  font-family:monospace;font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em}
+.ov-back{position:fixed;top:12px;left:12px;z-index:20;display:flex;align-items:center;
+  height:44px;padding:0 18px;background:rgba(10,11,10,0.82);backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);color:rgba(255,255,255,0.55);text-decoration:none;
+  font-family:monospace;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em}
 .ov-back:hover{color:#7D9E7E}
-#dexBtn{position:fixed;top:14px;right:14px;z-index:20;
-  height:36px;padding:0 14px;background:#7D9E7E;color:#0A0B0A;border:none;cursor:pointer;
-  font-family:monospace;font-size:0.52rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em}
+#dexBtn{position:fixed;top:12px;right:12px;z-index:20;
+  height:44px;padding:0 20px;background:#7D9E7E;color:#0A0B0A;border:none;cursor:pointer;
+  font-family:monospace;font-size:0.68rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em}
 #dexBtn:active{filter:brightness(1.2)}
 
 #zoneBadge{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);z-index:20;
@@ -161,9 +161,9 @@ dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
 .dex-hd h2{font-family:monospace;font-size:0.62rem;text-transform:uppercase;
   letter-spacing:0.12em;color:rgba(255,255,255,0.3)}
 .dex-cnt{font-size:0.82rem;font-weight:700;color:#7D9E7E}
-.dex-cls{padding:8px 14px;background:transparent;border:1px solid rgba(255,255,255,0.12);
-  color:rgba(255,255,255,0.4);font-family:monospace;font-size:0.5rem;
-  text-transform:uppercase;cursor:pointer}
+.dex-cls{padding:12px 26px;background:transparent;border:1px solid rgba(255,255,255,0.18);
+  color:rgba(255,255,255,0.55);font-family:monospace;font-size:0.78rem;
+  text-transform:uppercase;cursor:pointer;letter-spacing:0.06em}
 #grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:6px}
 @media(min-width:400px){#grid{grid-template-columns:repeat(5,1fr)}}
 @media(min-width:520px){#grid{grid-template-columns:repeat(6,1fr)}}
@@ -642,10 +642,26 @@ function openCard(spec,fresh,grade){
 
 /* ── 도감 화면 ───────────────────────────────── */
 $('dexBtn').onclick=function(){SND.unlock();showDex();};
-$('dexClsBtn').onclick=function(){$('dexOverlay').hidden=true;};
+$('dexClsBtn').onclick=function(){
+  if(history.state&&history.state.dexOpen){history.back();}
+  else{$('dexOverlay').hidden=true;}
+};
+/* 뒤로가기(popstate): 도감 오버레이가 열려있으면 닫기 */
+window.addEventListener('popstate',function(e){
+  if(!$('dexOverlay').hidden&&!(e.state&&e.state.dexOpen)){
+    $('dexOverlay').hidden=true;
+  }
+});
 /* 홈페이지 '수집 현황 보기' 버튼에서 #dex 해시로 진입 시 자동 오픈 */
 if(location.hash==='#dex'){setTimeout(function(){showDex();},600);}
-function showDex(newId){drawGrid(newId);$('dexOverlay').hidden=false;}
+function showDex(newId){
+  drawGrid(newId);
+  $('dexOverlay').hidden=false;
+  /* 히스토리에 dex 상태 추가 → 뒤로가기로 닫을 수 있게 */
+  if(!history.state||!history.state.dexOpen){
+    history.pushState({dexOpen:true},'','#dex');
+  }
+}
 function drawGrid(newId){
   var el=$('grid');el.innerHTML='';
   SP.forEach(function(s){

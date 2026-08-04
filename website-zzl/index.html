@@ -434,103 +434,26 @@
         <span class="text-[#D4FF00]/50">62 SPECIES</span>
       </div>
 
-      <!-- 도감 그리드 (실제 ZZL 3D 블록 동물 렌더링) -->
+      <!-- 도감 그리드: JS가 실제 ZZL 썸네일로 채움 -->
       <div class="border border-white/10 bg-[#0c0c0c] p-[3px]">
-        <div class="grid grid-cols-4 gap-[2px]">
-
-          <!-- ★ Featured: 회전하는 3D 블록 동물 (col 1-2, row 1-2) -->
-          <div id="dgFeaturedCell" class="col-span-2 row-span-2 bg-[#111] relative overflow-hidden">
-            <!-- 로딩 중 플레이스홀더 -->
-            <div id="dgFeaturedPh" class="absolute inset-0 flex items-center justify-center bg-[#111]">
-              <div style="width:20px;height:20px;border:2px solid rgba(255,255,255,0.08);border-top-color:rgba(255,255,255,0.25);border-radius:50%;animation:dgSpin 1s linear infinite"></div>
-            </div>
-            <!-- WebGL 캔버스 -->
-            <canvas id="dgFeatured" style="display:none;position:absolute;inset:0;width:100%;height:100%"></canvas>
-            <!-- 이름 오버레이 -->
-            <div style="position:absolute;bottom:0;left:0;right:0;padding:6px;background:linear-gradient(to top,rgba(0,0,0,0.75),transparent);pointer-events:none">
-              <b id="dgFeaturedName" style="font-size:8px;color:rgba(255,255,255,0.6);display:block;text-align:center"> </b>
-              <span id="dgFeaturedNo" style="font-size:6px;color:rgba(255,255,255,0.3);display:block;text-align:center;font-family:monospace"> </span>
-            </div>
-          </div>
-
-          <!-- ★ thumb 1 (row1 col3) -->
-          <div class="bg-[#111] p-[5px] flex flex-col items-center gap-[3px]">
-            <div id="dgPh1" class="w-full aspect-square bg-[#181818]"></div>
-            <img id="dgThumb1" class="w-full aspect-square object-contain" style="display:none">
-            <b id="dgName1" class="text-[7px] text-white/55 truncate w-full text-center"> </b>
-            <u id="dgNo1" class="mono text-[6px] text-gray-700 no-underline"> </u>
-          </div>
-          <!-- ★ thumb 2 (row1 col4) -->
-          <div class="bg-[#111] p-[5px] flex flex-col items-center gap-[3px]">
-            <div id="dgPh2" class="w-full aspect-square bg-[#181818]"></div>
-            <img id="dgThumb2" class="w-full aspect-square object-contain" style="display:none">
-            <b id="dgName2" class="text-[7px] text-white/55 truncate w-full text-center"> </b>
-            <u id="dgNo2" class="mono text-[6px] text-gray-700 no-underline"> </u>
-          </div>
-
-          <!-- ★ thumb 3 (row2 col3) -->
-          <div class="bg-[#111] p-[5px] flex flex-col items-center gap-[3px]">
-            <div id="dgPh3" class="w-full aspect-square bg-[#181818]"></div>
-            <img id="dgThumb3" class="w-full aspect-square object-contain" style="display:none">
-            <b id="dgName3" class="text-[7px] text-white/55 truncate w-full text-center"> </b>
-            <u id="dgNo3" class="mono text-[6px] text-gray-700 no-underline"> </u>
-          </div>
-          <!-- 잠김 (row2 col4) -->
-          <div class="bg-[#0e0e0e] p-[5px] flex flex-col items-center gap-[3px]">
-            <div class="w-full aspect-square bg-[#141414] flex items-center justify-center"><span class="text-[11px] text-gray-800">?</span></div>
-            <b class="text-[7px] text-gray-800">???</b>
-            <u class="mono text-[6px] text-gray-800 no-underline">---</u>
-          </div>
-
-          <!-- ★ thumb 4 (row3 col1) -->
-          <div class="bg-[#111] p-[5px] flex flex-col items-center gap-[3px]">
-            <div id="dgPh4" class="w-full aspect-square bg-[#181818]"></div>
-            <img id="dgThumb4" class="w-full aspect-square object-contain" style="display:none">
-            <b id="dgName4" class="text-[7px] text-white/55 truncate w-full text-center"> </b>
-            <u id="dgNo4" class="mono text-[6px] text-gray-700 no-underline"> </u>
-          </div>
-          <!-- 잠김 (row3 col2) -->
-          <div class="bg-[#0e0e0e] p-[5px] flex flex-col items-center gap-[3px]">
-            <div class="w-full aspect-square bg-[#141414] flex items-center justify-center"><span class="text-[11px] text-gray-800">?</span></div>
-            <b class="text-[7px] text-gray-800">???</b>
-            <u class="mono text-[6px] text-gray-800 no-underline">---</u>
-          </div>
-          <!-- ★ thumb 5 (row3 col3) -->
-          <div class="bg-[#111] p-[5px] flex flex-col items-center gap-[3px]">
-            <div id="dgPh5" class="w-full aspect-square bg-[#181818]"></div>
-            <img id="dgThumb5" class="w-full aspect-square object-contain" style="display:none">
-            <b id="dgName5" class="text-[7px] text-white/55 truncate w-full text-center"> </b>
-            <u id="dgNo5" class="mono text-[6px] text-gray-700 no-underline"> </u>
-          </div>
-          <!-- 잠김 (row3 col4) -->
-          <div class="bg-[#0e0e0e] p-[5px] flex flex-col items-center gap-[3px]">
-            <div class="w-full aspect-square bg-[#141414] flex items-center justify-center"><span class="text-[11px] text-gray-800">?</span></div>
-            <b class="text-[7px] text-gray-800">???</b>
-            <u class="mono text-[6px] text-gray-800 no-underline">---</u>
-          </div>
-
-          <!-- row4: 잠김 × 4 -->
-          <div class="bg-[#0e0e0e] p-[5px] flex flex-col items-center gap-[3px]">
-            <div class="w-full aspect-square bg-[#141414] flex items-center justify-center"><span class="text-[11px] text-gray-800">?</span></div>
-            <b class="text-[7px] text-gray-800">???</b>
-            <u class="mono text-[6px] text-gray-800 no-underline">---</u>
-          </div>
-          <div class="bg-[#0e0e0e] p-[5px] flex flex-col items-center gap-[3px]">
-            <div class="w-full aspect-square bg-[#141414] flex items-center justify-center"><span class="text-[11px] text-gray-800">?</span></div>
-            <b class="text-[7px] text-gray-800">???</b>
-            <u class="mono text-[6px] text-gray-800 no-underline">---</u>
-          </div>
-          <div class="bg-[#0e0e0e] p-[5px] flex flex-col items-center gap-[3px]">
-            <div class="w-full aspect-square bg-[#141414] flex items-center justify-center"><span class="text-[11px] text-gray-800">?</span></div>
-            <b class="text-[7px] text-gray-800">???</b>
-            <u class="mono text-[6px] text-gray-800 no-underline">---</u>
-          </div>
-          <div class="bg-[#0e0e0e] p-[5px] flex flex-col items-center gap-[3px]">
-            <div class="w-full aspect-square bg-[#141414] flex items-center justify-center"><span class="text-[11px] text-gray-800">?</span></div>
-            <b class="text-[7px] text-gray-800">???</b>
-            <u class="mono text-[6px] text-gray-800 no-underline">---</u>
-          </div>
-
+        <div id="dgPreviewGrid" class="grid grid-cols-4 gap-[2px]">
+          <!-- 로딩 중 플레이스홀더 (16칸) -->
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
+          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
         </div>
       </div>
 
@@ -709,9 +632,6 @@
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="js/main.js"></script>
 
-<!-- 도감 미리보기: @keyframes -->
-<style>@keyframes dgSpin{to{transform:rotate(360deg)}}</style>
-
 <!-- 도감 미리보기 스크립트 (IntersectionObserver로 lazy load) -->
 <script>
 (function () {
@@ -741,29 +661,25 @@
       var s = document.createElement('script');
       s.src = list[i++];
       s.onload = next;
-      s.onerror = next; // 실패해도 계속
+      s.onerror = next;
       document.head.appendChild(s);
     })();
   }
 
   function padId(id) {
-    return '#' + id.replace('A', '').replace(/^0+/, '') .padStart(3, '0');
+    return '#' + id.replace('A', '').replace(/^0+/, '').padStart(3, '0');
   }
 
   function initPreview() {
     var all = window.ZZL_SPECIES || [];
-    if (!all.length || !window.ZDX || !window.ZZL) return;
+    if (!all.length || !window.ZDX) return;
 
     /* 수집현황 버튼 활성화 */
     try {
       var cnt = ZDX.save.count();
       if (cnt > 0) {
         var btn = document.getElementById('dogamCollBtn');
-        if (btn) {
-          btn.style.opacity = '1';
-          btn.style.pointerEvents = 'auto';
-          btn.style.cursor = 'pointer';
-        }
+        if (btn) { btn.style.opacity='1'; btn.style.pointerEvents='auto'; btn.style.cursor='pointer'; }
         var lbl = document.getElementById('dgCollLabel');
         if (lbl) lbl.textContent = '수집 현황 보기 (' + cnt + ' / ' + all.length + ')';
         var lock = document.getElementById('dgLockIcon');
@@ -771,79 +687,54 @@
       }
     } catch (e) {}
 
-    /* 대표 동물: index 0 → 회전 캔버스 */
-    var featSpec = all[0];
-    if (featSpec) {
-      var fn = document.getElementById('dgFeaturedName');
-      var fo = document.getElementById('dgFeaturedNo');
-      if (fn) fn.textContent = featSpec.kname;
-      if (fo) fo.textContent = padId(featSpec.id);
-      startRotation(featSpec);
+    /* 16칸 그리드: 수집(컬러) 7칸 + 잠김(실루엣) 9칸
+       실제 도감화면과 동일한 스타일 */
+    var COLLECTED = [0, 3, 5, 8, 10, 13, 15]; // 수집된 칸 index (0~15)
+    var GRADES    = ['골드','실버','골드','브론즈','실버','실버','브론즈'];
+    var GRADE_CLR = { '골드':'#c8f000', '실버':'#bbb', '브론즈':'#b8763c' };
+    var grid = document.getElementById('dgPreviewGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    var collIdx = 0, lockIdx = 0;
+    for (var i = 0; i < 16; i++) {
+      var isCol = COLLECTED.indexOf(i) >= 0;
+      var spec  = all[isCol ? collIdx : (COLLECTED.length + lockIdx)];
+      if (!spec) spec = all[i % all.length]; // 폴백
+      var grade = isCol ? GRADES[collIdx] : null;
+      if (isCol) collIdx++; else lockIdx++;
+
+      var url;
+      try { url = ZDX.thumbs.species(spec, !isCol); } catch (e) {}
+
+      var cell = document.createElement('div');
+      cell.style.cssText = 'background:#111;padding:5px;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;'
+        + (isCol ? '' : 'opacity:0.3;filter:grayscale(1)');
+
+      /* 그레이드 도트 */
+      if (isCol && grade) {
+        var dot = document.createElement('div');
+        dot.style.cssText = 'position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:' + GRADE_CLR[grade];
+        cell.appendChild(dot);
+      }
+
+      var img = document.createElement('img');
+      img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:contain;display:block';
+      if (url) img.src = url;
+      cell.appendChild(img);
+
+      var name = document.createElement('b');
+      name.style.cssText = 'font-size:7px;text-align:center;color:rgba(255,255,255,' + (isCol ? '0.6' : '0.25') + ');line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%';
+      name.textContent = isCol ? spec.kname : '???';
+      cell.appendChild(name);
+
+      var no = document.createElement('u');
+      no.style.cssText = 'font-size:6px;color:rgba(255,255,255,' + (isCol ? '0.2' : '0.1') + ');font-family:monospace;text-decoration:none;display:block';
+      no.textContent = padId(spec.id);
+      cell.appendChild(no);
+
+      grid.appendChild(cell);
     }
-
-    /* 정적 썸네일 1~5: species index 1~5 */
-    [1, 2, 3, 4, 5].forEach(function (n) {
-      var spec = all[n];
-      if (!spec) return;
-      try {
-        var url = ZDX.thumbs.species(spec, false);
-        var img = document.getElementById('dgThumb' + n);
-        var ph  = document.getElementById('dgPh'    + n);
-        var nm  = document.getElementById('dgName'  + n);
-        var no  = document.getElementById('dgNo'    + n);
-        if (img) { img.src = url; img.style.display = 'block'; }
-        if (ph)  ph.style.display  = 'none';
-        if (nm)  nm.textContent = spec.kname;
-        if (no)  no.textContent = padId(spec.id);
-      } catch (e) {}
-    });
-  }
-
-  function startRotation(spec) {
-    var cell   = document.getElementById('dgFeaturedCell');
-    var canvas = document.getElementById('dgFeatured');
-    var ph     = document.getElementById('dgFeaturedPh');
-    if (!cell || !canvas) return;
-
-    /* 실제 픽셀 크기 */
-    var rect = cell.getBoundingClientRect();
-    var w = Math.round(rect.width)  || 160;
-    var h = Math.round(rect.height) || 160;
-    canvas.width  = w;
-    canvas.height = h;
-
-    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(1);
-    renderer.setSize(w, h, false);
-    if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
-
-    var scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight(0xEAF4F8, 0x8E8560, 1.0));
-    var dl  = new THREE.DirectionalLight(0xFFF8E8, 1.0);  dl.position.set(4,  7, 6);  scene.add(dl);
-    var dl2 = new THREE.DirectionalLight(0xC6DCFF, 0.35); dl2.position.set(-4, 2, -3); scene.add(dl2);
-
-    var cam = new THREE.PerspectiveCamera(32, w / h, 0.1, 200);
-    var model = ZZL.build(spec.model);
-    scene.add(model.root);
-
-    var bb = new THREE.Box3().setFromObject(model.root);
-    var sz = new THREE.Vector3(), ct = new THREE.Vector3();
-    bb.getSize(sz); bb.getCenter(ct);
-    var maxS = Math.max(sz.x, sz.y, sz.z) * 1.4;
-    var d = (maxS / 2) / Math.tan(cam.fov * Math.PI / 360);
-    cam.position.set(Math.sin(-0.55) * d, ct.y + sz.y * 0.2, Math.cos(-0.55) * d);
-    cam.lookAt(0, ct.y, 0);
-
-    if (ph)     ph.style.display = 'none';
-    canvas.style.display = 'block';
-
-    var rotY = -0.55;
-    (function tick() {
-      requestAnimationFrame(tick);
-      rotY += 0.007;
-      model.root.rotation.y = rotY;
-      renderer.render(scene, cam);
-    })();
   }
 })();
 </script>
