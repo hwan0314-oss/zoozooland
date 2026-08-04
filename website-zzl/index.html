@@ -394,46 +394,95 @@
 <section id="dogam" class="pt-12 pb-24 px-6 bg-black">
   <div class="section-label">ZZL-UNIT-08 / ZZL-DOGAM</div>
 
-  <div class="mb-14">
-    <div class="mono text-[#D4FF00] mb-4">[ IN_FIELD_ONLY ]</div>
-    <h2 class="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
-      쥬쥬랜드 안에서,<br>
-      <span class="text-[#D4FF00]">동물을 찾아보세요</span>
-    </h2>
-    <p class="text-gray-400 max-w-md text-sm leading-relaxed break-keep">
-      쥬쥬랜드에서만 작동하는 동물 수집 게임. 구역에 가까이 가면 동물이 나타나고, 퀴즈를 맞춰야 도감에 담을 수 있어요.
-    </p>
-  </div>
+  <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
 
-  <!-- 3단 기능 설명 -->
-  <div class="grid md:grid-cols-3 gap-px bg-white/5 border border-white/5 mb-12">
-    <div class="p-8 bg-[#080908]">
-      <div class="mono text-[#D4FF00] mb-6 text-[10px]">01_ENCOUNTER</div>
-      <h4 class="text-xl font-bold mb-4">동물을 만나보세요</h4>
-      <p class="text-sm text-gray-400 leading-relaxed break-keep">
-        공원 구역에 가까이 가면 동물이 나타나요.<br>구역마다 출현하는 동물이 달라요.
-      </p>
-    </div>
-    <div class="p-8 bg-[#080908]">
-      <div class="mono text-[#D4FF00] mb-6 text-[10px]">02_QUIZ</div>
-      <h4 class="text-xl font-bold mb-4">퀴즈로 도감에 담아요</h4>
-      <p class="text-sm text-gray-400 leading-relaxed break-keep">
-        머리 · 몸통 · 다리 조각을 맞춰보세요.<br>틀릴수록 등급이 낮아지니 잘 관찰해야 해요.
-      </p>
-    </div>
-    <div class="p-8 bg-[#080908]">
-      <div class="mono text-[#D4FF00] mb-6 text-[10px]">03_COLLECT</div>
-      <h4 class="text-xl font-bold mb-4">62종 모두 수집해보세요</h4>
-      <p class="text-sm text-gray-400 leading-relaxed break-keep">
-        골드 · 실버 · 브론즈로 수집 실력이 기록돼요.<br>62종 전부 골드 달성에 도전해보세요!
-      </p>
-    </div>
-  </div>
+    <!-- 왼쪽: 헤드라인 + 설명 + 버튼 -->
+    <div class="flex flex-col gap-10">
+      <div>
+        <div class="mono text-[#D4FF00] mb-4">[ IN_FIELD_ONLY ]</div>
+        <h2 class="text-4xl md:text-5xl font-black leading-tight mb-8">
+          쥬쥬랜드 안에서,<br>
+          <span class="text-[#D4FF00]">동물을 찾아보세요</span>
+        </h2>
+        <div class="space-y-2 text-sm text-gray-400 leading-relaxed break-keep">
+          <p>공원 구역에 가까이 가면 동물이 나타납니다.</p>
+          <p>머리 · 몸통 · 다리 퀴즈로 맞춰야 도감에 담겨요.</p>
+          <p>62종 모두 수집하면 — 직접 확인해보세요.</p>
+        </div>
+      </div>
 
-  <!-- CTA -->
-  <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-    <a href="dogam.html" class="btn-zzl">도감 열기</a>
-    <span class="mono text-[10px] text-gray-600">AVAILABLE_IN_PARK · GPS_REQUIRED</span>
+      <!-- 버튼 -->
+      <div class="space-y-3">
+        <a href="dogam.html" class="btn-zzl block text-center">DOGAM 열기 →</a>
+        <div class="w-full py-4 border border-white/8 flex items-center justify-center gap-2"
+             style="opacity:0.38;cursor:not-allowed">
+          <svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.3" stroke-linecap="round">
+            <rect x="1.5" y="5.5" width="7" height="5.5" rx="0.8" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.3)"/>
+            <path d="M3.2 5.5V3.8a1.8 1.8 0 013.6 0v1.7"/>
+          </svg>
+          <span class="mono text-[10px] text-gray-500">수집 현황 보기</span>
+        </div>
+        <p class="mono text-[9px] text-gray-700 text-center">현장 방문 후 도감 앱에서 확인 가능합니다</p>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 썸네일 그리드 미리보기 -->
+    <div>
+      <div class="mono text-[9px] text-gray-700 mb-2 flex justify-between">
+        <span>SPECIES_DATABASE</span>
+        <span>62 TOTAL</span>
+      </div>
+
+      <!-- 6×5 그리드 — 일부만 언락 -->
+      <div class="grid grid-cols-6 gap-[3px]">
+        <!-- row 1 -->
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#131510] border border-[#D4FF00]/20 relative overflow-hidden"><div class="absolute bottom-0 inset-x-0 h-[2px] bg-[#D4FF00]/30"></div></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <!-- row 2 -->
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#131510] border border-[#D4FF00]/20 relative overflow-hidden"><div class="absolute bottom-0 inset-x-0 h-[2px] bg-[#D4FF00]/30"></div></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#131510] border border-[#D4FF00]/20 relative overflow-hidden"><div class="absolute bottom-0 inset-x-0 h-[2px] bg-[#D4FF00]/30"></div></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <!-- row 3 -->
+        <div class="aspect-square bg-[#131510] border border-[#D4FF00]/20 relative overflow-hidden"><div class="absolute bottom-0 inset-x-0 h-[2px] bg-[#D4FF00]/30"></div></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#131510] border border-[#D4FF00]/20 relative overflow-hidden"><div class="absolute bottom-0 inset-x-0 h-[2px] bg-[#D4FF00]/30"></div></div>
+        <!-- row 4 -->
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#131510] border border-[#D4FF00]/20 relative overflow-hidden"><div class="absolute bottom-0 inset-x-0 h-[2px] bg-[#D4FF00]/30"></div></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <!-- row 5 -->
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#131510] border border-[#D4FF00]/20 relative overflow-hidden"><div class="absolute bottom-0 inset-x-0 h-[2px] bg-[#D4FF00]/30"></div></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+        <div class="aspect-square bg-[#0D0E0D] border border-white/[0.04]"></div>
+      </div>
+
+      <!-- 범례 -->
+      <div class="flex items-center gap-6 mt-4 mono text-[9px] text-gray-700">
+        <span class="flex items-center gap-1.5">
+          <span class="inline-block w-3 h-3 bg-[#131510] border border-[#D4FF00]/20"></span>수집됨
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="inline-block w-3 h-3 bg-[#0D0E0D] border border-white/[0.04]"></span>미수집
+        </span>
+      </div>
+    </div>
+
   </div>
 </section>
 
