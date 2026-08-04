@@ -164,6 +164,50 @@ dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
 .dex-cls{padding:12px 26px;background:transparent;border:1px solid rgba(255,255,255,0.18);
   color:rgba(255,255,255,0.55);font-family:monospace;font-size:0.78rem;
   text-transform:uppercase;cursor:pointer;letter-spacing:0.06em}
+/* ── 쥬쥬랜드 마스터 오버레이 ── */
+#masterOverlay{position:fixed;inset:0;z-index:35;background:#050806;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:32px 24px;overflow:hidden}
+#masterOverlay[hidden]{display:none}
+.mo-glow{position:absolute;top:50%;left:50%;width:400px;height:400px;
+  transform:translate(-50%,-50%);pointer-events:none;
+  background:radial-gradient(circle,rgba(212,255,0,0.14) 0%,transparent 65%);
+  animation:moPulse 4s ease-in-out infinite}
+@keyframes moPulse{0%,100%{opacity:0.55;transform:translate(-50%,-50%) scale(1)}
+  50%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}}
+.mo-eyebrow{font-family:monospace;font-size:0.44rem;text-transform:uppercase;
+  letter-spacing:0.22em;color:rgba(212,255,0,0.5);margin-bottom:24px;position:relative}
+.mo-stars{font-size:1.4rem;letter-spacing:0.12em;color:#D4FF00;
+  margin-bottom:18px;position:relative;
+  text-shadow:0 0 24px rgba(212,255,0,0.55)}
+.mo-zzl{display:block;font-family:monospace;font-size:0.62rem;letter-spacing:0.3em;
+  color:rgba(212,255,0,0.55);text-transform:uppercase;margin-bottom:6px;position:relative}
+.mo-title{font-size:clamp(3rem,13vw,5rem);font-weight:900;letter-spacing:-0.03em;
+  line-height:1.05;color:#fff;margin-bottom:20px;position:relative}
+.mo-divider{width:40px;height:2px;background:#D4FF00;margin:0 auto 16px;position:relative}
+.mo-sub{font-family:monospace;font-size:0.54rem;color:rgba(255,255,255,0.3);
+  letter-spacing:0.14em;text-transform:uppercase;margin-bottom:44px;position:relative}
+.mo-btn{padding:14px 32px;border:1px solid rgba(212,255,0,0.45);background:transparent;
+  color:#D4FF00;font-family:monospace;font-size:0.62rem;
+  text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;
+  transition:background 0.2s;position:relative}
+.mo-btn:active{background:rgba(212,255,0,0.12)}
+/* 등장 애니메이션 */
+@keyframes moIn{
+  0%{opacity:0;transform:scale(0.93) translateY(20px)}
+  65%{opacity:1;transform:scale(1.02) translateY(-3px)}
+  100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes moChildIn{
+  0%{opacity:0;transform:translateY(12px)}
+  100%{opacity:1;transform:translateY(0)}}
+#masterOverlay.mo-enter{animation:moIn 0.85s cubic-bezier(0.22,0.61,0.36,1) both}
+#masterOverlay.mo-enter .mo-eyebrow{animation:moChildIn 0.55s 0.15s cubic-bezier(0.22,0.61,0.36,1) both}
+#masterOverlay.mo-enter .mo-stars{animation:moChildIn 0.55s 0.3s cubic-bezier(0.22,0.61,0.36,1) both}
+#masterOverlay.mo-enter .mo-title{animation:moChildIn 0.6s 0.4s cubic-bezier(0.22,0.61,0.36,1) both}
+#masterOverlay.mo-enter .mo-divider{animation:moChildIn 0.4s 0.65s cubic-bezier(0.22,0.61,0.36,1) both}
+#masterOverlay.mo-enter .mo-sub{animation:moChildIn 0.4s 0.75s cubic-bezier(0.22,0.61,0.36,1) both}
+#masterOverlay.mo-enter .mo-btn{animation:moChildIn 0.4s 0.9s cubic-bezier(0.22,0.61,0.36,1) both}
+
 #grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:6px}
 @media(min-width:400px){#grid{grid-template-columns:repeat(5,1fr)}}
 @media(min-width:520px){#grid{grid-template-columns:repeat(6,1fr)}}
@@ -262,6 +306,17 @@ dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
     <button class="dex-cls" id="dexClsBtn">닫기</button>
   </div>
   <div id="grid"></div>
+</div>
+
+<div id="masterOverlay" hidden>
+  <div class="mo-glow"></div>
+  <div class="mo-eyebrow">ALL 62 SPECIES CLEARED</div>
+  <div class="mo-stars">★★★★★</div>
+  <span class="mo-zzl">ZZL</span>
+  <h1 class="mo-title">쥬쥬랜드<br>마스터</h1>
+  <div class="mo-divider"></div>
+  <p class="mo-sub">62종 완전 수집 달성</p>
+  <button id="masterDismiss" class="mo-btn">도감 보기 ↓</button>
 </div>
 
 <div id="regAnim"></div>
@@ -641,23 +696,33 @@ function openCard(spec,fresh,grade){
 }
 
 /* ── 도감 화면 ───────────────────────────────── */
+function hideDex(){
+  $('dexOverlay').hidden=true;
+  $('masterOverlay').hidden=true;
+}
+function showMaster(){
+  var mo=$('masterOverlay');
+  mo.hidden=false;
+  mo.classList.remove('mo-enter');
+  void mo.offsetWidth;
+  mo.classList.add('mo-enter');
+}
+$('masterDismiss').onclick=function(){$('masterOverlay').hidden=true;};
 $('dexBtn').onclick=function(){SND.unlock();showDex();};
 $('dexClsBtn').onclick=function(){
   if(history.state&&history.state.dexOpen){history.back();}
-  else{$('dexOverlay').hidden=true;}
+  else{hideDex();}
 };
-/* 뒤로가기(popstate): 도감 오버레이가 열려있으면 닫기 */
 window.addEventListener('popstate',function(e){
-  if(!$('dexOverlay').hidden&&!(e.state&&e.state.dexOpen)){
-    $('dexOverlay').hidden=true;
-  }
+  if(!$('dexOverlay').hidden&&!(e.state&&e.state.dexOpen)){hideDex();}
 });
-/* 홈페이지 '수집 현황 보기' 버튼에서 #dex 해시로 진입 시 자동 오픈 */
 if(location.hash==='#dex'){setTimeout(function(){showDex();},600);}
 function showDex(newId){
   drawGrid(newId);
   $('dexOverlay').hidden=false;
-  /* 히스토리에 dex 상태 추가 → 뒤로가기로 닫을 수 있게 */
+  /* 62종 완전 수집 시 마스터 오버레이 표시 */
+  if(S.count()===SP.length&&SP.length>0){showMaster();}
+  else{$('masterOverlay').hidden=true;}
   if(!history.state||!history.state.dexOpen){
     history.pushState({dexOpen:true},'','#dex');
   }
