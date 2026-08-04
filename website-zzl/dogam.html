@@ -643,6 +643,8 @@ function openCard(spec,fresh,grade){
 /* ── 도감 화면 ───────────────────────────────── */
 $('dexBtn').onclick=function(){SND.unlock();showDex();};
 $('dexClsBtn').onclick=function(){$('dexOverlay').hidden=true;};
+/* 홈페이지 '수집 현황 보기' 버튼에서 #dex 해시로 진입 시 자동 오픈 */
+if(location.hash==='#dex'){setTimeout(function(){showDex();},600);}
 function showDex(newId){drawGrid(newId);$('dexOverlay').hidden=false;}
 function drawGrid(newId){
   var el=$('grid');el.innerHTML='';
