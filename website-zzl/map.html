@@ -37,11 +37,11 @@
 
     /* ── 플로팅 오버레이: 뒤로 버튼 ── */
     .ov-back {
-      position: fixed; top: 14px; left: 14px; z-index: 20;
-      display: flex; align-items: center; min-height: 40px; padding: 0 14px;
-      background: rgba(10,11,10,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      position: fixed; top: 12px; left: 12px; z-index: 20;
+      display: flex; align-items: center; min-height: 44px; padding: 0 18px;
+      background: rgba(10,11,10,0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       color: rgba(255,255,255,0.65); text-decoration: none;
-      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.06em; transition: color 0.2s;
     }
     .ov-back:hover { color: #D4FF00; }
@@ -277,7 +277,7 @@ if (!('geolocation' in navigator)) {
 } else {
   navigator.geolocation.watchPosition(
     ({coords:{longitude:lng, latitude:lat, accuracy}}) => {
-      if (!inPark(lng, lat)) { clearGPS(); setStatus('outside','공원 밖'); return; }
+      if (!inPark(lng, lat)) { clearGPS(); setStatus('outside','쥬쥬랜드 밖'); return; }
       const {x:nx, y:ny} = gpsToNaturalPx(lng, lat);
       placeGPS(nx, ny, accuracy);
       setStatus('found', `정확도 ${Math.round(accuracy)}m`);

@@ -352,7 +352,7 @@ if('geolocation' in navigator){
     function(pos){
       if(testOverride)return;
       var lng=pos.coords.longitude,lat=pos.coords.latitude,acc=pos.coords.accuracy;
-      if(!inPark(lng,lat)){clearGPS();setStatus('outside','공원 밖');return;}
+      if(!inPark(lng,lat)){clearGPS();setStatus('outside','쥬쥬랜드 밖');return;}
       var p=gpsToNaturalPx(lng,lat);placeGPS(p.x,p.y,acc);
       setStatus('found','정확도 '+Math.round(acc)+'m');
       if(curLon===null)lmap.panTo(px2ll(p.x,p.y));
