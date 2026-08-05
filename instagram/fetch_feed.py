@@ -67,4 +67,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"[WARN] Instagram feed update skipped: {e}")
+        print("Token may be expired. Update INSTAGRAM_ACCESS_TOKEN secret to fix.")
+        raise SystemExit(0)
