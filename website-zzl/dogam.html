@@ -239,10 +239,11 @@ dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
   letter-spacing:0.1em;opacity:0;animation:fIn 0.4s 1.05s forwards}
 @keyframes fIn{to{opacity:1}}
 
-#toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:50;
-  max-width:92vw;padding:9px 18px;background:rgba(10,12,10,0.92);
-  border:1px solid rgba(125,158,126,0.28);color:#7D9E7E;font-size:0.7rem;
-  text-align:center;pointer-events:none;opacity:0;transition:opacity 0.22s;white-space:nowrap}
+#toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:50;
+  max-width:80vw;padding:18px 32px;background:rgba(10,12,10,0.96);
+  border:1px solid rgba(125,158,126,0.4);color:#7D9E7E;font-size:1rem;
+  text-align:center;pointer-events:none;opacity:0;transition:opacity 0.25s;
+  border-radius:10px;line-height:1.5}
 #toast.on{opacity:1}
   </style>
 </head>
