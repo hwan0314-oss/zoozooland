@@ -3,7 +3,7 @@
   "prev_date": "2025-08-06 (수)",
   "today_weather": {
     "desc": "대체로맑음",
-    "tmax": "34",
+    "tmax": "35",
     "tmin": "26"
   },
   "prev_weather": {
@@ -13,10 +13,10 @@
   },
   "kpi": {
     "daily_sales": "184,000",
-    "daily_visitors": "3",
+    "daily_visitors": "4",
     "ytd_sales": "1,329,966,750",
     "daily_sales_yoy": "-94.1%",
-    "daily_visitors_yoy": "-98.8%",
+    "daily_visitors_yoy": "-98.4%",
     "ytd_sales_yoy": "+33.2%"
   },
   "rows": [
@@ -24,15 +24,15 @@
       "label": "입장(전체)",
       "header": true,
       "d": {
-        "val": "3명",
-        "yoy": "-98.8%"
+        "val": "4명",
+        "yoy": "-98.4%"
       },
       "m": {
-        "val": "355명",
-        "yoy": "-59.5%"
+        "val": "356명",
+        "yoy": "-59.4%"
       },
       "y": {
-        "val": "70,883명",
+        "val": "70,884명",
         "yoy": "+30.0%"
       }
     },
@@ -40,15 +40,15 @@
       "label": "개인",
       "indent": true,
       "d": {
-        "val": "3명",
-        "yoy": "-87.0%"
+        "val": "4명",
+        "yoy": "-82.6%"
       },
       "m": {
-        "val": "334명",
-        "yoy": "-42.9%"
+        "val": "335명",
+        "yoy": "-42.7%"
       },
       "y": {
-        "val": "56,822명",
+        "val": "56,823명",
         "yoy": "+44.2%"
       }
     },
@@ -278,5 +278,5 @@
       }
     }
   ],
-  "generated_at": "2026-08-05 15:01 KST"
+  "generated_at": "2026-08-05 19:01 KST"
 }
