@@ -3,3 +3,5 @@ Allow: /
 
 User-agent: Yeti
 Allow: /
+
+Sitemap: https://zoozoo.kr/sitemap.xml
