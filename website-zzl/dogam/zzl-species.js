@@ -65,7 +65,7 @@ var S = [
 {
   id: 'A003', kname: '꽃사슴', ename: 'Formosan sika deer', zone: '대동물 방목장', n: 4,
   parts: 5, tell: '가지뿔 + 등의 흰 반점',
-  rivals: ['무플론', '산양', '면양'],
+  rivals: ['무플론', '면양'],
   model: {
     scale: 0.9,
     body: { type: 'quad', w: 1.0, h: 0.92, d: 1.86, y: 1.42, color: 0xB98A54, dark: 0xA0743F,

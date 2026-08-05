@@ -309,45 +309,24 @@ function add(a) { S.push(a); }
 
 /* ── 대동물 방목장 ─────────────────────────── */
 add({ id: 'A013', kname: '면양', ename: 'Sheep', zone: '대동물 방목장', n: 21, parts: 4,
-  tell: '두꺼운 양털 몸통 + 옆으로 말린 뿔', rivals: ['자넨', '보어염소', '무플론'],
+  tell: '두꺼운 양털 몸통 + 옆으로 말린 뿔', rivals: ['무플론', '흑염소'],
   model: hoof({ c: 0xF2ECDC, d: 0xDCD2BC, f: 0xE6DAC2, k: 0.95, neck: 0.5, leg: 0.8,
     ears: { type: 'point', w: 0.11, len: 0.3, gap: 0.3, y: 0.2, spread: 1.1, color: 0xE6DAC2 },
     extras: [{ type: 'hornSpiral', name: 'horn', w: 0.12, r: 0.42, gap: 0.26, on: 'head', y: 0.12, color: 0xC9B896 }],
     puzzle: ['head', 'horn', 'body', 'legs'] }) });
 
-add({ id: 'A014', kname: '자넨', ename: 'Saanen Goat', zone: '대동물 방목장', n: 1, parts: 4,
-  tell: '뿔이 없고 순백 + 길게 늘어진 귀', rivals: ['면양', '보어염소', '흑염소'],
-  model: hoof({ c: 0xFAF6EC, d: 0xE4DCCC, f: 0xFAF6EC, k: 0.92, neck: 0.62,
-    ears: { type: 'long', w: 0.13, len: 0.44, gap: 0.28, y: 0.18, spread: 1.3, color: 0xFAF6EC },
-    tail: { type: 'tuft', w: 0.16, y: 1.6, z: -0.92, color: 0xFAF6EC },
-    puzzle: ['head', 'body', 'legs', 'ears'] }) });
-
-add({ id: 'A015', kname: '보어염소', ename: 'Boer Goat', zone: '대동물 방목장', n: 4, parts: 4,
-  tell: '흰 몸 + 갈색 머리 + 짧고 굵은 뿔', rivals: ['자넨', '흑염소', '면양'],
-  model: hoof({ c: 0xF4EEE0, d: 0xDED4C0, f: 0xA85C34, muz: 0xC07848, k: 0.92, neck: 0.6,
-    ears: { type: 'long', w: 0.14, len: 0.42, gap: 0.28, y: 0.16, spread: 1.35, color: 0xA85C34 },
-    extras: [{ type: 'hornShort', name: 'horn', w: 0.1, len: 0.34, gap: 0.2, on: 'head', y: 0.2, color: 0x6A5236 }],
-    puzzle: ['head', 'horn', 'body', 'ears'] }) });
-
 add({ id: 'A016', kname: '흑염소', ename: 'Korean Black Goat', zone: '대동물 방목장', n: 2, parts: 4,
-  tell: '전신 검정 + 뒤로 곧게 뻗은 뿔', rivals: ['자넨', '보어염소', '산양'],
+  tell: '전신 검정 + 뒤로 곧게 뻗은 뿔', rivals: ['면양', '무플론'],
   model: hoof({ c: 0x33302C, d: 0x22201D, f: 0x33302C, k: 0.9, neck: 0.6, nose: 0x141312,
     ears: { type: 'point', w: 0.11, len: 0.34, gap: 0.26, y: 0.18, spread: 1.0, color: 0x33302C },
     extras: [{ type: 'hornBack', name: 'horn', w: 0.11, len: 0.46, gap: 0.18, on: 'head', y: 0.2, color: 0x6A5C48 }],
     puzzle: ['head', 'horn', 'body', 'legs'] }) });
 
 add({ id: 'A017', kname: '무플론', ename: 'Mouflon', zone: '대동물 방목장', n: 2, parts: 5,
-  tell: '머리 옆으로 크게 말려 감긴 나선뿔', rivals: ['면양', '산양', '흑염소'],
+  tell: '머리 옆으로 크게 말려 감긴 나선뿔', rivals: ['면양', '흑염소'],
   model: hoof({ c: 0x8A6440, d: 0x6E4E30, f: 0x9C7248, belly: 0xE8DCC4, k: 0.95, neck: 0.6,
     ears: { type: 'point', w: 0.1, len: 0.28, gap: 0.3, y: 0.16, spread: 1.2, color: 0x9C7248 },
     extras: [{ type: 'hornSpiral', name: 'horn', w: 0.14, r: 0.54, gap: 0.24, on: 'head', y: 0.14, color: 0xB09468 }],
-    puzzle: ['head', 'horn', 'body', 'legs', 'ears'] }) });
-
-add({ id: 'A018', kname: '산양', ename: 'Dall Sheep', zone: '대동물 방목장', n: 10, parts: 5,
-  tell: '굵고 뒤로 크게 휜 뿔 + 흰 몸', rivals: ['무플론', '면양', '흑염소'],
-  model: hoof({ c: 0xF0EAD8, d: 0xD8D0BA, f: 0xF0EAD8, k: 0.98, neck: 0.62,
-    ears: { type: 'point', w: 0.1, len: 0.28, gap: 0.3, y: 0.16, spread: 1.1, color: 0xF0EAD8 },
-    extras: [{ type: 'hornBack', name: 'horn', w: 0.16, len: 0.6, gap: 0.2, on: 'head', y: 0.16, color: 0xB8A278 }],
     puzzle: ['head', 'horn', 'body', 'legs', 'ears'] }) });
 
 add({ id: 'A019', kname: '미니나귀', ename: 'Miniature Donkey', zone: '대동물 방목장', n: 1, parts: 4,
@@ -489,24 +468,14 @@ add({ id: 'A036', kname: '할리퀸금강앵무새', ename: 'Red-and-green Macaw
     belly: 0xC8342E, k: 1.0, tailLen: 1.15, wingTip: 0x2E7A4E }) });
 
 add({ id: 'A037', kname: '아마존앵무새', ename: 'Amazon Parrot', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '중형 + 전신 녹색 + 짧은 꼬리', rivals: ['뉴기니아', '코뉴어', '노랑머리카이큐'],
+  tell: '중형 + 전신 녹색 + 짧은 꼬리', rivals: ['코뉴어', '할리퀸금강앵무새'],
   model: parrot({ c: 0x4E9E3E, d: 0x3C7C30, headC: 0x4E9E3E, face: 0xF2E8C8,
     belly: 0x62B04E, beak: 0x9A9084, k: 0.78, tailLen: 0.55, wingTip: 0xE8B62E }) });
 
-add({ id: 'A038', kname: '뉴기니아', ename: 'Eclectus Parrot', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '중형 + 굵고 밝은 부리 + 단색 몸', rivals: ['아마존앵무새', '코뉴어'],
-  model: parrot({ c: 0xC0322E, d: 0x9A2624, headC: 0xC0322E, belly: 0x8A2A6E,
-    beak: 0xE8A32E, k: 0.8, tailLen: 0.6, wingTip: 0x2E4E9E }) });
-
 add({ id: 'A039', kname: '코뉴어', ename: 'Green-cheeked Conure', zone: '파충류 빌리지', n: 3, parts: 4,
-  tell: '중소형 + 녹색 몸에 긴 꼬리', rivals: ['아마존앵무새', '사랑앵무새', '노랑머리카이큐'],
+  tell: '중소형 + 녹색 몸에 긴 꼬리', rivals: ['아마존앵무새', '사랑앵무새'],
   model: parrot({ c: 0x5AA84A, d: 0x448A38, headC: 0x4A423E, face: 0x8A5C4A,
     belly: 0xA84A3E, beak: 0x38342E, k: 0.62, scale: 1.1, tailLen: 1.2, wingTip: 0x2E5A9E }) });
-
-add({ id: 'A040', kname: '노랑머리카이큐', ename: 'White-bellied Caique', zone: '파충류 빌리지', n: 1, parts: 4,
-  tell: '중소형 + 흰 배 + 주황빛 머리', rivals: ['코뉴어', '아마존앵무새'],
-  model: parrot({ c: 0x4E9E3E, d: 0x3C7C30, headC: 0xE8942E, face: 0xF7F0E2,
-    belly: 0xF7F2E2, beak: 0xC9C2B4, k: 0.62, scale: 1.1, tailLen: 0.55, wingTip: 0x3C7C30 }) });
 
 /* ── 호숫가 ────────────────────────────────── */
 add({ id: 'A041', kname: '오리', ename: 'Duck', zone: '호숫가', n: 8, parts: 3,
@@ -540,21 +509,11 @@ add({ id: 'A046', kname: '커먼머스크터틀', ename: 'Common musk turtle', z
   model: turtleDome({ c: 0x4A443A, d: 0x36322A, f: 0x5C5648, k: 0.5, scutes: 5, scale: 1.4 }) });
 
 add({ id: 'A047', kname: '쿠터', ename: 'River cooter', zone: '거북이 빌리지 카페', n: 26, parts: 4,
-  tell: '납작한 유선형 등딱지 + 머리의 노란 줄무늬', rivals: ['늑대거북', '커먼머스크터틀', '악어거북'],
+  tell: '납작한 유선형 등딱지 + 머리의 노란 줄무늬', rivals: ['커먼머스크터틀', '마타마타거북'],
   model: turtleFlat({ c: 0x3A5A3E, d: 0x2A4430, f: 0x4A7048, k: 0.86, rows: 3, scale: 1.1 }) });
 
-add({ id: 'A048', kname: '늑대거북', ename: 'Snapping Turtle', zone: '거북이 빌리지 카페', n: 4, parts: 4,
-  tell: '몸에 비해 큰 머리 + 톱니 달린 긴 꼬리', rivals: ['악어거북', '쿠터', '마타마타거북'],
-  model: turtleFlat({ c: 0x4A4238, d: 0x33302A, f: 0x5C5448, k: 0.95,
-    headW: 0.72, neck: 0.5, tailLen: 0.8, rows: 3 }) });
-
-add({ id: 'A049', kname: '악어거북', ename: 'Alligator snapping turtle', zone: '거북이 빌리지 카페', n: 2, parts: 5,
-  tell: '등딱지 위 세 줄로 솟은 돌기', rivals: ['늑대거북', '쿠터'],
-  model: turtleFlat({ c: 0x3E3830, d: 0x2A2620, f: 0x504838, k: 1.0,
-    headW: 0.76, neck: 0.46, tailLen: 0.85, rows: 4 }) });
-
 add({ id: 'A050', kname: '마타마타거북', ename: 'Mata Mata', zone: '거북이 빌리지 카페', n: 1, parts: 5,
-  tell: '납작한 삼각 머리 + 목에 늘어진 술 장식', rivals: ['늑대거북', '쿠터'],
+  tell: '납작한 삼각 머리 + 목에 늘어진 술 장식', rivals: ['쿠터', '커먼머스크터틀'],
   model: turtleFlat({ c: 0x6E5C42, d: 0x503E2C, f: 0x7C6A4E, k: 0.92,
     headW: 0.9, neck: 0.62, tailLen: 0.5, rows: 3 }) });
 
@@ -564,15 +523,11 @@ add({ id: 'A051', kname: '긴코민물꼬치고기', ename: 'Longnose gar', zone
 
 /* ── 파충류 빌리지 · 파충류 ────────────────── */
 add({ id: 'A052', kname: '그린아나콘다', ename: 'Green Anaconda', zone: '파충류 빌리지', n: 1, parts: 3,
-  tell: '세 뱀 중 가장 굵다 + 올리브 녹색', rivals: ['레틱 파이톤', '레드테일보아'],
+  tell: '굵은 몸통 + 올리브 녹색 (레드테일보아보다 훨씬 굵다)', rivals: ['레드테일보아'],
   model: snake({ c: 0x5A6E3E, d: 0x44542E, headC: 0x6A7E4A, thick: 0.86, count: 3, tailLen: 2.0, k: 1.0, scale: 0.86 }) });
 
-add({ id: 'A053', kname: '레틱 파이톤', ename: 'Reticulated Python', zone: '파충류 빌리지', n: 1, parts: 3,
-  tell: '중간 굵기 + 그물 무늬 + 가장 길다', rivals: ['그린아나콘다', '레드테일보아'],
-  model: snake({ c: 0xC9A96E, d: 0x6E5A38, headC: 0xD8BC84, thick: 0.6, count: 4, tailLen: 2.5, k: 1.0, scale: 0.8 }) });
-
 add({ id: 'A054', kname: '레드테일보아', ename: 'Boa Constrictor', zone: '파충류 빌리지', n: 1, parts: 3,
-  tell: '가장 가늘고 꼬리 쪽이 붉다', rivals: ['그린아나콘다', '레틱 파이톤'],
+  tell: '가는 몸통 + 꼬리 쪽이 붉다 (그린아나콘다보다 훨씬 가늘다)', rivals: ['그린아나콘다'],
   model: snake({ c: 0xB09A78, d: 0x8A7454, headC: 0xC0AC8A, thick: 0.44, count: 3, tailLen: 2.0, k: 1.0, scale: 1.0 }) });
 
 add({ id: 'A055', kname: '테구', ename: 'Tegu', zone: '파충류 빌리지', n: 1, parts: 5,
