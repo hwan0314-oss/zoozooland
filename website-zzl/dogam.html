@@ -716,7 +716,8 @@ function drawGrid(newId){
     var no=document.createElement('u');no.textContent=s.id.slice(1);b.appendChild(no);
     var io=new IntersectionObserver(function(en){if(en[0].isIntersecting){img.src=ZDX.thumbs.species(s,!has);io.disconnect();}});
     io.observe(b);
-    if(has)b.onclick=function(){$('dexOverlay').hidden=true;openCard(s,false);};
+    if(has){b.onclick=function(){$('dexOverlay').hidden=true;openCard(s,false);};}
+    else{(function(spec){b.onclick=function(){toast(spec.zone+' 구역에서 찾을 수 있어요');};})(s);}
     el.appendChild(b);
     if(isNew)setTimeout(function(){b.scrollIntoView({behavior:'smooth',block:'center'});},120);
   });
