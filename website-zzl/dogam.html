@@ -124,10 +124,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0B0A;color:#fff;
   font-family:monospace;font-size:0.48rem;color:rgba(255,255,255,0.35);
   text-transform:uppercase;letter-spacing:0.06em}
 .chip.z{border-color:rgba(125,158,126,0.3);color:#7D9E7E}
-.chip.g{border-color:rgba(200,240,0,0.25);color:#c8f000}
-.chip.g.골드{background:rgba(200,240,0,0.07)}
-.chip.g.실버{border-color:rgba(190,190,190,0.35);color:#bbb}
-.chip.g.브론즈{border-color:rgba(180,120,60,0.35);color:#b8763c}
 dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
 .row{display:flex;flex-direction:column;gap:4px;padding:10px 0;
   border-bottom:1px solid rgba(255,255,255,0.07)}
@@ -218,10 +214,6 @@ dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
 .cell u{font-size:0.42rem;color:rgba(255,255,255,0.18);font-family:monospace;text-decoration:none}
 .cell.locked{opacity:0.3;filter:grayscale(1)}
 .cell.locked b{color:rgba(255,255,255,0.2)}
-.gr{position:absolute;top:4px;right:4px;width:10px;height:10px;border-radius:50%}
-.gr.골드{background:#c8f000}
-.gr.실버{background:#bbb}
-.gr.브론즈{background:#b8763c}
 .cell.new-unlock{animation:cellUnlock 0.7s cubic-bezier(0.22,0.61,0.36,1) forwards}
 @keyframes cellUnlock{
   0%{transform:scale(0.6);opacity:0;filter:brightness(2)}
@@ -243,16 +235,6 @@ dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
 .reg-name{font-size:2rem;font-weight:700;letter-spacing:-0.02em;color:#fff}
 .reg-ename{font-family:monospace;font-size:0.56rem;color:rgba(255,255,255,0.25);
   text-transform:uppercase;letter-spacing:0.1em}
-.reg-grade{padding:5px 22px;font-size:0.95rem;font-weight:900;letter-spacing:0.12em;
-  opacity:0;transform:scale(2.4) rotate(-10deg);margin-top:4px;
-  animation:gradeStamp 0.45s 0.65s cubic-bezier(0.22,0.61,0.36,1) forwards}
-@keyframes gradeStamp{
-  0%{opacity:0;transform:scale(2.4) rotate(-10deg)}
-  55%{opacity:1;transform:scale(0.9) rotate(3deg)}
-  100%{opacity:1;transform:scale(1) rotate(0)}}
-.reg-grade.골드{background:#c8f000;color:#0A0B0A}
-.reg-grade.실버{background:#ccc;color:#0A0B0A}
-.reg-grade.브론즈{background:#b8763c;color:#fff}
 .reg-prog{font-family:monospace;font-size:0.56rem;color:rgba(125,158,126,0.5);
   letter-spacing:0.1em;opacity:0;animation:fIn 0.4s 1.05s forwards}
 @keyframes fIn{to{opacity:1}}
@@ -584,8 +566,7 @@ function openEncounter(spec){
   }
 
   function finish(){
-    var grade=ZDX.puzzle.grade(misses,reduced);
-    S.add(spec.id,grade);
+    S.add(spec.id);
     var info=(window.ZZL_INFO&&ZZL_INFO[spec.id])||{};
     var eco=info.eco?'<dd>'+info.eco+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
     var iucn=info.iucn?'<dd>'+info.iucn+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
@@ -613,7 +594,6 @@ function openEncounter(spec){
             +'<div class="meta">'
             +'<span class="chip z">'+spec.zone+'</span>'
             +'<span class="chip">'+spec.n+'마리</span>'
-            +'<span class="chip g '+grade+'">'+grade+'</span>'
             +'</div>'
             +'<dl class="rows">'
             +'<div class="row"><dt>학명</dt>'+sname+'</div>'
@@ -629,7 +609,7 @@ function openEncounter(spec){
           /* 3초 후 도감으로 자동 전환 */
           setTimeout(function(){
             $('modal').hidden=true;$('sheet').innerHTML='';
-            playRegistration(spec,grade,function(){busy=false;updateProgress();showDex(spec.id);});
+            playRegistration(spec,function(){busy=false;updateProgress();showDex(spec.id);});
           },3000);
         },700);
       }
@@ -641,7 +621,7 @@ function openEncounter(spec){
 }
 
 /* ── 도감 등록 애니메이션 ──────────────────────── */
-function playRegistration(spec,grade,onComplete){
+function playRegistration(spec,onComplete){
   SND.paint();setTimeout(function(){SND.stamp();},400);
   if(S.count()===SP.length)setTimeout(function(){SND.fanfare();},900);
   var img=ZDX.thumbs.species(spec,false);
@@ -653,7 +633,6 @@ function playRegistration(spec,grade,onComplete){
     +'<div class="reg-img"><img src="'+img+'" alt="'+spec.kname+'"></div>'
     +'<div class="reg-name">'+spec.kname+'</div>'
     +'<div class="reg-ename">'+spec.ename+'</div>'
-    +'<div class="reg-grade '+grade+'">'+grade+'</div>'
     +'<div class="reg-prog">'+S.count()+' / '+SP.length+' 수집</div>'
     +'</div>';
   ra.classList.add('show');
@@ -661,10 +640,8 @@ function playRegistration(spec,grade,onComplete){
 }
 
 /* ── 카드 상세 ───────────────────────────────── */
-function openCard(spec,fresh,grade){
+function openCard(spec,fresh){
   busy=true;
-  var got=S.get().got[spec.id];
-  var g=grade||(got&&got.grade)||'';
   var info=(window.ZZL_INFO&&ZZL_INFO[spec.id])||{};
   var eco=info.eco?'<dd>'+info.eco+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
   var iucn=info.iucn?'<dd>'+info.iucn+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
@@ -677,7 +654,6 @@ function openCard(spec,fresh,grade){
     +'<div class="meta">'
     +'<span class="chip z">'+spec.zone+'</span>'
     +'<span class="chip">'+spec.n+'마리</span>'
-    +(g?'<span class="chip g '+g+'">'+g+'</span>':'')
     +'</div>'
     +'<dl class="rows">'
     +'<div class="row"><dt>학명</dt>'+sname+'</div>'
@@ -737,7 +713,6 @@ function drawGrid(newId){
     var img=document.createElement('img');img.loading='lazy';b.appendChild(img);
     var nm=document.createElement('b');nm.textContent=has?s.kname:'???';b.appendChild(nm);
     var no=document.createElement('u');no.textContent=s.id.slice(1);b.appendChild(no);
-    if(has){var gd=document.createElement('span');gd.className='gr '+(S.get().got[s.id].grade||'브론즈');b.appendChild(gd);}
     var io=new IntersectionObserver(function(en){if(en[0].isIntersecting){img.src=ZDX.thumbs.species(s,!has);io.disconnect();}});
     io.observe(b);
     if(has)b.onclick=function(){$('dexOverlay').hidden=true;openCard(s,false);};
