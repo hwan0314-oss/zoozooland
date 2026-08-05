@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ZZL — 쥬쥬랜드</title>
+    <link>https://zoozoo.kr</link>
+    <description>고양 동물 테마파크 쥬쥬랜드. 알파카·원숭이·파충류 50여 종과 함께하는 가장 힙한 동물원 나들이.</description>
+    <language>ko</language>
+    <atom:link href="https://zoozoo.kr/feed.xml" rel="self" type="application/rss+xml"/>
+
+    <item>
+      <title>쥬쥬랜드 동물도감 — 54종 동물 수집 게임</title>
+      <link>https://zoozoo.kr/dogam.html</link>
+      <description>현장에서 특정 구역에 도착하면 동물이 나타나고, 퀴즈를 맞춰야 도감에 담을 수 있어요. 54종 완전 수집에 도전하세요.</description>
+      <guid>https://zoozoo.kr/dogam.html</guid>
+      <pubDate>Tue, 05 Aug 2026 00:00:00 +0900</pubDate>
+    </item>
+
+    <item>
+      <title>쥬쥬랜드 가이드맵 — 구역별 동물 위치</title>
+      <link>https://zoozoo.kr/map.html</link>
+      <description>파충류 빌리지, 대동물 방목장, 사랑새 빌리지, 호숫가, 악어 빌리지 등 쥬쥬랜드 구역별 지도와 동물 위치를 확인하세요.</description>
+      <guid>https://zoozoo.kr/map.html</guid>
+      <pubDate>Tue, 05 Aug 2026 00:00:00 +0900</pubDate>
+    </item>
+
+    <item>
+      <title>ZZL — 쥬쥬랜드를 가장 힙하게, 즐기다</title>
+      <link>https://zoozoo.kr/</link>
+      <description>고양 동물 테마파크 쥬쥬랜드 공식 가이드. 알파카·원숭이·파충류 50여 종 동물과 함께하는 특별한 하루.</description>
+      <guid>https://zoozoo.kr/</guid>
+      <pubDate>Tue, 05 Aug 2026 00:00:00 +0900</pubDate>
+    </item>
+
+  </channel>
+</rss>
