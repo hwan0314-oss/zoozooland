@@ -648,6 +648,18 @@ PARTS.extra = {
     if (o.caudal) g.add(box(0.08, o.h * 1.2, o.d * 0.7, o.color, 0, 0, o.cz));
     return g;
   },
+  arms: function (o) {         /* 팔: 원숭이 */
+    var g = new THREE.Group();
+    [1, -1].forEach(function (s) {
+      var arm = new THREE.Group();
+      arm.position.set(s * o.gap, 0, 0);
+      arm.rotation.z = s * (o.angle || 0.65);
+      arm.add(cyl(o.r, o.r * 0.82, o.len, o.color, 0, -o.len / 2, 0, 7));
+      arm.add(box(o.r * 2.4, 0.11, o.r * 2.8, o.handColor || o.color, 0, -o.len - 0.04, o.r * 0.4));
+      g.add(arm);
+    });
+    return g;
+  },
   patagium: function (o) {     /* 비막: 슈가글라이더 */
     var g = new THREE.Group();
     [1, -1].forEach(function (s) {
