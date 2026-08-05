@@ -650,7 +650,7 @@ PARTS.extra = {
     if (o.caudal) g.add(box(0.08, o.h * 1.2, o.d * 0.7, o.color, 0, 0, o.cz));
     return g;
   },
-  arms: function (o) {         /* 팔: 원숭이 — ㄴ자 위로 들기 */
+  arms: function (o) {         /* 팔: 원숭이 — asymmetric:true 시 한쪽↑ 한쪽↓ */
     var uLen = o.upperLen || o.len * 0.46;
     var fLen = o.foreLen || o.len * 0.54;
     var g = new THREE.Group();
@@ -662,11 +662,12 @@ PARTS.extra = {
       ua.position.x = s * uLen / 2;
       ua.rotation.z = -s * Math.PI / 2;
       shou.add(ua);
-      /* 아래팔: 팔꿈치에서 위로 뻗기 */
+      /* 아래팔: asymmetric 시 s=1(오른팔)은 아래로, s=-1(왼팔)은 위로 */
+      var dir = (o.asymmetric && s === 1) ? -1 : 1;
       var elb = new THREE.Group();
       elb.position.set(s * uLen, 0, 0);
-      elb.add(cyl(o.r * 0.88, o.r * 0.74, fLen, o.color, 0, fLen / 2, 0, 7));
-      elb.add(box(o.r * 2.4, 0.12, o.r * 2.4, o.handColor || o.color, 0, fLen + 0.06, 0));
+      elb.add(cyl(o.r * 0.88, o.r * 0.74, fLen, o.color, 0, dir * fLen / 2, 0, 7));
+      elb.add(box(o.r * 2.4, 0.12, o.r * 2.4, o.handColor || o.color, 0, dir * (fLen + 0.06), 0));
       shou.add(elb);
       g.add(shou);
     });
