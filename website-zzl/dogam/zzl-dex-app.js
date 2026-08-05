@@ -83,9 +83,9 @@ ZDX.save = (function () {
     get: read,
     has: function (id) { return !!read().got[id]; },
     count: function () { return Object.keys(read().got).length; },
-    add: function (id, grade) {
+    add: function (id) {
       var d = read();
-      if (!d.got[id]) d.got[id] = { at: Date.now(), grade: grade, seen: 1 };
+      if (!d.got[id]) d.got[id] = { at: Date.now(), seen: 1 };
       else d.got[id].seen++;
       if (!d.code) d.code = code();
       write();
@@ -431,11 +431,6 @@ ZDX.puzzle = {
       return { part: p, slot: slot, options: opts };
     });
   },
-  grade: function (misses, reduced) {
-    if (reduced || misses >= 3) return '브론즈';
-    if (misses === 0) return '골드';
-    return '실버';
-  }
 };
 
 global.ZDX = ZDX;
