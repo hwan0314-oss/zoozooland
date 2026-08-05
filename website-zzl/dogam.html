@@ -86,7 +86,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0A0B0A;color:#fff;
 #sheet{max-width:440px;width:100%;margin:0 auto;flex:1;display:flex;flex-direction:column}
 
 .stage{position:relative;background:#0d0d0d;flex-shrink:0}
-.stage canvas{display:block;width:100%;height:260px}
+.stage canvas{display:block;width:100%;height:260px;touch-action:none;user-select:none}
 .stage-full{flex:1;flex-shrink:1;display:flex;flex-direction:column;justify-content:center}
 .sil-img{display:block;width:100%;height:260px;object-fit:contain;filter:brightness(0.28) saturate(0)}
 @media(min-height:700px){.stage canvas{height:300px}}
@@ -497,8 +497,8 @@ function fit3D(){
   var d=Math.max((hh/2)/Math.tan(vF/2),(ww/2)/Math.tan(hF/2));
   cam3.position.set(0,cur.center.y+cur.size.y*.26,d);cam3.lookAt(0,cur.center.y,0);
 }
-cv.addEventListener('pointerdown',function(e){cv.setPointerCapture(e.pointerId);drag=true;lastX=e.clientX;vel=0;});
-cv.addEventListener('pointermove',function(e){if(!drag)return;var d=e.clientX-lastX;lastX=e.clientX;rotT+=d*.011;vel=d*.011;idle3=performance.now();});
+cv.addEventListener('pointerdown',function(e){e.preventDefault();cv.setPointerCapture(e.pointerId);drag=true;lastX=e.clientX;vel=0;});
+cv.addEventListener('pointermove',function(e){if(!drag)return;var d=e.clientX-lastX;lastX=e.clientX;rotT+=d*.016;vel=d*.016;idle3=performance.now();});
 cv.addEventListener('pointerup',function(){drag=false;idle3=performance.now();});
 var clk=new THREE.Clock();
 (function loop(){
@@ -506,7 +506,7 @@ var clk=new THREE.Clock();
   if(!cur||!cv.parentNode)return;
   var t=clk.getElapsedTime(),now=performance.now();
   if(!drag){rotT+=vel;vel*=.93;if(now-idle3>2600)rotT+=.0032;}
-  rotY+=(rotT-rotY)*.16;
+  rotY+=(rotT-rotY)*.22;
   cur.update(t);if(curA&&!curA.done)curA.update(now);
   cur.root.rotation.y=rotY;pod.rotation.y=rotY*.12;
   R3.render(sc,cam3);
