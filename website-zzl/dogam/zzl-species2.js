@@ -345,7 +345,7 @@ add({ id: 'A020', kname: '미니말', ename: 'Miniature Horse', zone: '대동물
     puzzle: ['head', 'body', 'legs', 'ears'] }) });
 
 /* ── 오솔길 빌리지 ─────────────────────────── */
-add({ id: 'A021', kname: '제넷', ename: 'Genet', zone: '오솔길 빌리지', n: 2, parts: 5,
+add({ id: 'A021', kname: '제넷', ename: 'Genet', zone: '사랑새 빌리지', n: 2, parts: 5,
   tell: '가늘고 긴 몸 + 검은 고리 줄무늬 꼬리', rivals: ['페럿', '라쿤'],
   model: smallQuad({ c: 0xD8C9A8, d: 0xB8A684, f: 0xE0D3B6, k: 1.0, snoutLen: 0.34,
     belly: 0xF2E9D4, nose: 0x2A2A2E,
@@ -353,7 +353,7 @@ add({ id: 'A021', kname: '제넷', ename: 'Genet', zone: '오솔길 빌리지', 
     tail: { type: 'bushy', w: 0.26, len: 1.3, rings: 6, y: 0.68, z: -0.56, color: 0xE4D8BC, stripe: 0x38332C },
     puzzle: ['head', 'body', 'legs', 'tail', 'ears'] }) });
 
-add({ id: 'A022', kname: '다람쥐원숭이', ename: 'Squirrel Monkey', zone: '오솔길 빌리지', n: 2, parts: 5,
+add({ id: 'A022', kname: '다람쥐원숭이', ename: 'Squirrel Monkey', zone: '사랑새 빌리지', n: 2, parts: 5,
   tell: '흰 얼굴 가면 + 몸보다 훨씬 긴 꼬리', rivals: ['일본원숭이'],
   model: primate({ c: 0xC2A85E, d: 0x9C8442, face: 0xF4EEDC, earC: 0xF4EEDC,
     belly: 0xE8DCB4, k: 0.78, scale: 1.0,
@@ -410,7 +410,7 @@ add({ id: 'A028', kname: '슈가글라이더', ename: 'Sugar Glider', zone: '파
                on: 'body', y: -0.02, color: 0xA8ACB2 }],
     puzzle: ['head', 'body', 'patagium', 'tail'] }) });
 
-add({ id: 'A029', kname: '주머니여우', ename: 'Common Brushtail Possum', zone: '파충류 빌리지', n: 1, parts: 4,
+add({ id: 'A029', kname: '주머니여우', ename: 'Common Brushtail Possum', zone: '사랑새 빌리지', n: 1, parts: 4,
   tell: '분홍 코 + 덤불처럼 굵은 검은 꼬리', rivals: ['슈가글라이더', '페럿'],
   model: smallQuad({ c: 0x9A9690, d: 0x7A766F, f: 0xB0ACA4, k: 0.92, snoutLen: 0.3,
     belly: 0xDCD6C8, nose: 0xD48C96, leg: 0.24, scale: 1.05,
@@ -434,7 +434,7 @@ add({ id: 'A031', kname: '난쟁이몽구스', ename: 'Dwarf Mongoose', zone: '�
     puzzle: ['head', 'body', 'tail'] }) });
 
 /* ── 기타 구역 ─────────────────────────────── */
-add({ id: 'A032', kname: '코아티', ename: 'Coati', zone: '기타', n: 1, parts: 5,
+add({ id: 'A032', kname: '코아티', ename: 'Coati', zone: '사랑새 빌리지', n: 1, parts: 5,
   tell: '위로 들린 아주 긴 코 + 고리 꼬리', rivals: ['라쿤', '제넷'],
   model: smallQuad({ c: 0x8A6A4A, d: 0x6C5038, f: 0xA88462, k: 1.0, snoutLen: 0.58,
     muz: 0xD8C4A8, belly: 0xC9B08A, leg: 0.3, scale: 1.0,
@@ -442,7 +442,7 @@ add({ id: 'A032', kname: '코아티', ename: 'Coati', zone: '기타', n: 1, part
     tail: { type: 'thin', r: 0.13, len: 1.4, count: 5, y: 0.7, z: -0.54, color: 0xB8946C, stripe: 0x4A3828 },
     puzzle: ['head', 'body', 'legs', 'tail', 'ears'] }) });
 
-add({ id: 'A033', kname: '말레이호저', ename: 'Crested Porcupine', zone: '기타', n: 1, parts: 3,
+add({ id: 'A033', kname: '말레이호저', ename: 'Crested Porcupine', zone: '사랑새 빌리지', n: 1, parts: 3,
   tell: '길고 뾰족한 흑백 가시가 등을 덮음', rivals: ['고슴도치'],
   model: smallQuad({ c: 0x4A443C, d: 0x33302A, f: 0x5C554A, k: 1.15, snoutLen: 0.34,
     leg: 0.28, scale: 0.92, studs: false,
