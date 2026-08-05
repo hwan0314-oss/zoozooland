@@ -105,6 +105,7 @@ function primate(p) {
             pos: [[0.35 * k, 0.24 * k], [-0.35 * k, 0.24 * k], [0.33 * k, -0.3 * k], [-0.33 * k, -0.3 * k]],
             r: 0.13 * k, len: 0.54 * k, y: 0.58 * k, color: c, foot: 'paw', footColor: p.d || c },
     tail: p.tail,
+    extras: p.extras || [],
     anim: { bob: .05, bobSpeed: 1.9, headTurn: .42, turnSpeed: .6, blink: .62, hop: .4 },
     puzzle: p.puzzle
   };
@@ -357,6 +358,8 @@ add({ id: 'A022', kname: '다람쥐원숭이', ename: 'Squirrel Monkey', zone: '
   tell: '흰 얼굴 가면 + 몸보다 훨씬 긴 꼬리', rivals: ['일본원숭이'],
   model: primate({ c: 0xC2A85E, d: 0x9C8442, face: 0xF4EEDC, earC: 0xF4EEDC,
     belly: 0xE8DCB4, k: 0.78, scale: 1.0,
+    extras: [{ type: 'arms', name: 'arms', gap: 0.41, len: 0.36, r: 0.08, angle: 0.72,
+               on: 'body', y: 1.15, color: 0xC2A85E, handColor: 0xF4EEDC, puzzle: false }],
     tail: { type: 'thin', r: 0.08, len: 1.5, count: 5, y: 0.9, z: -0.38, color: 0xC2A85E, stripe: 0x8A7238 },
     puzzle: ['head', 'body', 'legs', 'tail', 'ears'] }) });
 
@@ -389,7 +392,7 @@ add({ id: 'A026', kname: '고슴도치', ename: 'Amur Hedgehog', zone: '파충�
   model: smallQuad({ c: 0xC9B08A, d: 0xA8906C, f: 0xE4D6BC, k: 0.78, snoutLen: 0.3,
     leg: 0.16, scale: 1.2, studs: false,
     extras: [{ type: 'quills', name: 'quills', w: 0.6, d: 0.9, r: 0.06, len: 0.3,
-               count: 22, on: 'body', y: 0.3, color: 0x6E5C44 }],
+               count: 22, on: 'body', y: 0.77, color: 0x6E5C44 }],
     puzzle: ['head', 'body', 'quills'] }) });
 
 add({ id: 'A027', kname: '페럿', ename: 'Ferret', zone: '파충류 빌리지', n: 3, parts: 4,
@@ -563,7 +566,7 @@ add({ id: 'A059', kname: '크레스티드게코', ename: 'Crested gecko', zone: 
   model: lizard({ c: 0xB07A4A, d: 0x8A5C34, k: 0.6, tailW: 0.3, tailH: 0.24, tailLen: 1.0,
     belly: 0xD8B48A, scale: 1.3,
     extras: [{ type: 'crest', name: 'crest', w: 0.1, len: 0.2, gap: 0.2,
-               on: 'head', y: 0.24, z: 0.1, color: 0xC9915E }],
+               on: 'head', y: 0.13, z: 0.1, color: 0xC9915E }],
     puzzle: ['head', 'crest', 'body', 'tail'] }) });
 
 /* ── 파충류 빌리지 · 양서류 ────────────────── */

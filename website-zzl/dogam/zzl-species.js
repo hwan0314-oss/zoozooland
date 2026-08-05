@@ -105,8 +105,12 @@ var S = [
     legs: { type: 'post', pos: [[0.36, 0.24], [-0.36, 0.24], [0.34, -0.3], [-0.34, -0.3]],
             r: 0.14, len: 0.56, y: 0.6, color: 0xA08B6E, foot: 'paw', footColor: 0x8A7658 },
     tail: { type: 'thin', r: 0.09, len: 0.4, count: 2, y: 1.06, z: -0.44, color: 0xA08B6E },
-    extras: [{ type: 'spots', name: 'face', size: 0.4, color: 0xD9756A, puzzle: false, y: 0.16,
-               at: [[0, 0, 0.4]] }],
+    extras: [
+      { type: 'spots', name: 'face', size: 0.4, color: 0xD9756A, puzzle: false, y: 0.16,
+        at: [[0, 0, 0.4]] },
+      { type: 'arms', name: 'arms', gap: 0.54, len: 0.46, r: 0.10, angle: 0.72,
+        on: 'body', y: 1.46, color: 0xA08B6E, handColor: 0x8A7658, puzzle: false }
+    ],
     anim: { bob: 0.05, bobSpeed: 1.9, headTurn: 0.42, turnSpeed: 0.6, blink: 0.62, hop: 0.4 },
     puzzle: ['head', 'body', 'legs', 'ears', 'tail']
   }
