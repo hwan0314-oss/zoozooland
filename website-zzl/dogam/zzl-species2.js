@@ -102,7 +102,7 @@ function primate(p) {
     ears: { type: 'round', w: 0.14 * k, gap: 0.46 * k, y: 0.06 * k, z: -0.02 * k,
             color: p.earC || c, inner: p.face || c },
     legs: { type: 'post',
-            pos: [[0.35 * k, 0.24 * k], [-0.35 * k, 0.24 * k], [0.33 * k, -0.3 * k], [-0.33 * k, -0.3 * k]],
+            pos: [[0.24 * k, -0.08 * k], [-0.24 * k, -0.08 * k]],
             r: 0.13 * k, len: 0.54 * k, y: 0.58 * k, color: c, foot: 'paw', footColor: p.d || c },
     tail: p.tail,
     extras: p.extras || [],
@@ -358,8 +358,8 @@ add({ id: 'A022', kname: '다람쥐원숭이', ename: 'Squirrel Monkey', zone: '
   tell: '흰 얼굴 가면 + 몸보다 훨씬 긴 꼬리', rivals: ['일본원숭이'],
   model: primate({ c: 0xC2A85E, d: 0x9C8442, face: 0xF4EEDC, earC: 0xF4EEDC,
     belly: 0xE8DCB4, k: 0.78, scale: 1.0,
-    extras: [{ type: 'arms', name: 'arms', gap: 0.41, len: 0.36, r: 0.08, angle: 0.72,
-               on: 'body', y: 1.15, color: 0xC2A85E, handColor: 0xF4EEDC, puzzle: false }],
+    extras: [{ type: 'arms', name: 'arms', gap: 0.42, len: 0.58, upperLen: 0.24, foreLen: 0.34,
+               r: 0.08, on: 'body', y: 1.15, color: 0xC2A85E, handColor: 0xF4EEDC, puzzle: false }],
     tail: { type: 'thin', r: 0.08, len: 1.5, count: 5, y: 0.9, z: -0.38, color: 0xC2A85E, stripe: 0x8A7238 },
     puzzle: ['head', 'body', 'legs', 'tail', 'ears'] }) });
 
@@ -391,8 +391,14 @@ add({ id: 'A026', kname: '고슴도치', ename: 'Amur Hedgehog', zone: '파충�
   tell: '등을 덮은 짧은 가시', rivals: ['말레이호저', '기니피그'],
   model: smallQuad({ c: 0xC9B08A, d: 0xA8906C, f: 0xE4D6BC, k: 0.78, snoutLen: 0.3,
     leg: 0.16, scale: 1.2, studs: false,
-    extras: [{ type: 'quills', name: 'quills', w: 0.6, d: 0.9, r: 0.06, len: 0.3,
-               count: 22, on: 'body', y: 0.77, color: 0x6E5C44 }],
+    extras: [
+      { type: 'quills', name: 'quills', w: 0.54, d: 0.84, r: 0.06, len: 0.28,
+        count: 16, on: 'body', y: 0.77, color: 0x6E5C44 },
+      { type: 'quills', name: 'quills', w: 0.06, d: 0.80, r: 0.055, len: 0.26,
+        count: 10, on: 'body', x: -0.31, y: 0.54, tiltZ: 1.48, color: 0x6E5C44, puzzle: false },
+      { type: 'quills', name: 'quills', w: 0.06, d: 0.80, r: 0.055, len: 0.26,
+        count: 10, on: 'body', x: 0.31, y: 0.54, tiltZ: -1.48, color: 0x6E5C44, puzzle: false }
+    ],
     puzzle: ['head', 'body', 'quills'] }) });
 
 add({ id: 'A027', kname: '페럿', ename: 'Ferret', zone: '파충류 빌리지', n: 3, parts: 4,
@@ -483,7 +489,7 @@ add({ id: 'A039', kname: '코뉴어', ename: 'Green-cheeked Conure', zone: '파�
 /* ── 호숫가 ────────────────────────────────── */
 add({ id: 'A041', kname: '오리', ename: 'Duck', zone: '호숫가', n: 8, parts: 3,
   tell: '납작 부리 + 짧은 목', rivals: ['거위', '에뮤'],
-  model: waterfowl({ c: 0xE8E2D2, d: 0xC9C2B0, neckC: 0xE8E2D2, headC: 0x3E7A4E,
+  model: waterfowl({ c: 0xE8E2D2, d: 0xC9C2B0, neckC: 0xE8E2D2, headC: 0xF4F0EA,
     belly: 0xF4F0E4, beak: 0xE8A93C, k: 0.95, neck: 0.42, scale: 1.05 }) });
 
 add({ id: 'A042', kname: '거위', ename: 'Goose', zone: '호숫가', n: 1, parts: 4,
@@ -563,11 +569,33 @@ add({ id: 'A058', kname: '레오파드게코', ename: 'Leopard gecko', zone: '�
 
 add({ id: 'A059', kname: '크레스티드게코', ename: 'Crested gecko', zone: '파충류 빌리지', n: 1, parts: 4,
   tell: '눈 위로 솟은 속눈썹 모양 볏', rivals: ['레오파드게코', '비어디 드래곤'],
-  model: lizard({ c: 0xB07A4A, d: 0x8A5C34, k: 0.6, tailW: 0.3, tailH: 0.24, tailLen: 1.0,
-    belly: 0xD8B48A, scale: 1.3,
-    extras: [{ type: 'crest', name: 'crest', w: 0.1, len: 0.2, gap: 0.2,
-               on: 'head', y: 0.13, z: 0.1, color: 0xC9915E }],
-    puzzle: ['head', 'crest', 'body', 'tail'] }) });
+  model: {
+    scale: 1.3,
+    body: { type: 'lowLong', w: 0.78, h: 0.50, d: 1.22, y: 0.58,
+            color: 0xA87848, dark: 0x7E5830, belly: 0xD4B080, studs: false },
+    head: { type: 'box', w: 0.88, h: 0.56, d: 0.76, color: 0xBC9260,
+            y: 0.80, z: 0.90,
+            muzzle: { w: 0.52, h: 0.34, d: 0.28, color: 0x9A7040, y: -0.08 },
+            nose: 0x7E5830 },
+    eyes: { size: 0.17, gap: 0.34, y: 0.14, z: 0.26, side: true },
+    legs: { type: 'sprawl',
+            pos: [[0.46, 0.40], [-0.46, 0.40], [0.46, -0.38], [-0.46, -0.38]],
+            r: 0.11, len: 0.32, y: 0.50, color: 0x7E5830 },
+    tail: { type: 'segment', w: 0.30, h: 0.24, len: 0.90, count: 3,
+            y: 0.56, z: -0.64, color: 0xA87848, dark: 0x7E5830 },
+    extras: [
+      /* 속눈썹 볏: 눈 위 양옆으로 뻗는 능선 */
+      { type: 'spots', name: 'lashes', size: 0.09, on: 'head',
+        y: 0, color: 0xD4AA72, puzzle: true,
+        at: [
+          [ 0.28, 0.28, 0, 0.09, 0.14, 0.60],
+          [-0.28, 0.28, 0, 0.09, 0.14, 0.60]
+        ] }
+    ],
+    anim: { bob: .02, bobSpeed: 1.2, headTurn: .28, turnSpeed: .4,
+            tailWave: .1, blink: .42, hop: .3 },
+    puzzle: ['head', 'lashes', 'body', 'tail']
+  } });
 
 /* ── 파충류 빌리지 · 양서류 ────────────────── */
 add({ id: 'A060', kname: '화이트트리프록', ename: "White's Tree Frog", zone: '파충류 빌리지', n: 1, parts: 3,

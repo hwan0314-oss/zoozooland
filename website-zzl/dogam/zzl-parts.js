@@ -613,12 +613,14 @@ PARTS.extra = {
     g.userData.wings = W;
     return g;
   },
-  quills: function (o) {       /* 등가시: 고슴도치·호저 */
+  quills: function (o) {       /* 등가시: 고슴도치·호저 (tiltZ로 측면 가시 방향 제어) */
     var g = new THREE.Group();
+    var tz = o.tiltZ !== undefined ? o.tiltZ : 0;
     for (var i = 0; i < (o.count || 12); i++) {
-      var x = (Math.random() - 0.5) * o.w, z = (Math.random() - 0.5) * o.d;
-      var q = cone(o.r, o.len, o.color, x, 0, z, 4);
-      q.rotation.x = -0.3 + Math.random() * 0.6; q.rotation.z = (Math.random() - 0.5) * 0.6;
+      var px = (Math.random() - 0.5) * o.w, pz = (Math.random() - 0.5) * o.d;
+      var q = cone(o.r, o.len, o.color, px, 0, pz, 4);
+      q.rotation.x = -0.3 + Math.random() * 0.6;
+      q.rotation.z = tz + (Math.random() - 0.5) * 0.5;
       g.add(q);
     }
     return g;
@@ -648,15 +650,25 @@ PARTS.extra = {
     if (o.caudal) g.add(box(0.08, o.h * 1.2, o.d * 0.7, o.color, 0, 0, o.cz));
     return g;
   },
-  arms: function (o) {         /* 팔: 원숭이 */
+  arms: function (o) {         /* 팔: 원숭이 — ㄴ자 위로 들기 */
+    var uLen = o.upperLen || o.len * 0.46;
+    var fLen = o.foreLen || o.len * 0.54;
     var g = new THREE.Group();
     [1, -1].forEach(function (s) {
-      var arm = new THREE.Group();
-      arm.position.set(s * o.gap, 0, 0);
-      arm.rotation.z = s * (o.angle || 0.65);
-      arm.add(cyl(o.r, o.r * 0.82, o.len, o.color, 0, -o.len / 2, 0, 7));
-      arm.add(box(o.r * 2.4, 0.11, o.r * 2.8, o.handColor || o.color, 0, -o.len - 0.04, o.r * 0.4));
-      g.add(arm);
+      var shou = new THREE.Group();
+      shou.position.set(s * o.gap, 0, o.z || 0);
+      /* 위팔: X축 방향으로 수평 뻗기 */
+      var ua = cyl(o.r, o.r * 0.88, uLen, o.color, 0, 0, 0, 7);
+      ua.position.x = s * uLen / 2;
+      ua.rotation.z = -s * Math.PI / 2;
+      shou.add(ua);
+      /* 아래팔: 팔꿈치에서 위로 뻗기 */
+      var elb = new THREE.Group();
+      elb.position.set(s * uLen, 0, 0);
+      elb.add(cyl(o.r * 0.88, o.r * 0.74, fLen, o.color, 0, fLen / 2, 0, 7));
+      elb.add(box(o.r * 2.4, 0.12, o.r * 2.4, o.handColor || o.color, 0, fLen + 0.06, 0));
+      shou.add(elb);
+      g.add(shou);
     });
     return g;
   },
