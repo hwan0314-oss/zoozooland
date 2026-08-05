@@ -359,7 +359,7 @@ add({ id: 'A022', kname: '다람쥐원숭이', ename: 'Squirrel Monkey', zone: '
   model: primate({ c: 0xC2A85E, d: 0x9C8442, face: 0xF4EEDC, earC: 0xF4EEDC,
     belly: 0xE8DCB4, k: 0.78, scale: 1.0,
     extras: [{ type: 'arms', name: 'arms', gap: 0.42, len: 0.58, upperLen: 0.24, foreLen: 0.34,
-               r: 0.08, on: 'body', y: 1.15, color: 0xC2A85E, handColor: 0xF4EEDC, puzzle: false }],
+               r: 0.08, on: 'body', y: 1.15, color: 0xC2A85E, handColor: 0xF4EEDC, asymmetric: true, puzzle: false }],
     tail: { type: 'thin', r: 0.08, len: 1.5, count: 5, y: 0.9, z: -0.38, color: 0xC2A85E, stripe: 0x8A7238 },
     puzzle: ['head', 'body', 'legs', 'tail', 'ears'] }) });
 

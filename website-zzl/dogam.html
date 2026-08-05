@@ -569,8 +569,6 @@ function openEncounter(spec){
   function finish(){
     S.add(spec.id);
     var info=(window.ZZL_INFO&&ZZL_INFO[spec.id])||{};
-    var eco=info.eco?'<dd>'+info.eco+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
-    var iucn=info.iucn?'<dd>'+info.iucn+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
     var sname=info.sname?'<dd><em>'+info.sname+'</em></dd>':'<dd class="pend">—</dd>';
 
     /* Phase 1: 조립 애니메이션 — 스테이지가 전체화면 차지, 캔버스는 수직 중앙 정렬 */
@@ -600,11 +598,8 @@ function openEncounter(spec){
             +'<div class="row"><dt>학명</dt>'+sname+'</div>'
             +'<div class="row"><dt>관찰 포인트</dt><dd>'+spec.tell+'</dd></div>'
             +'<div class="row"><dt>헷갈리는 친구</dt><dd>'+((spec.rivals||[]).join(' · ')||'없음')+'</dd></div>'
-            +'<div class="row"><dt>생태</dt>'+eco+'</div>'
-            +'<div class="row"><dt>CITES 등재</dt>'+iucn+'</div>'
             +'</dl>'
-            +'</div>'
-            +'<p class="src-note">생태·보전 항목은 1차 출처 확인 전 공개 보류 / 사육사 감수 예정</p>';
+            +'</div>';
           $('stg').appendChild(cv);
           fit3D();
           /* 3초 후 도감으로 자동 전환 */
@@ -644,8 +639,6 @@ function playRegistration(spec,onComplete){
 function openCard(spec,fresh){
   busy=true;
   var info=(window.ZZL_INFO&&ZZL_INFO[spec.id])||{};
-  var eco=info.eco?'<dd>'+info.eco+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
-  var iucn=info.iucn?'<dd>'+info.iucn+'</dd>':'<dd class="pend">출처 확인 후 공개됩니다</dd>';
   var sname=info.sname?'<dd><em>'+info.sname+'</em></dd>':'<dd class="pend">—</dd>';
   openSheet(
     '<div class="card-top-bar"><button class="card-top-close" id="cardTopClose">← 목록으로</button></div>'
@@ -660,11 +653,8 @@ function openCard(spec,fresh){
     +'<div class="row"><dt>학명</dt>'+sname+'</div>'
     +'<div class="row"><dt>관찰 포인트</dt><dd>'+spec.tell+'</dd></div>'
     +'<div class="row"><dt>헷갈리는 친구</dt><dd>'+((spec.rivals||[]).join(' · ')||'없음')+'</dd></div>'
-    +'<div class="row"><dt>생태</dt>'+eco+'</div>'
-    +'<div class="row"><dt>CITES 등재</dt>'+iucn+'</div>'
     +'</dl>'
     +'</div>'
-    +'<p class="src-note">생태·보전 항목은 1차 출처 확인 전 공개 보류 / 사육사 감수 예정</p>'
     +'<div class="foot"><button class="go" id="ok">'+(fresh?'도감에 등록!':'닫기')+'</button></div>'
   );
   $('cardTopClose').onclick=function(){closeModal();};
