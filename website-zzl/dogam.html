@@ -609,7 +609,7 @@ function openEncounter(spec){
           /* 3초 후 도감으로 자동 전환 */
           setTimeout(function(){
             $('modal').hidden=true;$('sheet').innerHTML='';
-            playRegistration(spec,function(){updateProgress();showDex(spec.id);setTimeout(function(){busy=false;tryEncounter();},3000);});
+            playRegistration(spec,function(){updateProgress();showDex(spec.id);});
           },3000);
         },700);
       }
@@ -675,6 +675,7 @@ function openCard(spec,fresh){
 function hideDex(){
   $('dexOverlay').hidden=true;
   $('masterOverlay').hidden=true;
+  if(busy){setTimeout(function(){busy=false;tryEncounter();},3000);}
 }
 function showMaster(){
   var mo=$('masterOverlay');
