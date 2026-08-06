@@ -77,8 +77,8 @@
   function closeModal() { mapModal.classList.remove('open'); mapModal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
   function applyT()     { mapModalImg.style.transform=`translate(${px}px,${py}px) scale(${sc})`; }
 
-  btnMapZoom?.addEventListener('click', () => { location.href = '/map'; });
-  gmapPreview?.addEventListener('click', () => { if (guideMapLoaded) location.href = '/map'; });
+  btnMapZoom?.addEventListener('click', () => { location.href = '/dogam'; });
+  gmapPreview?.addEventListener('click', () => { if (guideMapLoaded) location.href = '/dogam'; });
   mapModalClose?.addEventListener('click', closeModal);
   document.addEventListener('keydown', e => { if (e.key==='Escape' && mapModal?.classList.contains('open')) closeModal(); });
 
