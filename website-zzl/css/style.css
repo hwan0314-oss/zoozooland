@@ -329,7 +329,7 @@ section {
   border: 1px solid rgba(255,255,255,0.08);
   overflow: hidden;
 }
-.notice-img { width: 100%; aspect-ratio: 16/7; object-fit: cover; display: block; }
+.notice-img { width: 100%; height: auto; display: block; }
 .swiper-button-prev, .swiper-button-next {
   width: 40px !important; height: 40px !important;
   background: rgba(212,255,0,0.1);
