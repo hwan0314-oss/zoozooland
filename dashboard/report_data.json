@@ -2,14 +2,14 @@
   "today_date": "2026-08-10 (월)",
   "prev_date": "2025-08-11 (월)",
   "today_weather": {
-    "desc": "대체로맑음",
-    "tmax": "32",
-    "tmin": "24"
+    "desc": "구름많음",
+    "tmax": "33",
+    "tmin": "23"
   },
   "prev_weather": {
-    "desc": "이슬비",
-    "tmax": "29",
-    "tmin": "22"
+    "desc": "구름많음",
+    "tmax": "30",
+    "tmin": "25"
   },
   "kpi": {
     "daily_sales": "0",
@@ -278,5 +278,5 @@
       }
     }
   ],
-  "generated_at": "2026-08-10 15:01 KST"
+  "generated_at": "2026-08-10 19:01 KST"
 }
