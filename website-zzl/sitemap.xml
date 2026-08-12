@@ -4,18 +4,18 @@
     <loc>https://zoozoo.kr/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <lastmod>2026-08-05</lastmod>
+    <lastmod>2026-08-12</lastmod>
   </url>
   <url>
     <loc>https://zoozoo.kr/dogam.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-08-05</lastmod>
+    <lastmod>2026-08-12</lastmod>
   </url>
   <url>
     <loc>https://zoozoo.kr/map.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-08-05</lastmod>
+    <lastmod>2026-08-12</lastmod>
   </url>
 </urlset>
