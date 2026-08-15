@@ -156,21 +156,25 @@
   <div class="grid lg:grid-cols-3 gap-8 mb-12">
     <!-- 상품 카드 영역 (JS 동적) -->
     <div class="lg:col-span-1">
-      <div class="card-frame bg-black p-6 h-full flex flex-col" id="productSlot">
-        <!-- 상품 없을 때 기본 -->
-        <div id="productEmpty" class="flex flex-col h-full">
-          <div class="aspect-[4/5] bg-[#111] mb-6 overflow-hidden flex items-center justify-center">
-            <div class="mono text-[#D4FF00] text-center">
-              <div class="text-2xl font-black mb-2">ZZL</div>
-              <div class="text-[10px] opacity-60">NO_PRODUCT_LOADED</div>
-            </div>
-          </div>
-          <div class="mono text-xs text-gray-500 mb-4">NET_TICKET_STATUS: PENDING</div>
-          <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place"
-             class="mt-auto block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition"
-             target="_blank" rel="noopener" id="bookingBtnEmpty">BOOK VIA NAVER →</a>
+      <div class="card-frame bg-black p-6 h-full flex flex-col" id="productSlot"><!-- ssg:product -->
+        <div class="aspect-[4/5] bg-[#111] mb-5 overflow-hidden relative">
+          <img src="images/products/KakaoTalk_20260630_235950943.jpg" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition duration-500">
         </div>
-      </div>
+        <div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE / 입장요금 안내</div>
+        <div class="text-sm font-bold text-white mb-3">1인 입장권</div>
+        <div class="flex items-center gap-3 flex-wrap mb-5">
+          <div class="mono text-3xl font-bold text-[#D4FF00]">₩ 15,000</div>
+          <div class="flex flex-col items-start gap-1">
+            <span class="mono text-[11px] text-gray-500 line-through">28,000원</span>
+            <span class="tag-badge text-[9px] px-2 py-0.5">SALE 46%</span>
+          </div>
+        </div>
+        <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place"
+           target="_blank" rel="noopener" id="bookingBtnEmpty"
+           class="mt-auto block w-full py-4 border border-[#D4FF00]/40 text-sm font-bold text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">
+          네이버 예약하기 →
+        </a>
+      <!-- /ssg:product --></div>
     </div>
 
     <!-- 이용안내 카드들 -->
@@ -178,24 +182,44 @@
       <div class="p-8 border border-white/5 bg-[#151615]">
         <div class="mono text-[#D4FF00] mb-6">01_EXPERIENCE</div>
         <h4 class="text-xl font-bold mb-4">먹이체험 프로그램</h4>
-        <ul class="text-sm text-gray-400 space-y-4" id="feedingList">
-          <li class="mono text-[10px] text-gray-600">LOADING_FEED_DATA...</li>
-        </ul>
+        <ul class="text-sm text-gray-400 space-y-4" id="feedingList"><!-- ssg:feeding -->
+          <li><span class="text-white font-semibold" style="font-family:'Noto Sans KR',sans-serif">채소 먹이:</span> <span style="font-family:'Noto Sans KR',sans-serif">당근 · 청경채 · 치커리 · 양배추 · 사료 / 양 · 라마 · 알파카 · 꽃사슴 · 유산양 · 보어염소 · 무플론 · 당나귀 · 토끼 (사료만)</span></li>
+          <li><span class="text-white font-semibold" style="font-family:'Noto Sans KR',sans-serif">잉어먹이 (호수):</span> <span style="font-family:'Noto Sans KR',sans-serif">잉어 · 거북 · 오리</span></li>
+          <li><span class="text-white font-semibold" style="font-family:'Noto Sans KR',sans-serif">우유 젖병:</span> <span style="font-family:'Noto Sans KR',sans-serif">양 · 염소</span></li>
+        <!-- /ssg:feeding --></ul>
       </div>
 
       <div class="p-8 border border-white/5 bg-[#151615]">
         <div class="mono text-[#D4FF00] mb-6">02_TIMETABLE</div>
         <h4 class="text-xl font-bold mb-4">운영 프로그램</h4>
-        <div class="space-y-3" id="programsList">
-          <div class="mono text-[10px] text-gray-600">LOADING_SCHEDULE...</div>
-        </div>
+        <div class="space-y-3" id="programsList"><!-- ssg:programs -->
+          <div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.25);margin-bottom:8px;">WEEKDAY (TUE-FRI)</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;gap:12px;"><span style="font-size:13px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.88);">애니멀스타</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#D4FF00;font-weight:700;white-space:nowrap;flex-shrink:0;">11:30</span></div>
+          <div style="height:12px"></div>
+          <div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.25);margin-bottom:8px;">WEEKEND &amp; HOLIDAY</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;gap:12px;"><span style="font-size:13px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.88);">앵무새 설명회</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#D4FF00;font-weight:700;white-space:nowrap;flex-shrink:0;">12:30</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;gap:12px;"><span style="font-size:13px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.88);">애니멀 스타</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#D4FF00;font-weight:700;white-space:nowrap;flex-shrink:0;">13:30 · 15:30</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;gap:12px;"><span style="font-size:13px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.88);">로봇 공연</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#D4FF00;font-weight:700;white-space:nowrap;flex-shrink:0;">13:50 · 15:50</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;gap:12px;"><span style="font-size:13px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.88);">악어 설명회</span><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#D4FF00;font-weight:700;white-space:nowrap;flex-shrink:0;">14:30</span></div>
+        <!-- /ssg:programs --></div>
       </div>
 
       <div class="md:col-span-2 p-8 border border-white/5 bg-[#0A0B0A]">
         <div class="mono text-[#D4FF00] mb-6">03_CODE_OF_CONDUCT</div>
-        <div class="grid md:grid-cols-3 gap-4" id="conductList">
-          <div class="mono text-[10px] text-gray-600">LOADING_CONDUCT...</div>
-        </div>
+        <div class="grid md:grid-cols-3 gap-4" id="conductList"><!-- ssg:conduct -->
+          <div class="space-y-4">
+            <div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;">- No kickboards / scooters</div><div style="font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;">　킥보드 반입 금지</div></div>
+            <div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;">- Authorized feed only</div><div style="font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;">　허가된 먹이만 제공</div></div>
+          </div>
+          <div class="space-y-4">
+            <div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;">- Zero waste policy</div><div style="font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;">　쓰레기 지정 장소에</div></div>
+            <div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;">- Restricted smoking areas</div><div style="font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;">　흡연 구역 외 금지</div></div>
+          </div>
+          <div class="space-y-4">
+            <div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;">- No pets allowed</div><div style="font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;">　반려동물 출입 불가</div></div>
+            <div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;">- Safety distance maintenance</div><div style="font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;">　안전 거리 유지</div></div>
+          </div>
+        <!-- /ssg:conduct --></div>
       </div>
     </div>
   </div>
@@ -352,16 +376,11 @@
   </div>
 
   <div class="swiper notices-swiper">
-    <div class="swiper-wrapper" id="noticesWrapper">
-      <div class="swiper-slide" id="noticePlaceholder">
-        <div class="border border-white/10 aspect-[16/6] flex items-center justify-center bg-[#0E0F0E]">
-          <div class="text-center">
-            <div class="mono text-[#D4FF00] text-sm font-black mb-2">BROADCAST_EMPTY</div>
-            <p class="mono text-[10px] text-gray-600">NO_ACTIVE_TRANSMISSIONS</p>
-          </div>
-        </div>
+    <div class="swiper-wrapper" id="noticesWrapper"><!-- ssg:notices -->
+      <div class="swiper-slide">
+        <img src="images/notices/notice_20260602_1780412651180_kakaotalk_20260603_000354716.png" alt="공지/이벤트" class="notice-img">
       </div>
-    </div>
+    <!-- /ssg:notices --></div>
     <div class="swiper-pagination"></div>
     <div class="swiper-button-prev"></div>
     <div class="swiper-button-next"></div>
@@ -395,7 +414,7 @@
     <div id="gmapMissing" style="display:none"
          class="absolute inset-0 flex flex-col items-center justify-center bg-[#111]">
       <div class="mono text-[#D4FF00] text-xl font-black mb-3">ZZL_MAP_V2.0</div>
-      <p class="mono text-[10px] text-gray-600">MAP_FILE_NOT_LOADED</p>
+      <p class="mono text-[10px] text-gray-600">쥬쥬랜드 가이드맵</p>
     </div>
     <!-- hover 오버레이 -->
     <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-500

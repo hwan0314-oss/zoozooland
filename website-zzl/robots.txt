@@ -1,7 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
 
 User-agent: Yeti
 Allow: /
+Disallow: /admin/
 
 Sitemap: https://zoozoo.kr/sitemap.xml

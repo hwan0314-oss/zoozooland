@@ -48,6 +48,9 @@ jobs:
           cp -r website/admin deploy/admin
           cp website/js/admin.js deploy/js/admin.js
 
+      - name: Build static HTML (SSG for SEO)
+        run: python3 website-zzl/build.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

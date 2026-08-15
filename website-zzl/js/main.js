@@ -286,7 +286,7 @@
       if (!res.ok) return;
       const { notices=[] } = await res.json();
       if (!notices.length) { initSwiper(false); return; }
-      placeholder?.remove();
+      if (wrapper) wrapper.innerHTML = ''; // SSG 정적 콘텐츠 제거 후 최신 데이터로 교체
       notices.forEach(n => {
         const slide = document.createElement('div');
         slide.className = 'swiper-slide';
