@@ -1,0 +1,41 @@
+name: 📊 Marketing Analytics ETL (zoozoo.kr)
+
+on:
+  schedule:
+    - cron: '10 15 * * *'  # 매일 00:10 KST (UTC 15:10)
+  workflow_dispatch:
+
+jobs:
+  etl:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests google-auth
+
+      - name: Run ETL
+        env:
+          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+          GSC_SITE_URL: ${{ secrets.GSC_SITE_URL }}
+          CLARITY_PROJECT_ID: ${{ secrets.CLARITY_PROJECT_ID }}
+          CLARITY_API_TOKEN: ${{ secrets.CLARITY_API_TOKEN }}
+        run: python marketing_analytics_etl.py
+
+      - name: Commit analytics data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/data/analytics.json
+          git diff --cached --quiet || git commit -m "chore: zoozoo.kr 마케팅 분석 데이터 갱신 $(date -u -d '+9 hours' +'%Y-%m-%d %H:%M KST')"
+          git push
