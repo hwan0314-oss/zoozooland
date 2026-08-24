@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>쥬쥬랜드 마케팅 대시보드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --g700: #145a2e; --g600: #1d7a40; --g100: #e8f5ed; --g50: #f0f9f3;
+      --n900: #111827; --n700: #374151; --n500: #6b7280; --n300: #d1d5db;
+      --n200: #e5e7eb; --n100: #f3f4f6; --n50: #f9fafb; --white: #ffffff;
+      --ff: 'Noto Sans KR', sans-serif; --r: 12px; --sh: 0 4px 16px rgba(0,0,0,.08);
+      --surface-1: #fcfcfb; --text-secondary: #52514e; --text-muted: #898781;
+      --series-1: #2a78d6; --grid: #e1e0d9; --baseline: #c3c2b7;
+    }
+    html, body { height: 100%; }
+    body { font-family: var(--ff); background: var(--n50); color: var(--n900); line-height: 1.6; }
+    #pinScreen { position: fixed; inset: 0; background: linear-gradient(145deg, #062318 0%, #1d7a40 100%);
+      display: flex; align-items: center; justify-content: center; z-index: 999; }
+    #pinScreen.hidden { display: none; }
+    .pin-box { background: var(--white); border-radius: 24px; padding: 48px 40px; width: 100%; max-width: 380px; box-shadow: 0 24px 64px rgba(0,0,0,.25); }
+    .pin-box h1 { font-size: 22px; color: var(--g700); margin-bottom: 24px; }
+    .pin-input { width: 100%; border: 1.5px solid var(--n300); border-radius: var(--r); padding: 13px 16px;
+      font-family: var(--ff); font-size: 14px; margin-bottom: 16px; outline: none; }
+    .pin-input:focus { border-color: var(--g600); }
+    .pin-btn { width: 100%; background: var(--g700); color: var(--white); border: none; border-radius: var(--r);
+      padding: 13px; font-family: var(--ff); font-weight: 700; font-size: 14px; cursor: pointer; }
+    .pin-error { color: #ef4444; font-size: 13px; margin-top: 10px; display: none; }
+    .pin-error.show { display: block; }
+
+    #dash { display: none; max-width: 1080px; margin: 0 auto; padding: 32px 20px 80px; }
+    #dash.show { display: block; }
+    .dash-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
+    .dash-head h1 { font-size: 24px; color: var(--g700); }
+    .dash-updated { font-size: 12px; color: var(--n500); }
+
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-tile { background: var(--white); border-radius: var(--r); box-shadow: var(--sh); padding: 20px; }
+    .stat-label { font-size: 12px; color: var(--n500); margin-bottom: 8px; }
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--n900); }
+
+    .card { background: var(--white); border-radius: var(--r); box-shadow: var(--sh); padding: 24px; margin-bottom: 20px; }
+    .card h2 { font-size: 16px; color: var(--n700); margin-bottom: 16px; }
+
+    #lineChart, #barChart { width: 100%; height: auto; }
+    .tooltip { position: absolute; background: var(--n900); color: var(--white); font-size: 12px;
+      padding: 6px 10px; border-radius: 6px; pointer-events: none; opacity: 0; transition: opacity .1s; white-space: nowrap; }
+
+    table.qtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.qtable th { text-align: left; color: var(--n500); font-weight: 500; font-size: 12px;
+      padding: 8px 10px; border-bottom: 1px solid var(--n200); }
+    table.qtable td { padding: 8px 10px; border-bottom: 1px solid var(--n100); }
+    table.qtable td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .naver-card { display: flex; justify-content: space-between; align-items: center; }
+    .naver-link { color: var(--g700); font-weight: 700; text-decoration: none; }
+
+    .empty-state { text-align: center; color: var(--n500); padding: 40px 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="pinScreen">
+    <div class="pin-box">
+      <h1>마케팅 대시보드</h1>
+      <input type="password" class="pin-input" id="pinInput" placeholder="비밀번호">
+      <button class="pin-btn" id="pinBtn">입장</button>
+      <div class="pin-error" id="pinError">비밀번호가 올바르지 않습니다.</div>
+    </div>
+  </div>
+
+  <div id="dash">
+    <div class="dash-head">
+      <h1>zoozoo.kr 마케팅 대시보드</h1>
+      <div class="dash-updated" id="updatedAt"></div>
+    </div>
+
+    <div class="stat-row" id="statRow"></div>
+
+    <div class="card">
+      <h2>최근 30일 방문자 수 (GA4)</h2>
+      <svg id="lineChart" viewBox="0 0 640 220"></svg>
+    </div>
+
+    <div class="card">
+      <h2>유입 경로 Top 5 (최근 30일, GA4)</h2>
+      <svg id="barChart" viewBox="0 0 640 200"></svg>
+    </div>
+
+    <div class="card">
+      <h2>검색어 Top 10 (Google Search Console)</h2>
+      <div id="queryTableWrap"></div>
+    </div>
+
+    <div class="card naver-card">
+      <div>
+        <h2 style="margin-bottom:4px">네이버 검색 유입</h2>
+        <div style="font-size:13px;color:var(--n500)">네이버 서치어드바이저는 공개 API가 없어 자동 수집이 불가능합니다. 콘솔에서 직접 확인해주세요.</div>
+      </div>
+      <a class="naver-link" href="https://searchadvisor.naver.com" target="_blank" rel="noopener">서치어드바이저 열기 →</a>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script src="../js/dashboard.js"></script>
+</body>
+</html>
