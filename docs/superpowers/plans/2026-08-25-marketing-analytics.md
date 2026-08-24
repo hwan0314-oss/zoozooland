@@ -27,7 +27,7 @@
 **Interfaces:**
 - Produces: 사용자가 따라할 4단계 가입/등록 절차 문서. Task 2·3이 필요로 하는 `GA4_MEASUREMENT_ID`, `CLARITY_PROJECT_ID` 두 값을 사용자가 이 문서를 보고 발급받아 Claude에게 전달하게 된다.
 
-- [ ] **Step 1: 가이드 문서 작성**
+- [x] **Step 1: 가이드 문서 작성**
 
 `docs/marketing-analytics-setup-guide.md` 파일을 아래 내용으로 생성한다.
 
@@ -74,12 +74,12 @@
 ①②를 완료하시면 측정 ID 두 개(GA4 `G-...`, Clarity 10자리)를 Claude에게 전달해주세요. 코드에 반영해서 배포하겠습니다.
 ```
 
-- [ ] **Step 2: 문서가 올바르게 생성됐는지 확인**
+- [x] **Step 2: 문서가 올바르게 생성됐는지 확인**
 
 Run: `cat "docs/marketing-analytics-setup-guide.md" | grep -c "^## "`
 Expected: `4` (①~④ 4개 섹션이 모두 존재)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/marketing-analytics-setup-guide.md
@@ -247,7 +247,7 @@ Search Console과 네이버 서치어드바이저는 검색어 데이터가 실�
 }
 ```
 
-- [ ] **Step 1: 스크립트 작성**
+- [x] **Step 1: 스크립트 작성**
 
 `marketing_analytics_etl.py`를 아래 내용으로 생성한다.
 
@@ -430,17 +430,17 @@ if __name__ == '__main__':
     main()
 ```
 
-- [ ] **Step 2: 구문 검증**
+- [x] **Step 2: 구문 검증**
 
 Run: `python3 -m py_compile marketing_analytics_etl.py`
 Expected: 오류 없이 종료 (exit code 0)
 
-- [ ] **Step 3: 필수 환경변수 누락 시 정상적으로 오류를 기록하는지 확인**
+- [x] **Step 3: 필수 환경변수 누락 시 정상적으로 오류를 기록하는지 확인**
 
 Run: `python3 marketing_analytics_etl.py`
 Expected: `website/data/analytics.json`이 생성되고, `errors` 키에 `google_auth`(또는 `clarity`) 관련 메시지가 담김 — 환경변수가 없어도 스크립트 자체는 크래시하지 않고 종료되어야 한다. 확인 후 `git checkout -- website/data/analytics.json`으로 테스트 산출물은 되돌린다 (실제 데이터가 아니므로 커밋하지 않음).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add marketing_analytics_etl.py
@@ -460,7 +460,7 @@ git commit -m "feat: GA4/Search Console/Clarity 마케팅 분석 ETL 스크립�
 - Consumes: `marketing_analytics_etl.py` (Task 5), GitHub Secrets `GA4_SERVICE_ACCOUNT_JSON`, `GA4_PROPERTY_ID`, `GSC_SITE_URL`, `CLARITY_PROJECT_ID`, `CLARITY_API_TOKEN` (사용자가 ⑤~⑦ 완료 후 값을 전달하면 Claude 또는 사용자가 등록)
 - Produces: 매일 커밋되는 `website/data/analytics.json` → 기존 `deploy-website.yml`이 `website/data`를 통째로 복사하므로 자동 배포됨
 
-- [ ] **Step 1: 워크플로우 파일 작성**
+- [x] **Step 1: 워크플로우 파일 작성**
 
 `.github/workflows/marketing-analytics-etl.yml`을 아래 내용으로 생성한다. `daily_report.yml`과 이름·시크릿이 겹치지 않도록 별도 워크플로우로 분리한다.
 
@@ -508,12 +508,12 @@ jobs:
           git push
 ```
 
-- [ ] **Step 2: YAML 문법 검증**
+- [x] **Step 2: YAML 문법 검증**
 
 Run: `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/marketing-analytics-etl.yml', encoding='utf-8'))"`
 Expected: 오류 없이 종료 (`PyYAML`이 없으면 `pip install pyyaml` 먼저 실행)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .github/workflows/marketing-analytics-etl.yml
@@ -534,7 +534,7 @@ git commit -m "ci: 마케팅 분석 ETL 매일 자동 실행 워크플로우 추
 - Consumes: `../data/analytics.json` (Task 5 스키마), 기존 `ADMIN_PIN = 'zoozoo4500'` 상수 (website/js/admin.js:157와 동일한 값 — 로그인 화면 재사용 없이 같은 PIN만 재사용하는 경량 게이트)
 - Produces: 없음 (읽기 전용 페이지)
 
-- [ ] **Step 1: dashboard.html 작성**
+- [x] **Step 1: dashboard.html 작성**
 
 `website/admin/dashboard.html`을 아래 내용으로 생성한다. 기존 `website/admin/index.html`의 라이트 테마 톤(녹색 `--g700` 계열, Noto Sans KR)을 그대로 따르고, 차트 색상만 dataviz 스킬의 검증된 팔레트(`references/palette.md`)를 사용한다.
 
@@ -653,7 +653,7 @@ git commit -m "ci: 마케팅 분석 ETL 매일 자동 실행 워크플로우 추
 </html>
 ```
 
-- [ ] **Step 2: dashboard.js 작성**
+- [x] **Step 2: dashboard.js 작성**
 
 `website/js/dashboard.js`를 아래 내용으로 생성한다.
 
@@ -823,14 +823,14 @@ git commit -m "ci: 마케팅 분석 ETL 매일 자동 실행 워크플로우 추
 })();
 ```
 
-- [ ] **Step 3: 빈 상태(데이터 없음) 렌더링 확인**
+- [x] **Step 3: 빈 상태(데이터 없음) 렌더링 확인**
 
 `website/data/analytics.json`이 아직 없는 상태에서 로컬로 페이지를 연다.
 
 Run: `python3 -m http.server 8000 --directory website`
 그 다음 브라우저로 `http://localhost:8000/admin/dashboard.html` 접속 → PIN(`zoozoo4500`) 입력 → "아직 수집된 데이터가 없습니다" 메시지가 뜨는지 확인. 확인 후 서버 종료.
 
-- [ ] **Step 4: 샘플 데이터로 차트 렌더링 확인**
+- [x] **Step 4: 샘플 데이터로 차트 렌더링 확인**
 
 임시로 `website/data/analytics.json`을 아래 샘플로 만들고 같은 방법으로 열어 라인차트·바차트·표가 정상적으로 그려지는지 확인한다.
 
@@ -849,7 +849,7 @@ Run: `python3 -m http.server 8000 --directory website`
 
 확인 후 이 샘플 파일은 실제 데이터가 아니므로 삭제한다: `rm website/data/analytics.json`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add website/admin/dashboard.html website/js/dashboard.js
