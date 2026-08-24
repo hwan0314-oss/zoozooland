@@ -1,6 +1,6 @@
 # zoozoo.kr 마케팅 분석 도구 설정 가이드
 
-아래 4가지를 순서대로 진행해주세요. ①②는 완료 후 값을 Claude에게 전달해야 코드에 반영됩니다. ③④는 등록만 하면 끝입니다.
+아래를 순서대로 진행해주세요. ①②는 완료 후 값을 Claude에게 전달해야 추적 코드에 반영됩니다. ③④는 등록만 하면 끝입니다. ⑤~⑦은 관리자 패널 통합 대시보드를 만들기 위한 단계입니다 (①③이 먼저 완료되어 있어야 합니다).
 
 ## ① Google Analytics 4 (GA4) — 방문자 수 · 유입 경로
 
@@ -35,6 +35,35 @@
 3. 소유확인 방식 중 "HTML 태그" 선택 — zoozoo.kr에는 이미 소유확인 메타태그가 심어져 있어서 (`naver-site-verification`) 바로 확인이 완료될 가능성이 높습니다. 만약 실패하면 확인창에 뜨는 메타태그 값을 Claude에게 전달해주세요.
 4. 등록 완료 후 "요약정보" → "검색 유입 분석"에서 며칠 뒤부터 검색어별 유입 데이터를 볼 수 있습니다.
 
+## ⑤ Google Cloud 서비스 계정 발급 — 대시보드가 GA4·Search Console 데이터를 읽어오기 위한 열쇠
+
+1. https://console.cloud.google.com 접속 → ①과 같은 Google 계정으로 로그인
+2. 상단 프로젝트 선택 → "새 프로젝트" → 이름: `zoozoo-dashboard` → 만들기
+3. "API 및 서비스" → "라이브러리"에서 `Google Analytics Data API` 검색 → "사용 설정" 클릭
+4. 같은 방법으로 `Google Search Console API`도 검색해서 "사용 설정"
+5. "API 및 서비스" → "사용자 인증 정보" → "+ 사용자 인증 정보 만들기" → "서비스 계정" 선택
+6. 서비스 계정 이름: `zoozoo-dashboard-reader` 입력 → "만들기 및 계속하기" → 역할 선택은 건너뛰고 "완료"
+7. 생성된 서비스 계정을 클릭 → "키" 탭 → "키 추가" → "새 키 만들기" → 키 유형 "JSON" 선택 → 다운로드
+8. 다운로드된 JSON 파일을 텍스트 편집기로 열어 `"client_email"` 값을 확인합니다 (예: `zoozoo-dashboard-reader@zoozoo-dashboard.iam.gserviceaccount.com`) — 이 이메일 주소는 ⑥에서 사용합니다.
+9. GA4 속성 ID도 함께 필요합니다: analytics.google.com → 관리 → 속성 세부정보에서 숫자로 된 "속성 ID"를 확인하세요 (예: `123456789`, `G-`가 아닌 숫자만 있는 값입니다).
+10. **다운로드된 JSON 파일 전체 내용과 GA4 속성 ID(숫자)를 Claude에게 전달해주세요.** GitHub 저장소의 비공개 Secrets로만 저장되고 코드나 화면에는 노출되지 않습니다.
+
+## ⑥ 서비스 계정에게 GA4·Search Console 조회 권한 주기
+
+⑤-8에서 확인한 서비스 계정 이메일을 아래 두 곳에 "읽기 전용"으로 등록합니다.
+
+1. **GA4:** analytics.google.com → 관리 → (속성 열의) "속성 액세스 관리" → "+" → "사용자 추가" → 이메일에 서비스 계정 이메일 입력 → 역할 "뷰어" 선택 → 추가
+2. **Search Console:** search.google.com/search-console → 설정 → "사용자 및 권한" → "사용자 추가" → 같은 서비스 계정 이메일 입력 → 권한 "전체" 선택 → 추가
+
+## ⑦ Microsoft Clarity API 토큰 발급
+
+1. clarity.microsoft.com → zoozoo.kr 프로젝트 열기 → 우측 상단 "Settings" → "Data Export" 탭
+2. "Add API token" 클릭 → 토큰 이름: `zoozoo-dashboard` 입력 → 생성
+3. 화면에 표시된 토큰 값을 복사합니다 (이 화면을 벗어나면 다시 볼 수 없으니 바로 복사)
+4. **이 토큰 값을 Claude에게 전달해주세요.**
+
 ---
 
 ①②를 완료하시면 측정 ID 두 개(GA4 `G-...`, Clarity 10자리)를 Claude에게 전달해주세요. 코드에 반영해서 배포하겠습니다.
+
+⑤~⑦까지 완료하시면(서비스 계정 JSON, GA4 속성 ID, Clarity API 토큰) 관리자 패널에 통합 대시보드를 만들어 드립니다.
