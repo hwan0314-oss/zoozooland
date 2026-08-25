@@ -99,7 +99,7 @@ git commit -m "docs: 마케팅 분석 도구 4종 계정 생성 가이드 추가
 **Interfaces:**
 - Consumes: 사용자로부터 전달받은 실제 GA4 Measurement ID (예: `G-ABC1234XYZ`)
 
-- [ ] **Step 1: index.html에 GA4 스니펫 삽입**
+- [x] **Step 1: index.html에 GA4 스니펫 삽입**
 
 `website-zzl/index.html`의 55번째 줄(`</head>`) 바로 앞에 아래 블록을 삽입한다. `G-XXXXXXXXXX`는 사용자가 전달한 실제 Measurement ID로 정확히 치환한다.
 
@@ -117,11 +117,11 @@ git commit -m "docs: 마케팅 분석 도구 4종 계정 생성 가이드 추가
 
 (기존 `</head>` 한 줄을 이 블록으로 교체하는 형태 — 즉 스니펫 4줄을 추가하고 `</head>`는 그대로 마지막에 유지)
 
-- [ ] **Step 2: dogam.html에 동일한 스니펫 삽입**
+- [x] **Step 2: dogam.html에 동일한 스니펫 삽입**
 
 `website-zzl/dogam.html`의 257번째 줄(`</head>`) 바로 앞에 Step 1과 동일한 블록(같은 Measurement ID)을 삽입한다.
 
-- [ ] **Step 3: 삽입 확인**
+- [x] **Step 3: 삽입 확인**
 
 Run: `grep -c "gtag/js?id=G-" website-zzl/index.html website-zzl/dogam.html`
 Expected: 두 파일 모두 `1` (플레이스홀더가 아닌 실제 ID가 두 파일에 정확히 1번씩 들어갔는지 확인)
@@ -129,7 +129,7 @@ Expected: 두 파일 모두 `1` (플레이스홀더가 아닌 실제 ID가 두 �
 Run: `grep "G-XXXXXXXXXX" website-zzl/index.html website-zzl/dogam.html`
 Expected: 아무 결과도 없어야 함 (플레이스홀더가 실제 값으로 전부 치환됐는지 확인)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add website-zzl/index.html website-zzl/dogam.html
@@ -149,7 +149,7 @@ git commit -m "feat: GA4 방문자 추적 스니펫 연결"
 **Interfaces:**
 - Consumes: 사용자로부터 전달받은 실제 Clarity Project ID (예: `abc123defg`)
 
-- [ ] **Step 1: index.html에 Clarity 스니펫 삽입**
+- [x] **Step 1: index.html에 Clarity 스니펫 삽입**
 
 `website-zzl/index.html`의 `</head>` 직전(Task 2에서 넣은 GA4 스니펫 바로 다음)에 아래 블록을 삽입한다. `XXXXXXXXXX`는 실제 Project ID로 치환한다.
 
@@ -165,11 +165,11 @@ git commit -m "feat: GA4 방문자 추적 스니펫 연결"
 </head>
 ```
 
-- [ ] **Step 2: dogam.html에 동일한 스니펫 삽입**
+- [x] **Step 2: dogam.html에 동일한 스니펫 삽입**
 
 `website-zzl/dogam.html`의 `</head>` 직전(Task 2의 GA4 스니펫 다음)에 Step 1과 동일한 블록(같은 Project ID)을 삽입한다.
 
-- [ ] **Step 3: 삽입 확인**
+- [x] **Step 3: 삽입 확인**
 
 Run: `grep -c 'clarity.ms/tag' website-zzl/index.html website-zzl/dogam.html`
 Expected: 두 파일 모두 `1`
@@ -177,7 +177,7 @@ Expected: 두 파일 모두 `1`
 Run: `grep '"script", "XXXXXXXXXX"' website-zzl/index.html website-zzl/dogam.html`
 Expected: 아무 결과도 없어야 함 (플레이스홀더 미치환 여부 확인)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add website-zzl/index.html website-zzl/dogam.html
