@@ -1,0 +1,21 @@
+{
+  "ga4": {
+    "daily": [],
+    "sources": []
+  },
+  "gsc": {
+    "top_queries": []
+  },
+  "clarity": {
+    "history": [
+      {
+        "date": "2026-08-25",
+        "sessions": 0,
+        "scrollDepth": 0.0,
+        "engagementTime": 0.0
+      }
+    ]
+  },
+  "errors": {},
+  "updated_at": "2026-08-25T12:29:27.922378+09:00"
+}
