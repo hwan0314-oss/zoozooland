@@ -208,7 +208,7 @@ zoozoo.kr을 브라우저로 직접 방문한 뒤, GA4 콘솔(analytics.google.c
 
 같은 방문 후 clarity.microsoft.com 프로젝트 대시보드에서 세션이 기록되는지 확인한다 (수 분 정도 지연될 수 있음). (사용자가 직접 확인)
 
-- [ ] **Step 4: Search Console / 네이버 서치어드바이저 등록 상태 확인**
+- [x] **Step 4: Search Console / 네이버 서치어드바이저 등록 상태 확인**
 
 Search Console과 네이버 서치어드바이저는 검색어 데이터가 실제로 쌓이기까지 수일~2주가 걸린다. 이 단계에서는 "등록 및 소유확인 완료" 상태인지만 사용자가 각 콘솔에서 확인한다.
 
@@ -864,7 +864,7 @@ git commit -m "feat: 마케팅 통합 대시보드 페이지 추가"
 
 **Files:** 없음 (GitHub 저장소 설정 작업)
 
-- [ ] **Step 1: GitHub Secrets 등록**
+- [x] **Step 1: GitHub Secrets 등록**
 
 `gh` CLI가 인증되어 있으면 아래처럼 등록한다 (또는 사용자가 직접 저장소 Settings → Secrets and variables → Actions에서 등록해도 된다):
 
@@ -876,13 +876,13 @@ gh secret set CLARITY_PROJECT_ID --body "abc123defg"
 gh secret set CLARITY_API_TOKEN --body "<전달받은 토큰>"
 ```
 
-- [ ] **Step 2: 워크플로우 수동 실행**
+- [x] **Step 2: 워크플로우 수동 실행**
 
 ```bash
 gh workflow run marketing-analytics-etl.yml
 ```
 
-- [ ] **Step 3: 실행 결과 확인**
+- [x] **Step 3: 실행 결과 확인**
 
 ```bash
 gh run list --workflow=marketing-analytics-etl.yml --limit 1
