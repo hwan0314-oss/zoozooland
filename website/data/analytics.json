@@ -1,7 +1,33 @@
 {
   "ga4": {
-    "daily": [],
-    "sources": []
+    "daily": [
+      {
+        "date": "2026-08-25",
+        "activeUsers": 21
+      }
+    ],
+    "sources": [
+      {
+        "source": "(not set)",
+        "sessions": 12
+      },
+      {
+        "source": "goyang.go.kr",
+        "sessions": 4
+      },
+      {
+        "source": "pcmap.place.naver.com",
+        "sessions": 4
+      },
+      {
+        "source": "(direct)",
+        "sessions": 3
+      },
+      {
+        "source": "m.place.naver.com",
+        "sessions": 3
+      }
+    ]
   },
   "gsc": {
     "top_queries": []
@@ -13,9 +39,15 @@
         "sessions": 0,
         "scrollDepth": 0.0,
         "engagementTime": 0.0
+      },
+      {
+        "date": "2026-08-26",
+        "sessions": 21,
+        "scrollDepth": 60.94,
+        "engagementTime": 0.0
       }
     ]
   },
   "errors": {},
-  "updated_at": "2026-08-25T12:29:27.922378+09:00"
+  "updated_at": "2026-08-26T00:53:56.510943+09:00"
 }
