@@ -113,6 +113,50 @@
     if (mapModal?.classList.contains('open')) { sc=1; px=0; py=0; applyT(); }
   }, 150));
 
+  /* ── 단체도시락 안내 모달 (핀치줌) ── */
+  const lunchboxModal      = document.getElementById('lunchboxModal');
+  const lunchboxModalClose = document.getElementById('lunchboxModalClose');
+  const lunchboxModalImg   = document.getElementById('lunchboxModalImg');
+  const lunchboxModalArea  = document.getElementById('lunchboxModalArea');
+  const btnLunchboxPreview = document.getElementById('btnLunchboxPreview');
+  let lsc = 1, lpx = 0, lpy = 0;
+
+  function openLunchboxModal()  { lunchboxModal.classList.add('open'); lunchboxModal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; lsc=1;lpx=0;lpy=0;applyLT(); }
+  function closeLunchboxModal() { lunchboxModal.classList.remove('open'); lunchboxModal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+  function applyLT()            { lunchboxModalImg.style.transform=`translate(${lpx}px,${lpy}px) scale(${lsc})`; }
+
+  btnLunchboxPreview?.addEventListener('click', openLunchboxModal);
+  lunchboxModalClose?.addEventListener('click', closeLunchboxModal);
+  lunchboxModal?.addEventListener('click', e => { if (e.target === lunchboxModal) closeLunchboxModal(); });
+  document.addEventListener('keydown', e => { if (e.key==='Escape' && lunchboxModal?.classList.contains('open')) closeLunchboxModal(); });
+
+  // 터치 줌/팬
+  let lld=0,llt=0,lpan=false,lpsx=0,lpsy=0,lppx=0,lppy=0;
+  lunchboxModalArea?.addEventListener('touchstart', e => {
+    if (e.touches.length===2) { lld=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); }
+    else if (e.touches.length===1) {
+      const now=Date.now();
+      if(now-llt<300){lsc=lsc>1.5?1:2.5;lpx=0;lpy=0;applyLT();llt=0;return;}
+      llt=now;lpan=true;lpsx=e.touches[0].clientX;lpsy=e.touches[0].clientY;lppx=lpx;lppy=lpy;
+    }
+  },{passive:true});
+  lunchboxModalArea?.addEventListener('touchmove', e => {
+    if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);lsc=Math.min(Math.max(lsc*(d/lld),1),5);lld=d;applyLT();}
+    else if(e.touches.length===1&&lpan&&lsc>1){lpx=lppx+(e.touches[0].clientX-lpsx);lpy=lppy+(e.touches[0].clientY-lpsy);applyLT();}
+  },{passive:true});
+  lunchboxModalArea?.addEventListener('touchend',()=>{lpan=false;});
+  lunchboxModalArea?.addEventListener('wheel',e=>{e.preventDefault();lsc=Math.min(Math.max(lsc*(e.deltaY<0?1.12:0.89),1),5);if(lsc===1){lpx=0;lpy=0;}applyLT();},{passive:false});
+
+  // 마우스 드래그
+  let lmd=false,lmsx=0,lmsy=0,lmpx=0,lmpy=0;
+  lunchboxModalArea?.addEventListener('mousedown',e=>{if(lsc<=1)return;lmd=true;lmsx=e.clientX;lmsy=e.clientY;lmpx=lpx;lmpy=lpy;lunchboxModalArea.classList.add('dragging');});
+  document.addEventListener('mousemove',e=>{if(!lmd)return;lpx=lmpx+(e.clientX-lmsx);lpy=lmpy+(e.clientY-lmsy);applyLT();});
+  document.addEventListener('mouseup',()=>{lmd=false;lunchboxModalArea?.classList.remove('dragging');});
+
+  window.addEventListener('orientationchange', () => setTimeout(() => {
+    if (lunchboxModal?.classList.contains('open')) { lsc=1; lpx=0; lpy=0; applyLT(); }
+  }, 150));
+
   /* ── 프로그램 로딩 ── */
   async function loadPrograms() {
     const c = document.getElementById('programsList');
