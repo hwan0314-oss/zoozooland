@@ -454,6 +454,16 @@
   <div class="map-modal-hint">PINCH · ZOOM · DBL TAP</div>
 </div>
 
+<!-- 단체도시락 안내 모달 -->
+<div class="map-modal" id="lunchboxModal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="map-modal-img-area" id="lunchboxModalArea">
+    <img src="images/group-lunchbox.jpg" alt="단체도시락 안내" class="map-modal-img" id="lunchboxModalImg">
+  </div>
+  <button class="map-modal-close" id="lunchboxModalClose" aria-label="닫기">✕</button>
+  <a href="images/group-lunchbox.pdf" download="쥬쥬랜드_단체도시락.pdf" class="map-modal-dl">DOWNLOAD</a>
+  <div class="map-modal-hint">PINCH · ZOOM · DBL TAP</div>
+</div>
+
 <!-- ═══════════════════════════════════════════
   ZZL-DOGAM — ZZL-UNIT-08
 ═══════════════════════════════════════════ -->
@@ -603,6 +613,10 @@
            class="block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition">
           CALL: 031-962-4500
         </a>
+        <button type="button" id="btnLunchboxPreview"
+           class="block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition">
+          단체도시락 안내 보기
+        </button>
         <a href="mailto:info@zoozoo.kr"
            class="block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition"
            id="groupEmailLink">
