@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+      actions: write
 
     steps:
       - name: Checkout
@@ -33,9 +34,23 @@ jobs:
         run: python marketing_analytics_etl.py
 
       - name: Commit analytics data
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add website/data/analytics.json
-          git diff --cached --quiet || git commit -m "chore: zoozoo.kr 마케팅 분석 데이터 갱신 $(date -u -d '+9 hours' +'%Y-%m-%d %H:%M KST')"
-          git push
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "chore: zoozoo.kr 마케팅 분석 데이터 갱신 $(date -u -d '+9 hours' +'%Y-%m-%d %H:%M KST')"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # GITHUB_TOKEN으로 만든 커밋은 push 이벤트로 다른 워크플로우를 자동 트리거하지 않으므로
+      # (GitHub Actions의 의도된 제약) deploy-website.yml을 API로 직접 실행시켜 배포까지 이어준다.
+      - name: Trigger site redeploy
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy-website.yml --repo ${{ github.repository }}
