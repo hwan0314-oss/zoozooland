@@ -44,9 +44,9 @@ jobs:
           # 3. zoozoo.kr 커스텀 도메인
           echo "zoozoo.kr" > deploy/CNAME
 
-          # 3. 관리자 패널 (website/admin/ + website/js/admin.js)
+          # 3. 관리자 패널 (website/admin/ + website/js/*.js)
           cp -r website/admin deploy/admin
-          cp website/js/admin.js deploy/js/admin.js
+          cp website/js/*.js deploy/js/
 
       - name: Build static HTML (SSG for SEO)
         run: python3 website-zzl/build.py
