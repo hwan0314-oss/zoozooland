@@ -7,34 +7,99 @@
       },
       {
         "date": "2026-08-26",
+        "activeUsers": 28
+      },
+      {
+        "date": "2026-08-27",
         "activeUsers": 1
       }
     ],
     "sources": [
       {
         "source": "(not set)",
-        "sessions": 12
-      },
-      {
-        "source": "goyang.go.kr",
-        "sessions": 4
+        "sessions": 25
       },
       {
         "source": "pcmap.place.naver.com",
-        "sessions": 4
-      },
-      {
-        "source": "(direct)",
-        "sessions": 3
+        "sessions": 11
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 3
+        "sessions": 8
+      },
+      {
+        "source": "naver.com",
+        "sessions": 7
+      },
+      {
+        "source": "(direct)",
+        "sessions": 6
       }
     ]
   },
   "gsc": {
-    "top_queries": []
+    "top_queries": [
+      {
+        "query": "쥬쥬동물원",
+        "clicks": 1,
+        "impressions": 2,
+        "position": 2
+      },
+      {
+        "query": "juju land",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 1
+      },
+      {
+        "query": "zoo",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 17
+      },
+      {
+        "query": "거북이 동물",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 8
+      },
+      {
+        "query": "고양시 동물원",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 1
+      },
+      {
+        "query": "과천시",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 1
+      },
+      {
+        "query": "구경할",
+        "clicks": 0,
+        "impressions": 2,
+        "position": 2
+      },
+      {
+        "query": "동물",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 4
+      },
+      {
+        "query": "동물원",
+        "clicks": 0,
+        "impressions": 2,
+        "position": 1
+      },
+      {
+        "query": "실내 테마파크",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 26
+      }
+    ]
   },
   "clarity": {
     "history": [
@@ -49,9 +114,15 @@
         "sessions": 23,
         "scrollDepth": 62.1,
         "engagementTime": 4.2
+      },
+      {
+        "date": "2026-08-27",
+        "sessions": 32,
+        "scrollDepth": 75.31,
+        "engagementTime": 2.6
       }
     ]
   },
   "errors": {},
-  "updated_at": "2026-08-26T09:38:35.813453+09:00"
+  "updated_at": "2026-08-27T01:25:40.038434+09:00"
 }
