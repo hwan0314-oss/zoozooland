@@ -121,9 +121,20 @@
   const btnLunchboxPreview = document.getElementById('btnLunchboxPreview');
   let lsc = 1, lpx = 0, lpy = 0;
 
-  function openLunchboxModal()  { lunchboxModal.classList.add('open'); lunchboxModal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; lsc=1;lpx=0;lpy=0;applyLT(); }
-  function closeLunchboxModal() { lunchboxModal.classList.remove('open'); lunchboxModal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+  function hideLunchboxModal()  { lunchboxModal.classList.remove('open'); lunchboxModal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+  function openLunchboxModal()  {
+    lunchboxModal.classList.add('open'); lunchboxModal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; lsc=1;lpx=0;lpy=0;applyLT();
+    history.pushState({ lunchboxModal: true }, '');
+  }
+  function closeLunchboxModal() {
+    // 뒤로가기(popstate)에서 호출된 경우가 아니라면, 눌러서 연 history 항목을 되돌려
+    // 브라우저 "뒤로가기"가 이전 페이지가 아니라 이 모달을 닫도록 만든다.
+    if (history.state?.lunchboxModal) history.back();
+    else hideLunchboxModal();
+  }
   function applyLT()            { lunchboxModalImg.style.transform=`translate(${lpx}px,${lpy}px) scale(${lsc})`; }
+
+  window.addEventListener('popstate', () => { if (lunchboxModal?.classList.contains('open')) hideLunchboxModal(); });
 
   btnLunchboxPreview?.addEventListener('click', openLunchboxModal);
   lunchboxModalClose?.addEventListener('click', closeLunchboxModal);
