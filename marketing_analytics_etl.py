@@ -121,12 +121,13 @@ def fetch_clarity(project_id, token):
     scroll = find_metric('ScrollDepth')
     engagement = find_metric('EngagementTime')
 
-    return {
+    snapshot = {
         'date': datetime.now(KST).date().isoformat(),
         'sessions': int(traffic.get('totalSessionCount', 0) or 0),
         'scrollDepth': float(scroll.get('averageScrollDepth', 0) or 0),
         'engagementTime': float(engagement.get('averageEngagementTime', 0) or 0),
     }
+    return snapshot, metrics
 
 
 def merge_clarity_history(existing_history, today_snapshot):
@@ -158,9 +159,11 @@ def main():
             errors['gsc'] = str(e)
 
     try:
-        snapshot = fetch_clarity(os.environ['CLARITY_PROJECT_ID'], os.environ['CLARITY_API_TOKEN'])
+        snapshot, raw_metrics = fetch_clarity(os.environ['CLARITY_PROJECT_ID'], os.environ['CLARITY_API_TOKEN'])
         data.setdefault('clarity', {'history': []})
         data['clarity']['history'] = merge_clarity_history(data['clarity'].get('history', []), snapshot)
+        # 임시 디버그: engagementTime 파싱 문제 확인 후 이 줄과 fetch_clarity의 raw_metrics 반환은 제거할 것
+        data['clarity']['_debug_raw'] = raw_metrics
     except Exception as e:
         errors['clarity'] = str(e)
 
