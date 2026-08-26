@@ -605,18 +605,27 @@
     <div class="card-frame bg-black p-8 md:p-12">
       <div class="mono text-[#D4FF00] mb-8">MODULE: GROUP_ACCESS</div>
       <h3 class="text-3xl font-black mb-4">같이 ZZL겨요</h3>
-      <p class="text-gray-400 text-sm mb-10 leading-relaxed">
+      <p class="text-gray-400 text-sm mb-6 leading-relaxed">
         20인 이상 단체 방문은 사전 문의 바랍니다.
       </p>
+
+      <button type="button" id="btnLunchboxPreview"
+        class="relative w-full overflow-hidden border border-white/10 mb-6 cursor-pointer group">
+        <img src="images/group-lunchbox.jpg" alt="단체도시락 안내" loading="lazy"
+             class="w-full h-64 object-cover object-top">
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition duration-300
+                    flex items-center justify-center">
+          <div class="mono text-[#D4FF00] text-xs opacity-0 group-hover:opacity-100 transition">
+            CLICK TO ENLARGE
+          </div>
+        </div>
+      </button>
+
       <div class="space-y-3">
         <a href="tel:031-962-4500"
            class="block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition">
           CALL: 031-962-4500
         </a>
-        <button type="button" id="btnLunchboxPreview"
-           class="block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition">
-          단체도시락 안내 보기
-        </button>
         <a href="mailto:jun@zoozoo.kr"
            class="block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition"
            id="groupEmailLink">
