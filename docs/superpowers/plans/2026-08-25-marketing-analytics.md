@@ -195,16 +195,16 @@ git commit -m "feat: Microsoft Clarity 세션 녹화/히트맵 스니펫 연결"
 **Interfaces:**
 - Consumes: Task 2·3에서 배포된 실제 GA4/Clarity 스니펫
 
-- [ ] **Step 1: 배포 완료 확인**
+- [x] **Step 1: 배포 완료 확인**
 
 Run: `curl -s https://zoozoo.kr | grep -c "gtag/js"`
 Expected: `1` (라이브 사이트에 GA4 스니펫이 실제로 반영됐는지 확인)
 
-- [ ] **Step 2: GA4 실시간 리포트로 수신 확인**
+- [x] **Step 2: GA4 실시간 리포트로 수신 확인**
 
 zoozoo.kr을 브라우저로 직접 방문한 뒤, GA4 콘솔(analytics.google.com) → 보고서 → 실시간 메뉴에서 활성 사용자 1명이 잡히는지 확인한다. (사용자가 직접 확인 — Claude가 GA4 콘솔에 로그인할 수 없음)
 
-- [ ] **Step 3: Clarity 대시보드로 세션 수신 확인**
+- [x] **Step 3: Clarity 대시보드로 세션 수신 확인**
 
 같은 방문 후 clarity.microsoft.com 프로젝트 대시보드에서 세션이 기록되는지 확인한다 (수 분 정도 지연될 수 있음). (사용자가 직접 확인)
 
@@ -212,7 +212,7 @@ zoozoo.kr을 브라우저로 직접 방문한 뒤, GA4 콘솔(analytics.google.c
 
 Search Console과 네이버 서치어드바이저는 검색어 데이터가 실제로 쌓이기까지 수일~2주가 걸린다. 이 단계에서는 "등록 및 소유확인 완료" 상태인지만 사용자가 각 콘솔에서 확인한다.
 
-- [ ] **Step 5: 결과를 Claude에게 알리고 마무리**
+- [x] **Step 5: 결과를 Claude에게 알리고 마무리**
 
 사용자가 위 확인 결과를 Claude에게 전달하면, 문제가 있을 경우(예: GA4에 데이터가 안 잡힘) 스니펫 위치나 ID 오타를 함께 디버깅한다.
 
@@ -890,6 +890,16 @@ gh run list --workflow=marketing-analytics-etl.yml --limit 1
 
 Expected: 최근 실행이 `success` 상태. 실패하면 `gh run view --log`로 로그를 확인해 어떤 플랫폼(GA4/GSC/Clarity) 호출이 실패했는지 확인하고 디버깅한다 (서비스 계정 권한 부여 누락, 속성 ID 오타 등이 흔한 원인).
 
-- [ ] **Step 4: 대시보드에서 실데이터 확인**
+- [x] **Step 4: 대시보드에서 실데이터 확인**
 
 `https://zoozoo.kr/admin/dashboard.html`을 브라우저로 열어 PIN 입력 후 방문자 수·유입 경로·검색어가 표시되는지 확인한다 (Search Console 데이터는 등록 후 며칠~2주가 지나야 채워질 수 있음 — 그 전까지는 GA4/Clarity 카드만 채워져도 정상).
+
+헤드리스 Edge(Playwright)로 실제 확인함. GA4 방문자·유입 경로, Clarity 스크롤 깊이·참여시간 모두 실데이터로 정상 표시. GSC는 아직 데이터 없음(정상, 등록 후 며칠 소요).
+
+## 첫 실행 중 발견해 수정한 버그 2건
+
+1. **Clarity `engagementTime`이 항상 0** — API 응답이 `averageEngagementTime` 필드가 아니라 `activeTime`(세션 합산 초)으로 내려옴. `activeTime / 세션수`로 평균을 직접 계산하도록 수정 (`marketing_analytics_etl.py`).
+2. **ETL이 커밋해도 사이트가 안 바뀜** — GitHub Actions의 `GITHUB_TOKEN`으로 만든 push는 다른 워크플로우의 `on: push` 트리거를 발동시키지 않는 정책 때문에, `deploy-website.yml`이 자동 실행되지 않았음. ETL 워크플로우 마지막에 `gh workflow run deploy-website.yml`을 추가해 해결 (`.github/workflows/marketing-analytics-etl.yml`).
+3. (배포 파이프라인 버그, 위와 별개) `deploy-website.yml`이 `website/js/admin.js`만 개별 복사하고 있어 새로 추가한 `website/js/dashboard.js`가 배포에서 누락되어 대시보드가 404였음. `website/js/*.js` 전체 복사로 수정.
+
+세 버그 모두 수정·배포·재검증까지 완료.
