@@ -4,7 +4,11 @@
 (() => {
   'use strict';
 
-  const ADMIN_PIN = 'zoozoo4500'; // website/js/admin.js의 ADMIN_PIN과 동일하게 유지
+  // 참고: 이 PIN은 실제 보안이 아니라 캐주얼한 열람 방지용 UI 게이트입니다.
+  // 이 파일 자체가 공개되어 있고, 데이터(../data/analytics.json)도 URL만 알면
+  // 누구나 직접 접근 가능합니다 (GitHub Pages는 정적 호스팅이라 파일 단위 접근
+  // 제어가 불가능함). 민감정보가 아닌 집계 통계이므로 감수하는 트레이드오프입니다.
+  const ADMIN_PIN = 'zzldash2026';
 
   const pinScreen = document.getElementById('pinScreen');
   const pinInput  = document.getElementById('pinInput');
