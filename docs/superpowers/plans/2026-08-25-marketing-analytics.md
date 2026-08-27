@@ -903,3 +903,13 @@ Expected: 최근 실행이 `success` 상태. 실패하면 `gh run view --log`로
 3. (배포 파이프라인 버그, 위와 별개) `deploy-website.yml`이 `website/js/admin.js`만 개별 복사하고 있어 새로 추가한 `website/js/dashboard.js`가 배포에서 누락되어 대시보드가 404였음. `website/js/*.js` 전체 복사로 수정.
 
 세 버그 모두 수정·배포·재검증까지 완료.
+
+## 확장: 페이지·기기·UX 신호 추가 (2026-08-28)
+
+사용자 요청으로 대시보드에 4가지를 추가함:
+- **인기 페이지 Top5** — GA4 `pagePath`+`screenPageViews` 신규 조회
+- **신규 vs 재방문 비율** — GA4 `newVsReturning`+`activeUsers` 신규 조회
+- **기기 · 브라우저 분포** — Clarity가 이미 매일 받아오던 응답에서 `Device`/`Browser` 지표를 추가로 파싱 (API 호출 추가 없음, 하루 10회 제한에 영향 없음)
+- **UX 문제 신호** — 같은 Clarity 응답에서 Rage Click·Dead Click·Quickback 등 `sessionsWithMetricPercentage`를 파싱
+
+대시보드의 "유입 경로"·"인기 페이지"·"기기"·"브라우저" 막대 차트가 구조적으로 동일해 `renderRankedBar()`로 일반화해 재사용(DRY). 좁은 라벨 영역(기기/브라우저 미니 차트)에서 글자 수 기준 자르기가 실제 글자 폭과 안 맞아(가는 글자 i/l 대 넓은 글자 C/M) 라벨이 화면 밖으로 잘리는 문제를 발견 — `getComputedTextLength()`로 실측해 자르는 방식으로 수정. 로컬 서버 + 헤드리스 Edge로 데이터 있음/없음 두 상태 모두 확인 후 배포, 라이브에서 최종 확인 완료.
