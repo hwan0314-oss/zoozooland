@@ -220,7 +220,7 @@ def _upload_imgbb(image_bytes: bytes) -> str:
     """imgbb에 이미지 업로드 후 공개 URL 반환."""
     r = requests.post(
         "https://api.imgbb.com/1/upload",
-        data={"key": IMGBB_API_KEY, "expiration": 600},
+        data={"key": IMGBB_API_KEY},
         files={"image": ("photo.jpg", image_bytes, "image/jpeg")},
         timeout=30,
     )
