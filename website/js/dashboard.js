@@ -40,14 +40,23 @@
       document.getElementById('statRow').innerHTML = msg;
       document.getElementById('lineChart').parentElement.innerHTML += msg;
       document.getElementById('barChart').parentElement.innerHTML += msg;
+      document.getElementById('pagesChart').parentElement.innerHTML += msg;
       document.getElementById('queryTableWrap').innerHTML = msg;
+      document.getElementById('deviceChart').parentElement.parentElement.parentElement.innerHTML += msg;
+      document.getElementById('uxSignalsWrap').innerHTML = msg;
       return;
     }
     renderUpdatedAt(data.updated_at);
     renderStats(data);
     renderLineChart(data.ga4?.daily || []);
-    renderBarChart(data.ga4?.sources || []);
+    renderRankedBar('barChart', data.ga4?.sources || [], 'source', 'sessions');
+    renderRankedBar('pagesChart', data.ga4?.topPages || [], 'path', 'views');
     renderQueryTable(data.gsc?.top_queries || []);
+    renderRankedBar('deviceChart', data.clarity?.devices || [], 'name', 'sessions',
+      { W: 300, padL: 85, padR: 30, rowH: 28, gap: 6, truncateLen: 10 });
+    renderRankedBar('browserChart', data.clarity?.browsers || [], 'name', 'sessions',
+      { W: 300, padL: 85, padR: 30, rowH: 28, gap: 6, truncateLen: 10 });
+    renderUxSignals(data.clarity?.uxSignals || {});
   }
 
   function renderUpdatedAt(iso) {
@@ -63,9 +72,15 @@
     const total30 = daily.reduce((sum, d) => sum + d.activeUsers, 0);
     const clarityLatest = (data.clarity?.history || []).slice(-1)[0];
 
+    const nvr = data.ga4?.newVsReturning || { new: 0, returning: 0 };
+    const nvrTotal = nvr.new + nvr.returning;
+    const pct = n => nvrTotal ? Math.round((n / nvrTotal) * 100) : 0;
+
     const tiles = [
       { label: '오늘 방문자 (GA4)', value: today ? today.activeUsers.toLocaleString('ko-KR') : '–' },
       { label: '최근 30일 방문자 합계', value: total30.toLocaleString('ko-KR') },
+      { label: '신규 방문자 (최근 30일)', value: nvrTotal ? `${nvr.new.toLocaleString('ko-KR')} (${pct(nvr.new)}%)` : '–' },
+      { label: '재방문자 (최근 30일)', value: nvrTotal ? `${nvr.returning.toLocaleString('ko-KR')} (${pct(nvr.returning)}%)` : '–' },
       { label: '평균 스크롤 깊이 (Clarity)', value: clarityLatest ? `${clarityLatest.scrollDepth.toFixed(0)}%` : '–' },
       { label: '평균 참여 시간 (Clarity)', value: clarityLatest ? `${clarityLatest.engagementTime.toFixed(0)}초` : '–' },
     ];
@@ -118,28 +133,69 @@
     });
   }
 
-  function renderBarChart(sources) {
-    const svg = document.getElementById('barChart');
-    if (!sources.length) { svg.parentElement.innerHTML += '<div class="empty-state">데이터 없음</div>'; return; }
+  // 카테고리별 순위 막대 차트 (유입 경로, 인기 페이지, 기기, 브라우저에서 공용으로 사용)
+  function renderRankedBar(svgId, items, labelKey, valueKey, opts = {}) {
+    const { W = 640, padL = 140, padR = 50, rowH = 36, gap = 8, truncateLen = 18 } = opts;
+    const svg = document.getElementById(svgId);
+    if (!items.length) { svg.parentElement.innerHTML += '<div class="empty-state">데이터 없음</div>'; return; }
 
-    const W = 640, H = 200, padL = 140, padR = 50, rowH = 36, gap = 8;
-    const max = Math.max(...sources.map(s => s.sessions), 1);
+    const max = Math.max(...items.map(it => it[valueKey]), 1);
     const plotW = W - padL - padR;
+    const initialClip = s => s.length > truncateLen ? s.slice(0, truncateLen - 1) + '…' : s;
 
-    const truncate = s => s.length > 18 ? s.slice(0, 17) + '…' : s;
-
-    const bars = sources.map((s, i) => {
+    const bars = items.map((it, i) => {
       const y = i * (rowH + gap);
-      const w = (s.sessions / max) * plotW;
+      const w = (it[valueKey] / max) * plotW;
+      const label = String(it[labelKey]);
       return `
-        <text x="${padL - 10}" y="${y + rowH / 2 + 4}" font-size="12" fill="var(--n700)" text-anchor="end">${truncate(s.source)}<title>${s.source}</title></text>
+        <text class="rb-label" x="${padL - 10}" y="${y + rowH / 2 + 4}" font-size="12" fill="var(--n700)" text-anchor="end"><tspan class="rb-label-text">${initialClip(label)}</tspan><title>${label}</title></text>
         <rect x="${padL}" y="${y}" width="${w}" height="${rowH - 4}" rx="4" fill="var(--series-1)"/>
-        <text x="${padL + w + 8}" y="${y + rowH / 2 + 4}" font-size="12" fill="var(--n700)">${s.sessions}</text>
+        <text x="${padL + w + 8}" y="${y + rowH / 2 + 4}" font-size="12" fill="var(--n700)">${it[valueKey]}</text>
       `;
     }).join('');
 
-    svg.setAttribute('viewBox', `0 0 ${W} ${sources.length * (rowH + gap)}`);
+    svg.setAttribute('viewBox', `0 0 ${W} ${items.length * (rowH + gap)}`);
     svg.innerHTML = bars;
+
+    // 문자 수 기준 클리핑은 폰트가 고정폭이 아니라 부정확하므로(예: "MobileSafari"의 i/l vs
+    // "ChromeMobile"의 C/M), 렌더링된 실제 폭(getComputedTextLength)을 재서 넘치면 한 글자씩
+    // 더 줄인다. 라벨 영역 좌측 끝(x=0)을 넘지 않도록 padL - 10을 예산으로 삼는다.
+    const budget = padL - 10;
+    svg.querySelectorAll('.rb-label').forEach(el => {
+      const tspan = el.querySelector('.rb-label-text');
+      let text = tspan.textContent;
+      while (el.getComputedTextLength() > budget && text.length > 1) {
+        text = text.length > 2 ? text.slice(0, -2) + '…' : '…';
+        tspan.textContent = text;
+      }
+    });
+  }
+
+  const UX_LABELS = {
+    rageClick: 'Rage Click — 짜증나서 반복 클릭',
+    deadClick: 'Dead Click — 눌러도 반응 없음',
+    quickback: 'Quickback — 들어오자마자 이탈',
+    excessiveScroll: '과도한 스크롤',
+    scriptError: '스크립트 오류 발생',
+  };
+
+  function renderUxSignals(ux) {
+    const wrap = document.getElementById('uxSignalsWrap');
+    const keys = Object.keys(UX_LABELS).filter(k => ux && ux[k] !== undefined);
+    if (!keys.length) { wrap.innerHTML = '<div class="empty-state">데이터 없음</div>'; return; }
+    wrap.innerHTML = `
+      <table class="qtable">
+        <thead><tr><th>신호</th><th class="num">발생 세션 비율</th></tr></thead>
+        <tbody>
+          ${keys.map(k => `
+            <tr>
+              <td>${UX_LABELS[k]}</td>
+              <td class="num">${ux[k].toFixed(1)}%</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
   }
 
   function renderQueryTable(queries) {

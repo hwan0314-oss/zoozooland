@@ -47,7 +47,10 @@
     .card { background: var(--white); border-radius: var(--r); box-shadow: var(--sh); padding: 24px; margin-bottom: 20px; }
     .card h2 { font-size: 16px; color: var(--n700); margin-bottom: 16px; }
 
-    #lineChart, #barChart { width: 100%; height: auto; }
+    #lineChart, #barChart, #pagesChart, #deviceChart, #browserChart { width: 100%; height: auto; }
+    .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 560px) { .split-grid { grid-template-columns: 1fr; } }
+    .mini-h { font-size: 12px; color: var(--n500); margin-bottom: 8px; }
     .tooltip { position: absolute; background: var(--n900); color: var(--white); font-size: 12px;
       padding: 6px 10px; border-radius: 6px; pointer-events: none; opacity: 0; transition: opacity .1s; white-space: nowrap; }
 
@@ -92,8 +95,32 @@
     </div>
 
     <div class="card">
+      <h2>인기 페이지 Top 5 (최근 30일, GA4)</h2>
+      <svg id="pagesChart" viewBox="0 0 640 200"></svg>
+    </div>
+
+    <div class="card">
       <h2>검색어 Top 10 (Google Search Console)</h2>
       <div id="queryTableWrap"></div>
+    </div>
+
+    <div class="card">
+      <h2>기기 · 브라우저 (최근 1일, Clarity)</h2>
+      <div class="split-grid">
+        <div>
+          <div class="mini-h">기기</div>
+          <svg id="deviceChart" viewBox="0 0 300 100"></svg>
+        </div>
+        <div>
+          <div class="mini-h">브라우저</div>
+          <svg id="browserChart" viewBox="0 0 300 140"></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>사용자 경험 신호 (최근 1일, Clarity)</h2>
+      <div id="uxSignalsWrap"></div>
     </div>
 
     <div class="card naver-card">

@@ -28,7 +28,12 @@ GOOGLE_SCOPES = [
 def load_existing():
     if OUT.exists():
         return json.loads(OUT.read_text('utf-8'))
-    return {'ga4': {'daily': [], 'sources': []}, 'gsc': {'top_queries': []}, 'clarity': {'history': []}, 'errors': {}}
+    return {
+        'ga4': {'daily': [], 'sources': [], 'topPages': [], 'newVsReturning': {'new': 0, 'returning': 0}},
+        'gsc': {'top_queries': []},
+        'clarity': {'history': [], 'devices': [], 'browsers': [], 'uxSignals': {}},
+        'errors': {},
+    }
 
 
 def google_credentials():
@@ -74,7 +79,36 @@ def fetch_ga4(creds, property_id):
         for r in sources_rows
     ]
 
-    return {'daily': daily, 'sources': sources}
+    pages_body = {
+        'dateRanges': [{'startDate': '30daysAgo', 'endDate': 'today'}],
+        'dimensions': [{'name': 'pagePath'}],
+        'metrics': [{'name': 'screenPageViews'}],
+        'orderBys': [{'metric': {'metricName': 'screenPageViews'}, 'desc': True}],
+        'limit': 5,
+    }
+    pages_res = requests.post(base, headers=headers, json=pages_body, timeout=30)
+    pages_res.raise_for_status()
+    pages_rows = pages_res.json().get('rows', [])
+    top_pages = [
+        {'path': r['dimensionValues'][0]['value'], 'views': int(r['metricValues'][0]['value'])}
+        for r in pages_rows
+    ]
+
+    new_vs_returning_body = {
+        'dateRanges': [{'startDate': '30daysAgo', 'endDate': 'today'}],
+        'dimensions': [{'name': 'newVsReturning'}],
+        'metrics': [{'name': 'activeUsers'}],
+    }
+    nvr_res = requests.post(base, headers=headers, json=new_vs_returning_body, timeout=30)
+    nvr_res.raise_for_status()
+    nvr_rows = nvr_res.json().get('rows', [])
+    new_vs_returning = {'new': 0, 'returning': 0}
+    for r in nvr_rows:
+        key = r['dimensionValues'][0]['value']  # 'new' | 'returning' | '(not set)'
+        if key in new_vs_returning:
+            new_vs_returning[key] = int(r['metricValues'][0]['value'])
+
+    return {'daily': daily, 'sources': sources, 'topPages': top_pages, 'newVsReturning': new_vs_returning}
 
 
 def fetch_gsc(creds, site_url):
@@ -117,6 +151,16 @@ def fetch_clarity(project_id, token):
                 return m.get('information', [{}])[0]
         return {}
 
+    def find_breakdown(name, limit=5):
+        for m in metrics:
+            if m.get('metricName') == name:
+                rows = m.get('information', [])
+                return [
+                    {'name': row.get('name') or '(알 수 없음)', 'sessions': int(row.get('sessionsCount', 0) or 0)}
+                    for row in rows[:limit]
+                ]
+        return []
+
     traffic = find_metric('Traffic')
     scroll = find_metric('ScrollDepth')
     engagement = find_metric('EngagementTime')
@@ -131,7 +175,20 @@ def fetch_clarity(project_id, token):
         'scrollDepth': float(scroll.get('averageScrollDepth', 0) or 0),
         'engagementTime': round(float(avg_engagement), 1),
     }
-    return snapshot
+
+    devices = find_breakdown('Device')
+    browsers = find_breakdown('Browser')
+
+    # sessionsWithMetricPercentage: 해당 UX 문제가 한 번이라도 발생한 세션의 비율(%)
+    ux_signals = {
+        'rageClick': float(find_metric('RageClickCount').get('sessionsWithMetricPercentage', 0) or 0),
+        'deadClick': float(find_metric('DeadClickCount').get('sessionsWithMetricPercentage', 0) or 0),
+        'quickback': float(find_metric('QuickbackClick').get('sessionsWithMetricPercentage', 0) or 0),
+        'excessiveScroll': float(find_metric('ExcessiveScroll').get('sessionsWithMetricPercentage', 0) or 0),
+        'scriptError': float(find_metric('ScriptErrorCount').get('sessionsWithMetricPercentage', 0) or 0),
+    }
+
+    return snapshot, devices, browsers, ux_signals
 
 
 def merge_clarity_history(existing_history, today_snapshot):
@@ -163,9 +220,14 @@ def main():
             errors['gsc'] = str(e)
 
     try:
-        snapshot = fetch_clarity(os.environ['CLARITY_PROJECT_ID'], os.environ['CLARITY_API_TOKEN'])
+        snapshot, devices, browsers, ux_signals = fetch_clarity(
+            os.environ['CLARITY_PROJECT_ID'], os.environ['CLARITY_API_TOKEN']
+        )
         data.setdefault('clarity', {'history': []})
         data['clarity']['history'] = merge_clarity_history(data['clarity'].get('history', []), snapshot)
+        data['clarity']['devices'] = devices
+        data['clarity']['browsers'] = browsers
+        data['clarity']['uxSignals'] = ux_signals
         data['clarity'].pop('_debug_raw', None)
     except Exception as e:
         errors['clarity'] = str(e)
