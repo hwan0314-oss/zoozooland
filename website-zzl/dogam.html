@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover">
   <title>쥬쥬랜드 동물도감</title>
+  <meta name="description" content="쥬쥬랜드 방문 중 GPS로 동물을 찾아 수집하는 동물도감 게임. 쥬쥬랜드 홈페이지: https://zoozoo.kr">
   <meta name="robots" content="noindex,nofollow">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
@@ -561,7 +562,7 @@ function openEncounter(spec){
   function render(){
     var st=steps[step];
     openSheet(
-      '<div class="stage" id="stg"><div class="stag">'+spec.zone+'</div><img class="sil-img" src="'+silSrc+'"></div>'
+      '<div class="stage" id="stg"><div class="stag">'+spec.zone+'</div><img class="sil-img" src="'+silSrc+'" alt="동물 실루엣 퀴즈"></div>'
       +'<div class="quiz-panel">'
       +'<div class="qhead">'
       +'<b class="kname-big">'+(step===0?spec.kname+'가 나타났어요!':'좋아요, 계속!')+'</b>'

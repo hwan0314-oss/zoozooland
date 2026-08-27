@@ -96,7 +96,7 @@ if products:
     img  = p.get('image') or p.get('og_image') or ''
     url  = h(p.get('booking_url', '#'))
     img_block = (
-        f'<img src="{h(img)}" class="w-full h-full object-cover '
+        f'<img src="{h(img)}" alt="쥬쥬랜드 1인 입장권" class="w-full h-full object-cover '
         f'mix-blend-luminosity hover:mix-blend-normal transition duration-500">'
         if img else
         '<div class="w-full h-full flex items-center justify-center"><span class="text-4xl">🎟</span></div>'

@@ -288,7 +288,7 @@
         <div class="card-frame bg-black p-6 h-full flex flex-col">
           <div class="aspect-[4/5] bg-[#111] mb-5 overflow-hidden relative">
             ${imgSrc
-              ? `<img src="${imgSrc}" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition duration-500">`
+              ? `<img src="${imgSrc}" alt="쥬쥬랜드 1인 입장권" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition duration-500">`
               : `<div class="w-full h-full flex items-center justify-center"><span class="text-4xl">🎟</span></div>`}
           </div>
           <div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE / 입장요금 안내</div>
