@@ -7,43 +7,89 @@
       },
       {
         "date": "2026-08-26",
-        "activeUsers": 28
+        "activeUsers": 30
       },
       {
         "date": "2026-08-27",
-        "activeUsers": 1
+        "activeUsers": 36
+      },
+      {
+        "date": "2026-08-28",
+        "activeUsers": 2
       }
     ],
     "sources": [
       {
+        "source": "(direct)",
+        "sessions": 24
+      },
+      {
         "source": "(not set)",
-        "sessions": 25
-      },
-      {
-        "source": "pcmap.place.naver.com",
-        "sessions": 11
-      },
-      {
-        "source": "m.place.naver.com",
-        "sessions": 8
+        "sessions": 24
       },
       {
         "source": "naver.com",
-        "sessions": 7
+        "sessions": 15
       },
       {
-        "source": "(direct)",
-        "sessions": 6
+        "source": "pcmap.place.naver.com",
+        "sessions": 15
+      },
+      {
+        "source": "m.place.naver.com",
+        "sessions": 13
       }
-    ]
+    ],
+    "topPages": [
+      {
+        "path": "/",
+        "views": 120
+      },
+      {
+        "path": "/dogam",
+        "views": 16
+      },
+      {
+        "path": "/dogam.html",
+        "views": 13
+      }
+    ],
+    "newVsReturning": {
+      "new": 82,
+      "returning": 6
+    }
   },
   "gsc": {
     "top_queries": [
       {
+        "query": "동물원",
+        "clicks": 1,
+        "impressions": 4,
+        "position": 2.8
+      },
+      {
         "query": "쥬쥬동물원",
         "clicks": 1,
-        "impressions": 2,
+        "impressions": 4,
+        "position": 1.8
+      },
+      {
+        "query": "쥬쥬랜드 사진",
+        "clicks": 1,
+        "impressions": 1,
         "position": 2
+      },
+      {
+        "query": "bruxelas",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 1
+      },
+      {
+        "query": "incheon",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 1
       },
       {
         "query": "juju land",
@@ -58,46 +104,22 @@
         "position": 17
       },
       {
+        "query": "zoo near me",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 12
+      },
+      {
         "query": "거북이 동물",
         "clicks": 0,
         "impressions": 1,
         "position": 8
       },
       {
-        "query": "고양시 동물원",
+        "query": "경기도 가볼만한 곳 실내",
         "clicks": 0,
         "impressions": 1,
-        "position": 1
-      },
-      {
-        "query": "과천시",
-        "clicks": 0,
-        "impressions": 1,
-        "position": 1
-      },
-      {
-        "query": "구경할",
-        "clicks": 0,
-        "impressions": 2,
-        "position": 2
-      },
-      {
-        "query": "동물",
-        "clicks": 0,
-        "impressions": 1,
-        "position": 4
-      },
-      {
-        "query": "동물원",
-        "clicks": 0,
-        "impressions": 2,
-        "position": 1
-      },
-      {
-        "query": "실내 테마파크",
-        "clicks": 0,
-        "impressions": 1,
-        "position": 26
+        "position": 5
       }
     ]
   },
@@ -120,9 +142,54 @@
         "sessions": 32,
         "scrollDepth": 75.31,
         "engagementTime": 2.6
+      },
+      {
+        "date": "2026-08-28",
+        "sessions": 38,
+        "scrollDepth": 70.75,
+        "engagementTime": 2.2
       }
-    ]
+    ],
+    "devices": [
+      {
+        "name": "Mobile",
+        "sessions": 29
+      },
+      {
+        "name": "PC",
+        "sessions": 9
+      }
+    ],
+    "browsers": [
+      {
+        "name": "MobileSafari",
+        "sessions": 10
+      },
+      {
+        "name": "Other",
+        "sessions": 8
+      },
+      {
+        "name": "SamsungInternet",
+        "sessions": 7
+      },
+      {
+        "name": "ChromeMobile",
+        "sessions": 5
+      },
+      {
+        "name": "Edge",
+        "sessions": 5
+      }
+    ],
+    "uxSignals": {
+      "rageClick": 0.0,
+      "deadClick": 5.26,
+      "quickback": 15.79,
+      "excessiveScroll": 0.0,
+      "scriptError": 0.0
+    }
   },
   "errors": {},
-  "updated_at": "2026-08-27T01:25:40.038434+09:00"
+  "updated_at": "2026-08-28T00:55:43.526011+09:00"
 }
