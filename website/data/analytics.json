@@ -15,24 +15,24 @@
       },
       {
         "date": "2026-08-28",
-        "activeUsers": 2
+        "activeUsers": 5
       }
     ],
     "sources": [
+      {
+        "source": "(not set)",
+        "sessions": 26
+      },
       {
         "source": "(direct)",
         "sessions": 24
       },
       {
-        "source": "(not set)",
-        "sessions": 24
+        "source": "pcmap.place.naver.com",
+        "sessions": 16
       },
       {
         "source": "naver.com",
-        "sessions": 15
-      },
-      {
-        "source": "pcmap.place.naver.com",
         "sessions": 15
       },
       {
@@ -43,11 +43,11 @@
     "topPages": [
       {
         "path": "/",
-        "views": 120
+        "views": 125
       },
       {
         "path": "/dogam",
-        "views": 16
+        "views": 17
       },
       {
         "path": "/dogam.html",
@@ -55,7 +55,7 @@
       }
     ],
     "newVsReturning": {
-      "new": 82,
+      "new": 84,
       "returning": 6
     }
   },
@@ -145,36 +145,36 @@
       },
       {
         "date": "2026-08-28",
-        "sessions": 38,
-        "scrollDepth": 70.75,
-        "engagementTime": 2.2
+        "sessions": 36,
+        "scrollDepth": 66.44,
+        "engagementTime": 2.1
       }
     ],
     "devices": [
       {
         "name": "Mobile",
-        "sessions": 29
+        "sessions": 25
       },
       {
         "name": "PC",
-        "sessions": 9
+        "sessions": 11
       }
     ],
     "browsers": [
       {
         "name": "MobileSafari",
-        "sessions": 10
-      },
-      {
-        "name": "Other",
         "sessions": 8
       },
       {
-        "name": "SamsungInternet",
+        "name": "Other",
         "sessions": 7
       },
       {
         "name": "ChromeMobile",
+        "sessions": 6
+      },
+      {
+        "name": "Chrome",
         "sessions": 5
       },
       {
@@ -184,12 +184,12 @@
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 5.26,
-      "quickback": 15.79,
+      "deadClick": 5.56,
+      "quickback": 13.89,
       "excessiveScroll": 0.0,
       "scriptError": 0.0
     }
   },
   "errors": {},
-  "updated_at": "2026-08-28T00:55:43.526011+09:00"
+  "updated_at": "2026-08-28T09:21:53.862646+09:00"
 }
