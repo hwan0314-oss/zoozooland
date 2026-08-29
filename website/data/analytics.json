@@ -19,48 +19,52 @@
       },
       {
         "date": "2026-08-29",
-        "activeUsers": 3
+        "activeUsers": 102
+      },
+      {
+        "date": "2026-08-30",
+        "activeUsers": 5
       }
     ],
     "sources": [
       {
         "source": "(direct)",
-        "sessions": 37
+        "sessions": 73
       },
       {
         "source": "(not set)",
-        "sessions": 30
+        "sessions": 67
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 25
-      },
-      {
-        "source": "pcmap.place.naver.com",
-        "sessions": 23
+        "sessions": 60
       },
       {
         "source": "naver.com",
-        "sessions": 18
+        "sessions": 27
+      },
+      {
+        "source": "pcmap.place.naver.com",
+        "sessions": 27
       }
     ],
     "topPages": [
       {
         "path": "/",
-        "views": 182
-      },
-      {
-        "path": "/dogam",
-        "views": 24
+        "views": 298
       },
       {
         "path": "/dogam.html",
-        "views": 23
+        "views": 42
+      },
+      {
+        "path": "/dogam",
+        "views": 34
       }
     ],
     "newVsReturning": {
-      "new": 134,
-      "returning": 11
+      "new": 227,
+      "returning": 13
     }
   },
   "gsc": {
@@ -158,48 +162,58 @@
         "sessions": 53,
         "scrollDepth": 60.41,
         "engagementTime": 0.6
+      },
+      {
+        "date": "2026-08-30",
+        "sessions": 119,
+        "scrollDepth": 55.23,
+        "engagementTime": 0.2
       }
     ],
     "devices": [
       {
         "name": "Mobile",
-        "sessions": 36
+        "sessions": 112
       },
       {
         "name": "PC",
-        "sessions": 17
+        "sessions": 6
+      },
+      {
+        "name": "Tablet",
+        "sessions": 1
       }
     ],
     "browsers": [
       {
         "name": "MobileSafari",
-        "sessions": 20
+        "sessions": 39
       },
       {
         "name": "Other",
-        "sessions": 9
+        "sessions": 31
       },
       {
-        "name": "Edge",
-        "sessions": 9
-      },
-      {
-        "name": "Chrome",
-        "sessions": 7
+        "name": "ChromeMobile",
+        "sessions": 21
       },
       {
         "name": "SamsungInternet",
-        "sessions": 4
+        "sessions": 17
+      },
+      {
+        "name": "Chrome",
+        "sessions": 6
       }
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 3.85,
-      "quickback": 7.69,
+      "deadClick": 1.68,
+      "quickback": 5.88,
       "excessiveScroll": 0.0,
-      "scriptError": 0.0
+      "scriptError": 1.68
     }
   },
   "errors": {},
-  "updated_at": "2026-08-29T08:59:34.884713+09:00"
+  "updated_at": "2026-08-30T03:22:06.156368+09:00"
 }
