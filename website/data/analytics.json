@@ -31,115 +31,115 @@
       },
       {
         "date": "2026-09-01",
-        "activeUsers": 36
+        "activeUsers": 37
       },
       {
         "date": "2026-09-02",
-        "activeUsers": 3
+        "activeUsers": 44
       }
     ],
     "sources": [
       {
         "source": "(direct)",
-        "sessions": 160
+        "sessions": 169
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 106
+        "sessions": 108
       },
       {
         "source": "pcmap.place.naver.com",
-        "sessions": 60
+        "sessions": 66
       },
       {
         "source": "naver.com",
-        "sessions": 50
+        "sessions": 53
       },
       {
         "source": "google",
-        "sessions": 31
+        "sessions": 44
       }
     ],
     "topPages": [
       {
         "path": "/",
-        "views": 561
+        "views": 621
       },
       {
         "path": "/dogam.html",
-        "views": 95
+        "views": 99
       },
       {
         "path": "/dogam",
-        "views": 70
+        "views": 78
       }
     ],
     "newVsReturning": {
-      "new": 436,
-      "returning": 36
+      "new": 475,
+      "returning": 40
     }
   },
   "gsc": {
     "top_queries": [
       {
         "query": "쥬쥬랜드",
-        "clicks": 6,
-        "impressions": 68,
-        "position": 1.6
+        "clicks": 8,
+        "impressions": 81,
+        "position": 1.7
+      },
+      {
+        "query": "동물원",
+        "clicks": 3,
+        "impressions": 50,
+        "position": 2.4
       },
       {
         "query": "주주랜드",
         "clicks": 3,
-        "impressions": 20,
+        "impressions": 28,
         "position": 1.9
       },
       {
-        "query": "동물원",
+        "query": "주주동물원",
         "clicks": 2,
-        "impressions": 28,
-        "position": 2.6
+        "impressions": 15,
+        "position": 1.4
       },
       {
         "query": "쥬쥬동물원",
         "clicks": 2,
-        "impressions": 11,
-        "position": 1.5
+        "impressions": 17,
+        "position": 1.6
       },
       {
         "query": "경기도 실내 가볼만한 곳",
         "clicks": 1,
-        "impressions": 3,
-        "position": 2.3
+        "impressions": 4,
+        "position": 3.5
       },
       {
         "query": "고양시 동물원",
         "clicks": 1,
-        "impressions": 7,
+        "impressions": 8,
         "position": 1.1
-      },
-      {
-        "query": "주주동물원",
-        "clicks": 1,
-        "impressions": 13,
-        "position": 1.5
       },
       {
         "query": "쥬쥬랜드 사진",
         "clicks": 1,
-        "impressions": 3,
-        "position": 1.7
+        "impressions": 5,
+        "position": 1.8
+      },
+      {
+        "query": "alpaca",
+        "clicks": 0,
+        "impressions": 1,
+        "position": 10
       },
       {
         "query": "animal museum",
         "clicks": 0,
         "impressions": 1,
         "position": 4
-      },
-      {
-        "query": "bruxelas",
-        "clicks": 0,
-        "impressions": 1,
-        "position": 1
       }
     ]
   },
@@ -198,19 +198,33 @@
         "sessions": 32,
         "scrollDepth": 61.74,
         "engagementTime": 1.7
+      },
+      {
+        "date": "2026-09-03",
+        "sessions": 41,
+        "scrollDepth": 59.3,
+        "engagementTime": 1.2
       }
     ],
     "devices": [
       {
         "name": "Mobile",
-        "sessions": 20
+        "sessions": 26
       },
       {
         "name": "PC",
-        "sessions": 12
+        "sessions": 15
       }
     ],
     "browsers": [
+      {
+        "name": "Chrome",
+        "sessions": 10
+      },
+      {
+        "name": "MobileSafari",
+        "sessions": 8
+      },
       {
         "name": "ChromeMobile",
         "sessions": 7
@@ -221,25 +235,17 @@
       },
       {
         "name": "Edge",
-        "sessions": 6
-      },
-      {
-        "name": "SamsungInternet",
-        "sessions": 6
-      },
-      {
-        "name": "Chrome",
         "sessions": 4
       }
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 6.25,
-      "quickback": 9.38,
+      "deadClick": 9.76,
+      "quickback": 4.88,
       "excessiveScroll": 0.0,
       "scriptError": 0.0
     }
   },
   "errors": {},
-  "updated_at": "2026-09-02T03:23:34.776155+09:00"
+  "updated_at": "2026-09-03T03:35:49.595190+09:00"
 }
