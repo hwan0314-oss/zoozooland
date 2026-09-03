@@ -35,93 +35,97 @@
       },
       {
         "date": "2026-09-02",
-        "activeUsers": 44
+        "activeUsers": 46
+      },
+      {
+        "date": "2026-09-03",
+        "activeUsers": 30
       }
     ],
     "sources": [
       {
         "source": "(direct)",
-        "sessions": 169
+        "sessions": 175
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 108
+        "sessions": 114
       },
       {
         "source": "pcmap.place.naver.com",
-        "sessions": 66
+        "sessions": 76
       },
       {
         "source": "naver.com",
-        "sessions": 53
+        "sessions": 55
       },
       {
         "source": "google",
-        "sessions": 44
+        "sessions": 50
       }
     ],
     "topPages": [
       {
         "path": "/",
-        "views": 621
+        "views": 660
       },
       {
         "path": "/dogam.html",
-        "views": 99
+        "views": 101
       },
       {
         "path": "/dogam",
-        "views": 78
+        "views": 86
       }
     ],
     "newVsReturning": {
-      "new": 475,
-      "returning": 40
+      "new": 507,
+      "returning": 51
     }
   },
   "gsc": {
     "top_queries": [
       {
         "query": "쥬쥬랜드",
-        "clicks": 8,
-        "impressions": 81,
+        "clicks": 14,
+        "impressions": 92,
         "position": 1.7
+      },
+      {
+        "query": "주주랜드",
+        "clicks": 4,
+        "impressions": 31,
+        "position": 1.8
       },
       {
         "query": "동물원",
         "clicks": 3,
-        "impressions": 50,
-        "position": 2.4
+        "impressions": 55,
+        "position": 2.7
       },
       {
-        "query": "주주랜드",
+        "query": "쥬쥬동물원",
         "clicks": 3,
-        "impressions": 28,
-        "position": 1.9
+        "impressions": 20,
+        "position": 1.8
+      },
+      {
+        "query": "고양시 동물원",
+        "clicks": 2,
+        "impressions": 10,
+        "position": 1.1
       },
       {
         "query": "주주동물원",
         "clicks": 2,
-        "impressions": 15,
+        "impressions": 16,
         "position": 1.4
-      },
-      {
-        "query": "쥬쥬동물원",
-        "clicks": 2,
-        "impressions": 17,
-        "position": 1.6
       },
       {
         "query": "경기도 실내 가볼만한 곳",
         "clicks": 1,
         "impressions": 4,
         "position": 3.5
-      },
-      {
-        "query": "고양시 동물원",
-        "clicks": 1,
-        "impressions": 8,
-        "position": 1.1
       },
       {
         "query": "쥬쥬랜드 사진",
@@ -204,48 +208,58 @@
         "sessions": 41,
         "scrollDepth": 59.3,
         "engagementTime": 1.2
+      },
+      {
+        "date": "2026-09-04",
+        "sessions": 39,
+        "scrollDepth": 65.87,
+        "engagementTime": 2.2
       }
     ],
     "devices": [
       {
         "name": "Mobile",
-        "sessions": 26
+        "sessions": 20
       },
       {
         "name": "PC",
-        "sessions": 15
+        "sessions": 16
+      },
+      {
+        "name": "Tablet",
+        "sessions": 3
       }
     ],
     "browsers": [
       {
-        "name": "Chrome",
+        "name": "Other",
         "sessions": 10
       },
       {
-        "name": "MobileSafari",
+        "name": "Edge",
         "sessions": 8
       },
       {
-        "name": "ChromeMobile",
+        "name": "Chrome",
         "sessions": 7
       },
       {
-        "name": "Other",
+        "name": "ChromeMobile",
         "sessions": 6
       },
       {
-        "name": "Edge",
-        "sessions": 4
+        "name": "MobileSafari",
+        "sessions": 6
       }
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 9.76,
-      "quickback": 4.88,
+      "deadClick": 7.69,
+      "quickback": 15.38,
       "excessiveScroll": 0.0,
       "scriptError": 0.0
     }
   },
   "errors": {},
-  "updated_at": "2026-09-03T03:35:49.595190+09:00"
+  "updated_at": "2026-09-04T03:33:13.729128+09:00"
 }
