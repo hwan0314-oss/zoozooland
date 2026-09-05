@@ -43,84 +43,88 @@
       },
       {
         "date": "2026-09-04",
-        "activeUsers": 46
+        "activeUsers": 58
       },
       {
         "date": "2026-09-05",
-        "activeUsers": 1
+        "activeUsers": 138
+      },
+      {
+        "date": "2026-09-06",
+        "activeUsers": 2
       }
     ],
     "sources": [
       {
         "source": "(direct)",
-        "sessions": 188
+        "sessions": 223
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 122
+        "sessions": 166
       },
       {
         "source": "pcmap.place.naver.com",
-        "sessions": 87
+        "sessions": 100
       },
       {
         "source": "naver.com",
-        "sessions": 57
+        "sessions": 75
       },
       {
-        "source": "google",
-        "sessions": 53
+        "source": "(not set)",
+        "sessions": 71
       }
     ],
     "topPages": [
       {
         "path": "/",
-        "views": 724
+        "views": 910
       },
       {
         "path": "/dogam.html",
-        "views": 104
+        "views": 117
       },
       {
         "path": "/dogam",
-        "views": 94
+        "views": 116
       }
     ],
     "newVsReturning": {
-      "new": 555,
-      "returning": 59
+      "new": 705,
+      "returning": 63
     }
   },
   "gsc": {
     "top_queries": [
       {
         "query": "쥬쥬랜드",
-        "clicks": 15,
-        "impressions": 105,
+        "clicks": 16,
+        "impressions": 110,
         "position": 1.8
       },
       {
         "query": "주주랜드",
-        "clicks": 5,
-        "impressions": 36,
+        "clicks": 6,
+        "impressions": 40,
         "position": 1.8
       },
       {
         "query": "주주동물원",
         "clicks": 4,
-        "impressions": 21,
+        "impressions": 25,
         "position": 1.5
       },
       {
         "query": "동물원",
         "clicks": 3,
-        "impressions": 59,
-        "position": 2.9
+        "impressions": 66,
+        "position": 3.5
       },
       {
         "query": "쥬쥬동물원",
         "clicks": 3,
-        "impressions": 20,
+        "impressions": 21,
         "position": 1.8
       },
       {
@@ -128,6 +132,12 @@
         "clicks": 2,
         "impressions": 11,
         "position": 1.1
+      },
+      {
+        "query": "jujuland",
+        "clicks": 1,
+        "impressions": 1,
+        "position": 1
       },
       {
         "query": "경기도 실내 가볼만한 곳",
@@ -146,12 +156,6 @@
         "clicks": 0,
         "impressions": 1,
         "position": 10
-      },
-      {
-        "query": "animal museum",
-        "clicks": 0,
-        "impressions": 1,
-        "position": 4
       }
     ]
   },
@@ -228,12 +232,18 @@
         "sessions": 61,
         "scrollDepth": 58.43,
         "engagementTime": 0.7
+      },
+      {
+        "date": "2026-09-06",
+        "sessions": 152,
+        "scrollDepth": 54.64,
+        "engagementTime": 0.3
       }
     ],
     "devices": [
       {
         "name": "Mobile",
-        "sessions": 39
+        "sessions": 129
       },
       {
         "name": "PC",
@@ -241,39 +251,39 @@
       },
       {
         "name": "Tablet",
-        "sessions": 1
+        "sessions": 2
       }
     ],
     "browsers": [
       {
         "name": "MobileSafari",
-        "sessions": 13
+        "sessions": 43
       },
       {
         "name": "Other",
-        "sessions": 12
-      },
-      {
-        "name": "Chrome",
-        "sessions": 12
+        "sessions": 42
       },
       {
         "name": "ChromeMobile",
-        "sessions": 10
+        "sessions": 28
+      },
+      {
+        "name": "SamsungInternet",
+        "sessions": 19
       },
       {
         "name": "Edge",
-        "sessions": 8
+        "sessions": 10
       }
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 6.56,
-      "quickback": 8.2,
+      "deadClick": 2.63,
+      "quickback": 5.26,
       "excessiveScroll": 0.0,
-      "scriptError": 0.0
+      "scriptError": 1.32
     }
   },
   "errors": {},
-  "updated_at": "2026-09-05T03:18:49.208895+09:00"
+  "updated_at": "2026-09-06T02:16:03.345744+09:00"
 }
