@@ -28,8 +28,11 @@ KMA_API_KEY = os.environ.get("KMA_API_KEY", "")
 # 외부 플랫폼(네이버 스마트플레이스 / LS파트너) 결제 상품:
 #   - OKPOS에는 qty만 기록, TOT_SALE_AMT = 0 (대사 목적 0원 상품)
 #   - 실제 정산금액은 각 플랫폼에서 별도 집계
+# 신상품 등록 시 주의: OKPOS 분류가 "매표소>개인" 또는 "매표소>단체"가 아니면
+# fetch_sales()에서 집계 자체가 누락된다. 0원 정산 상품(경기투어패스 사례처럼)은
+# 추가로 아래 NAVER_TICKETS/LS_TICKETS 세트에도 등록해야 매출이 잡힌다.
 NAVER_TICKETS  = {"네이버 주중", "네이버 주말"}
-LS_TICKETS     = {"온라인티켓(LS)"}
+LS_TICKETS     = {"온라인티켓(LS)", "경기투어패스"}  # 경기투어패스도 매출 포함: LS와 동일 방식으로 정산되는 0원 발권 상품
 ONLINE_TICKETS = NAVER_TICKETS | LS_TICKETS  # OKPOS amt=0 → online_ticket_price() 로 추정매출 반영
 FREE_PRODUCTS  = {"24개월미만무료입장", "초대권"}
 
