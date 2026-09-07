@@ -51,80 +51,88 @@
       },
       {
         "date": "2026-09-06",
-        "activeUsers": 116
+        "activeUsers": 119
+      },
+      {
+        "date": "2026-09-07",
+        "activeUsers": 52
+      },
+      {
+        "date": "2026-09-08",
+        "activeUsers": 2
       }
     ],
     "sources": [
       {
         "source": "(direct)",
-        "sessions": 262
+        "sessions": 276
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 203
+        "sessions": 211
       },
       {
         "source": "pcmap.place.naver.com",
-        "sessions": 104
+        "sessions": 121
       },
       {
         "source": "naver.com",
-        "sessions": 96
+        "sessions": 103
       },
       {
         "source": "m.search.naver.com",
-        "sessions": 71
+        "sessions": 77
       }
     ],
     "topPages": [
       {
         "path": "/",
-        "views": 1046
+        "views": 1118
       },
       {
         "path": "/dogam.html",
-        "views": 134
+        "views": 147
       },
       {
         "path": "/dogam",
-        "views": 133
+        "views": 138
       }
     ],
     "newVsReturning": {
-      "new": 826,
-      "returning": 74
+      "new": 884,
+      "returning": 86
     }
   },
   "gsc": {
     "top_queries": [
       {
         "query": "쥬쥬랜드",
-        "clicks": 20,
-        "impressions": 138,
+        "clicks": 22,
+        "impressions": 152,
         "position": 1.8
       },
       {
         "query": "주주랜드",
         "clicks": 7,
-        "impressions": 46,
+        "impressions": 49,
         "position": 1.8
       },
       {
         "query": "주주동물원",
         "clicks": 5,
-        "impressions": 26,
+        "impressions": 28,
         "position": 1.5
       },
       {
         "query": "동물원",
         "clicks": 3,
-        "impressions": 81,
-        "position": 3.8
+        "impressions": 91,
+        "position": 3.6
       },
       {
         "query": "쥬쥬동물원",
         "clicks": 3,
-        "impressions": 23,
+        "impressions": 24,
         "position": 1.8
       },
       {
@@ -136,8 +144,8 @@
       {
         "query": "테마동물원 쥬쥬",
         "clicks": 2,
-        "impressions": 11,
-        "position": 1.5
+        "impressions": 12,
+        "position": 1.6
       },
       {
         "query": "jujuland",
@@ -244,48 +252,54 @@
         "sessions": 121,
         "scrollDepth": 61.1,
         "engagementTime": 0.4
+      },
+      {
+        "date": "2026-09-08",
+        "sessions": 49,
+        "scrollDepth": 66.3,
+        "engagementTime": 1.0
       }
     ],
     "devices": [
       {
         "name": "Mobile",
-        "sessions": 113
+        "sessions": 28
       },
       {
         "name": "PC",
-        "sessions": 8
+        "sessions": 21
       }
     ],
     "browsers": [
       {
+        "name": "Chrome",
+        "sessions": 11
+      },
+      {
         "name": "MobileSafari",
-        "sessions": 55
+        "sessions": 10
+      },
+      {
+        "name": "Edge",
+        "sessions": 9
       },
       {
         "name": "Other",
-        "sessions": 21
+        "sessions": 8
       },
       {
         "name": "ChromeMobile",
-        "sessions": 19
-      },
-      {
-        "name": "SamsungInternet",
-        "sessions": 17
-      },
-      {
-        "name": "Chrome",
-        "sessions": 5
+        "sessions": 7
       }
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 4.13,
-      "quickback": 4.13,
-      "excessiveScroll": 0.0,
+      "deadClick": 10.2,
+      "quickback": 12.24,
+      "excessiveScroll": 2.04,
       "scriptError": 0.0
     }
   },
   "errors": {},
-  "updated_at": "2026-09-07T02:35:38.579403+09:00"
+  "updated_at": "2026-09-08T04:06:36.994425+09:00"
 }
