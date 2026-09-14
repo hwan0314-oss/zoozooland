@@ -2,7 +2,7 @@
   "today_date": "2026-09-14 (월)",
   "prev_date": "2025-09-15 (월)",
   "today_weather": {
-    "desc": "구름많음",
+    "desc": "맑음",
     "tmax": "26",
     "tmin": "16"
   },
@@ -278,5 +278,5 @@
       }
     }
   ],
-  "generated_at": "2026-09-14 15:01 KST"
+  "generated_at": "2026-09-14 19:01 KST"
 }
