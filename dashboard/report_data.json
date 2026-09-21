@@ -3,13 +3,13 @@
   "prev_date": "2025-09-22 (월)",
   "today_weather": {
     "desc": "맑음",
-    "tmax": "30",
-    "tmin": "16"
+    "tmax": "28",
+    "tmin": "14"
   },
   "prev_weather": {
     "desc": "흐림",
-    "tmax": "25",
-    "tmin": "18"
+    "tmax": "24",
+    "tmin": "17"
   },
   "kpi": {
     "daily_sales": "0",
@@ -278,5 +278,5 @@
       }
     }
   ],
-  "generated_at": "2026-09-21 15:01 KST"
+  "generated_at": "2026-09-21 19:01 KST"
 }
