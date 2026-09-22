@@ -111,90 +111,90 @@
       },
       {
         "date": "2026-09-21",
-        "activeUsers": 52
+        "activeUsers": 57
       },
       {
         "date": "2026-09-22",
-        "activeUsers": 5
+        "activeUsers": 61
       }
     ],
     "sources": [
       {
         "source": "(direct)",
-        "sessions": 598
+        "sessions": 609
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 451
+        "sessions": 456
       },
       {
         "source": "pcmap.place.naver.com",
-        "sessions": 308
+        "sessions": 316
       },
       {
         "source": "naver.com",
-        "sessions": 217
+        "sessions": 220
       },
       {
         "source": "m.search.naver.com",
-        "sessions": 193
+        "sessions": 195
       }
     ],
     "topPages": [
       {
         "path": "/",
-        "views": 2484
-      },
-      {
-        "path": "/dogam.html",
-        "views": 345
+        "views": 2568
       },
       {
         "path": "/dogam",
-        "views": 340
+        "views": 350
+      },
+      {
+        "path": "/dogam.html",
+        "views": 350
       }
     ],
     "newVsReturning": {
-      "new": 1941,
-      "returning": 202
+      "new": 1993,
+      "returning": 210
     }
   },
   "gsc": {
     "top_queries": [
       {
         "query": "쥬쥬랜드",
-        "clicks": 52,
-        "impressions": 311,
+        "clicks": 54,
+        "impressions": 323,
         "position": 1.8
       },
       {
         "query": "주주랜드",
         "clicks": 11,
-        "impressions": 97,
+        "impressions": 100,
         "position": 1.6
       },
       {
         "query": "주주동물원",
         "clicks": 9,
-        "impressions": 59,
+        "impressions": 61,
         "position": 1.4
       },
       {
         "query": "쥬쥬동물원",
         "clicks": 5,
-        "impressions": 56,
+        "impressions": 61,
         "position": 1.6
       },
       {
         "query": "동물원",
         "clicks": 4,
-        "impressions": 193,
+        "impressions": 197,
         "position": 3.8
       },
       {
         "query": "테마동물원 쥬쥬",
         "clicks": 4,
-        "impressions": 25,
+        "impressions": 26,
         "position": 1.4
       },
       {
@@ -206,14 +206,14 @@
       {
         "query": "주주 동물원",
         "clicks": 3,
-        "impressions": 11,
-        "position": 1.5
+        "impressions": 12,
+        "position": 1.4
       },
       {
         "query": "고양 쥬쥬랜드",
         "clicks": 2,
-        "impressions": 3,
-        "position": 1.7
+        "impressions": 4,
+        "position": 1.5
       },
       {
         "query": "쥬쥬랜드 사진",
@@ -398,16 +398,22 @@
         "sessions": 62,
         "scrollDepth": 61.18,
         "engagementTime": 1.0
+      },
+      {
+        "date": "2026-09-23",
+        "sessions": 58,
+        "scrollDepth": 60.08,
+        "engagementTime": 1.4
       }
     ],
     "devices": [
       {
         "name": "Mobile",
-        "sessions": 36
+        "sessions": 31
       },
       {
         "name": "PC",
-        "sessions": 25
+        "sessions": 26
       },
       {
         "name": "Tablet",
@@ -416,11 +422,11 @@
     ],
     "browsers": [
       {
-        "name": "Chrome",
-        "sessions": 15
+        "name": "MobileSafari",
+        "sessions": 17
       },
       {
-        "name": "SamsungInternet",
+        "name": "Chrome",
         "sessions": 14
       },
       {
@@ -428,22 +434,22 @@
         "sessions": 10
       },
       {
-        "name": "Other",
-        "sessions": 9
+        "name": "SamsungInternet",
+        "sessions": 8
       },
       {
-        "name": "ChromeMobile",
-        "sessions": 7
+        "name": "Other",
+        "sessions": 6
       }
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 9.68,
-      "quickback": 6.45,
+      "deadClick": 3.45,
+      "quickback": 5.17,
       "excessiveScroll": 0.0,
       "scriptError": 0.0
     }
   },
   "errors": {},
-  "updated_at": "2026-09-22T04:57:07.329582+09:00"
+  "updated_at": "2026-09-23T03:46:51.835147+09:00"
 }
