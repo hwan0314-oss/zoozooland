@@ -83,3 +83,85 @@ def test_poll_until_done_raises_on_timeout():
          patch("higgsfield_client.time.monotonic", side_effect=[0, 1000]):
         with pytest.raises(higgsfield_client.HiggsfieldError, match="타임아웃"):
             higgsfield_client._poll_until_done(STATUS_URL, timeout_seconds=5.0)
+
+
+def _submit_response(request_id: str) -> Mock:
+    response = Mock(status_code=200)
+    response.json.return_value = {
+        "status": "queued",
+        "request_id": request_id,
+        "status_url": f"https://api.higgsfield.ai/requests/{request_id}/status",
+    }
+    return response
+
+
+def _completed_response(video_url: str) -> Mock:
+    response = Mock(status_code=200)
+    response.json.return_value = {"status": "completed", "video": {"url": video_url}}
+    return response
+
+
+def test_generate_video_from_image_uploads_cropped_photo_and_returns_video():
+    upload_url_response = Mock(status_code=200)
+    upload_url_response.json.return_value = {
+        "public_url": "https://cdn.example.com/input/cropped.jpeg",
+        "upload_url": "https://storage.example.com/presigned",
+        "upload_headers": {"Content-Type": "image/jpeg"},
+    }
+    download_response = Mock(status_code=200, content=b"fake-video-bytes")
+
+    with patch("higgsfield_client.crop_to_vertical", return_value=b"cropped-jpeg") as mock_crop, \
+         patch(
+             "higgsfield_client.requests.post",
+             side_effect=[upload_url_response, _submit_response("r1")],
+         ) as mock_post, \
+         patch("higgsfield_client.requests.put", return_value=Mock(status_code=200)) as mock_put, \
+         patch(
+             "higgsfield_client.requests.get",
+             side_effect=[_completed_response("https://cdn.example.com/output.mp4"), download_response],
+         ) as mock_get:
+        result = higgsfield_client.generate_video_from_image(
+            "alpaca.jpg", "알파카가 건초를 먹는 모습", duration=8
+        )
+
+    assert result == b"fake-video-bytes"
+    mock_crop.assert_called_once_with("alpaca.jpg")
+    assert mock_put.call_args.kwargs["data"] == b"cropped-jpeg"
+    submit_call = mock_post.call_args_list[1]
+    assert submit_call.args[0] == "https://api.higgsfield.ai/kling-video/v3.0/std/image-to-video"
+    assert submit_call.kwargs["json"] == {
+        "prompt": "알파카가 건초를 먹는 모습",
+        "image_url": "https://cdn.example.com/input/cropped.jpeg",
+        "duration": 8,
+    }
+    assert mock_get.call_args_list[0].args[0] == "https://api.higgsfield.ai/requests/r1/status"
+    assert mock_get.call_args_list[1].args[0] == "https://cdn.example.com/output.mp4"
+
+
+def test_generate_video_from_text_returns_video():
+    download_response = Mock(status_code=200, content=b"fake-video-bytes-2")
+
+    with patch("higgsfield_client.requests.post", return_value=_submit_response("r2")) as mock_post, \
+         patch(
+             "higgsfield_client.requests.get",
+             side_effect=[_completed_response("https://cdn.example.com/output2.mp4"), download_response],
+         ):
+        result = higgsfield_client.generate_video_from_text(
+            "알파카 아침 산책", duration=10, aspect_ratio="9:16"
+        )
+
+    assert result == b"fake-video-bytes-2"
+    assert mock_post.call_args.args[0] == "https://api.higgsfield.ai/kling-video/v3.0/std/text-to-video"
+    assert mock_post.call_args.kwargs["json"] == {
+        "prompt": "알파카 아침 산책",
+        "duration": 10,
+        "aspect_ratio": "9:16",
+    }
+
+
+def test_generate_video_raises_when_submission_rejected():
+    rejected = Mock(status_code=403, text='{"detail": "Insufficient credits"}')
+
+    with patch("higgsfield_client.requests.post", return_value=rejected):
+        with pytest.raises(higgsfield_client.HiggsfieldError, match="403"):
+            higgsfield_client.generate_video_from_text("알파카 아침 산책")
