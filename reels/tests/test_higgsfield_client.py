@@ -40,3 +40,46 @@ def test_upload_image_raises_on_upload_url_error():
     with patch("higgsfield_client.requests.post", return_value=error_response):
         with pytest.raises(higgsfield_client.HiggsfieldError, match="401"):
             higgsfield_client.upload_image(b"fake-jpeg-bytes")
+
+
+STATUS_URL = "https://api.higgsfield.ai/requests/r1/status"
+
+
+def test_poll_until_done_returns_completed_result():
+    queued = Mock(status_code=200)
+    queued.json.return_value = {"status": "queued", "request_id": "r1"}
+    completed = Mock(status_code=200)
+    completed.json.return_value = {
+        "status": "completed",
+        "request_id": "r1",
+        "video": {"url": "https://cdn.example.com/output.mp4"},
+    }
+
+    with patch("higgsfield_client.requests.get", side_effect=[queued, completed]) as mock_get, \
+         patch("higgsfield_client.time.sleep") as mock_sleep:
+        result = higgsfield_client._poll_until_done(STATUS_URL)
+
+    assert result["video"]["url"] == "https://cdn.example.com/output.mp4"
+    assert mock_get.call_count == 2
+    assert mock_get.call_args.args[0] == STATUS_URL
+    mock_sleep.assert_called_once()
+
+
+def test_poll_until_done_raises_on_failed_status():
+    failed = Mock(status_code=200)
+    failed.json.return_value = {"status": "failed", "request_id": "r1", "error": "Generation failed"}
+
+    with patch("higgsfield_client.requests.get", return_value=failed):
+        with pytest.raises(higgsfield_client.HiggsfieldError, match="Generation failed"):
+            higgsfield_client._poll_until_done(STATUS_URL)
+
+
+def test_poll_until_done_raises_on_timeout():
+    queued = Mock(status_code=200)
+    queued.json.return_value = {"status": "queued", "request_id": "r1"}
+
+    with patch("higgsfield_client.requests.get", return_value=queued), \
+         patch("higgsfield_client.time.sleep"), \
+         patch("higgsfield_client.time.monotonic", side_effect=[0, 1000]):
+        with pytest.raises(higgsfield_client.HiggsfieldError, match="타임아웃"):
+            higgsfield_client._poll_until_done(STATUS_URL, timeout_seconds=5.0)
