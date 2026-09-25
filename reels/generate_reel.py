@@ -25,7 +25,9 @@ def _generate_and_send(generate: Callable[[], bytes]) -> int:
 
     try:
         message_id = send_video_for_approval(video_bytes, filename=video_path.name)
-    except TelegramSendError as e:
+    except Exception as e:
+        # 텔레그램 전송(외부 서비스 경계)에서 무엇이 실패하든 영상은 이미 저장되어 있으니
+        # 에러를 보고하고 안전하게 끝낸다 (조용히 삼키지 않는다).
         print(f"[텔레그램 전송 실패] {e}\n저장된 영상을 직접 승인 채널에 올려도 됩니다: {video_path}", file=sys.stderr)
         return 1
 
