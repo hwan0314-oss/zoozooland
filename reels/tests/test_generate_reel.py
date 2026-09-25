@@ -62,3 +62,21 @@ def test_telegram_failure_keeps_saved_video_and_reports_path(tmp_path, capsys):
     saved = list(tmp_path.glob("reel_*.mp4"))
     assert len(saved) == 1
     assert str(saved[0]) in capsys.readouterr().err
+
+
+def test_telegram_unexpected_exception_keeps_saved_video_and_reports_path(tmp_path, capsys):
+    with patch("generate_reel.OUTPUT_DIR", tmp_path), \
+         patch("generate_reel.generate_video_from_text", return_value=b"fake-video-bytes"), \
+         patch(
+             "generate_reel.send_video_for_approval",
+             side_effect=ConnectionError("network down"),
+         ):
+        exit_code = generate_reel.main(["text", "알파카 아침 산책"])
+
+    assert exit_code == 1
+    saved = list(tmp_path.glob("reel_*.mp4"))
+    assert len(saved) == 1
+    assert saved[0].read_bytes() == b"fake-video-bytes"
+    err = capsys.readouterr().err
+    assert "network down" in err
+    assert str(saved[0]) in err

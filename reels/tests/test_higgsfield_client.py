@@ -1,6 +1,8 @@
+import re
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 
 import higgsfield_client
 
@@ -83,6 +85,128 @@ def test_poll_until_done_raises_on_timeout():
          patch("higgsfield_client.time.monotonic", side_effect=[0, 1000]):
         with pytest.raises(higgsfield_client.HiggsfieldError, match="타임아웃"):
             higgsfield_client._poll_until_done(STATUS_URL, timeout_seconds=5.0)
+
+
+def test_poll_until_done_retries_after_5xx_then_returns_completed():
+    server_error = Mock(status_code=503, text="Service Unavailable")
+    completed = Mock(status_code=200)
+    completed.json.return_value = {
+        "status": "completed",
+        "video": {"url": "https://cdn.example.com/output.mp4"},
+    }
+
+    with patch("higgsfield_client.requests.get", side_effect=[server_error, completed]) as mock_get, \
+         patch("higgsfield_client.time.sleep") as mock_sleep:
+        result = higgsfield_client._poll_until_done(STATUS_URL)
+
+    assert result["video"]["url"] == "https://cdn.example.com/output.mp4"
+    assert mock_get.call_count == 2
+    mock_sleep.assert_called_once()
+
+
+def test_poll_until_done_retries_after_connection_error_then_returns_completed():
+    completed = Mock(status_code=200)
+    completed.json.return_value = {
+        "status": "completed",
+        "video": {"url": "https://cdn.example.com/output.mp4"},
+    }
+
+    with patch(
+        "higgsfield_client.requests.get",
+        side_effect=[requests.ConnectionError("connection reset"), completed],
+    ) as mock_get, \
+         patch("higgsfield_client.time.sleep") as mock_sleep:
+        result = higgsfield_client._poll_until_done(STATUS_URL)
+
+    assert result["video"]["url"] == "https://cdn.example.com/output.mp4"
+    assert mock_get.call_count == 2
+    mock_sleep.assert_called_once()
+
+
+def test_poll_until_done_retries_after_429_then_returns_completed():
+    rate_limited = Mock(status_code=429, text="Too Many Requests")
+    completed = Mock(status_code=200)
+    completed.json.return_value = {
+        "status": "completed",
+        "video": {"url": "https://cdn.example.com/output.mp4"},
+    }
+
+    with patch("higgsfield_client.requests.get", side_effect=[rate_limited, completed]) as mock_get, \
+         patch("higgsfield_client.time.sleep") as mock_sleep:
+        result = higgsfield_client._poll_until_done(STATUS_URL)
+
+    assert result["video"]["url"] == "https://cdn.example.com/output.mp4"
+    assert mock_get.call_count == 2
+    mock_sleep.assert_called_once()
+
+
+def test_poll_until_done_raises_after_max_consecutive_failures():
+    server_error = Mock(status_code=503, text="Service Unavailable")
+
+    with patch("higgsfield_client.requests.get", return_value=server_error) as mock_get, \
+         patch("higgsfield_client.time.sleep"):
+        with pytest.raises(higgsfield_client.HiggsfieldError, match=re.escape(STATUS_URL)):
+            higgsfield_client._poll_until_done(STATUS_URL)
+
+    assert mock_get.call_count == higgsfield_client.MAX_CONSECUTIVE_POLL_FAILURES
+
+
+def test_poll_until_done_raises_immediately_on_404():
+    not_found = Mock(status_code=404, text="Not Found")
+
+    with patch("higgsfield_client.requests.get", return_value=not_found) as mock_get, \
+         patch("higgsfield_client.time.sleep"):
+        with pytest.raises(higgsfield_client.HiggsfieldError, match="404"):
+            higgsfield_client._poll_until_done(STATUS_URL)
+
+    assert mock_get.call_count == 1
+
+
+def test_download_video_raises_on_404_with_url():
+    video_url = "https://cdn.example.com/output.mp4"
+    not_found = Mock(status_code=404, text="Not Found")
+
+    with patch("higgsfield_client.requests.get", return_value=not_found):
+        with pytest.raises(higgsfield_client.HiggsfieldError, match=re.escape(video_url)):
+            higgsfield_client._download_video(video_url)
+
+
+def test_download_video_raises_on_connection_error_with_url():
+    video_url = "https://cdn.example.com/output.mp4"
+
+    with patch("higgsfield_client.requests.get", side_effect=requests.ConnectionError("boom")):
+        with pytest.raises(higgsfield_client.HiggsfieldError, match=re.escape(video_url)):
+            higgsfield_client._download_video(video_url)
+
+
+def test_submit_and_download_raises_on_connection_error_without_retry():
+    with patch(
+        "higgsfield_client.requests.post",
+        side_effect=requests.ConnectionError("boom"),
+    ) as mock_post:
+        with pytest.raises(higgsfield_client.HiggsfieldError, match=re.escape("console.higgsfield.ai")):
+            higgsfield_client._submit_and_download(
+                higgsfield_client.KLING_TEXT_TO_VIDEO_ENDPOINT, {"prompt": "test"}
+            )
+
+    assert mock_post.call_count == 1
+
+
+def test_submit_and_download_prints_request_id_and_status_url(capsys):
+    download_response = Mock(status_code=200, content=b"fake-video-bytes")
+
+    with patch("higgsfield_client.requests.post", return_value=_submit_response("r1")), \
+         patch(
+             "higgsfield_client.requests.get",
+             side_effect=[_completed_response("https://cdn.example.com/output.mp4"), download_response],
+         ):
+        higgsfield_client._submit_and_download(
+            higgsfield_client.KLING_TEXT_TO_VIDEO_ENDPOINT, {"prompt": "test"}
+        )
+
+    err = capsys.readouterr().err
+    assert "r1" in err
+    assert "https://api.higgsfield.ai/requests/r1/status" in err
 
 
 def _submit_response(request_id: str) -> Mock:
