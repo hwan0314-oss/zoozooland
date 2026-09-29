@@ -2,10 +2,6 @@
   "ga4": {
     "daily": [
       {
-        "date": "2026-08-30",
-        "activeUsers": 117
-      },
-      {
         "date": "2026-08-31",
         "activeUsers": 41
       },
@@ -119,21 +115,25 @@
       },
       {
         "date": "2026-09-28",
-        "activeUsers": 75
+        "activeUsers": 76
       },
       {
         "date": "2026-09-29",
-        "activeUsers": 4
+        "activeUsers": 50
+      },
+      {
+        "date": "2026-09-30",
+        "activeUsers": 2
       }
     ],
     "sources": [
       {
         "source": "(direct)",
-        "sessions": 756
+        "sessions": 714
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 556
+        "sessions": 539
       },
       {
         "source": "pcmap.place.naver.com",
@@ -141,29 +141,29 @@
       },
       {
         "source": "m.search.naver.com",
-        "sessions": 281
+        "sessions": 282
       },
       {
         "source": "naver.com",
-        "sessions": 259
+        "sessions": 245
       }
     ],
     "topPages": [
       {
         "path": "/",
-        "views": 3129
-      },
-      {
-        "path": "/dogam.html",
-        "views": 443
+        "views": 3052
       },
       {
         "path": "/dogam",
-        "views": 425
+        "views": 417
+      },
+      {
+        "path": "/dogam.html",
+        "views": 415
       }
     ],
     "newVsReturning": {
-      "new": 2414,
+      "new": 2347,
       "returning": 270
     }
   },
@@ -171,39 +171,39 @@
     "top_queries": [
       {
         "query": "쥬쥬랜드",
-        "clicks": 60,
-        "impressions": 392,
-        "position": 1.8
+        "clicks": 59,
+        "impressions": 415,
+        "position": 1.9
       },
       {
         "query": "주주동물원",
         "clicks": 12,
-        "impressions": 68,
+        "impressions": 63,
         "position": 1.3
       },
       {
         "query": "주주랜드",
-        "clicks": 11,
-        "impressions": 106,
+        "clicks": 12,
+        "impressions": 108,
         "position": 1.5
       },
       {
         "query": "쥬쥬동물원",
-        "clicks": 7,
+        "clicks": 8,
         "impressions": 77,
-        "position": 1.6
+        "position": 1.7
       },
       {
         "query": "테마동물원 쥬쥬",
         "clicks": 6,
-        "impressions": 30,
+        "impressions": 29,
         "position": 1.3
       },
       {
         "query": "고양시 동물원",
         "clicks": 4,
-        "impressions": 29,
-        "position": 1.2
+        "impressions": 27,
+        "position": 1.3
       },
       {
         "query": "주주 동물원",
@@ -220,7 +220,7 @@
       {
         "query": "동물원",
         "clicks": 2,
-        "impressions": 232,
+        "impressions": 240,
         "position": 4.2
       },
       {
@@ -233,12 +233,6 @@
   },
   "clarity": {
     "history": [
-      {
-        "date": "2026-08-31",
-        "sessions": 128,
-        "scrollDepth": 62.24,
-        "engagementTime": 0.2
-      },
       {
         "date": "2026-09-01",
         "sessions": 37,
@@ -412,48 +406,54 @@
         "sessions": 92,
         "scrollDepth": 67.7,
         "engagementTime": 0.5
+      },
+      {
+        "date": "2026-09-30",
+        "sessions": 19,
+        "scrollDepth": 52.92,
+        "engagementTime": 4.1
       }
     ],
     "devices": [
       {
-        "name": "Mobile",
-        "sessions": 51
+        "name": "PC",
+        "sessions": 10
       },
       {
-        "name": "PC",
-        "sessions": 41
+        "name": "Mobile",
+        "sessions": 9
       }
     ],
     "browsers": [
       {
         "name": "Chrome",
-        "sessions": 20
-      },
-      {
-        "name": "Other",
-        "sessions": 18
-      },
-      {
-        "name": "SamsungInternet",
-        "sessions": 17
+        "sessions": 5
       },
       {
         "name": "Edge",
-        "sessions": 16
+        "sessions": 4
+      },
+      {
+        "name": "ChromeMobile",
+        "sessions": 3
       },
       {
         "name": "MobileSafari",
-        "sessions": 14
+        "sessions": 3
+      },
+      {
+        "name": "SamsungInternet",
+        "sessions": 3
       }
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 4.35,
-      "quickback": 13.04,
+      "deadClick": 0.0,
+      "quickback": 0.0,
       "excessiveScroll": 0.0,
       "scriptError": 0.0
     }
   },
   "errors": {},
-  "updated_at": "2026-09-29T06:11:51.585652+09:00"
+  "updated_at": "2026-09-30T04:56:41.064529+09:00"
 }
