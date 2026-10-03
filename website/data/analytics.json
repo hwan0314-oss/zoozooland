@@ -2,10 +2,6 @@
   "ga4": {
     "daily": [
       {
-        "date": "2026-09-03",
-        "activeUsers": 43
-      },
-      {
         "date": "2026-09-04",
         "activeUsers": 58
       },
@@ -119,72 +115,76 @@
       },
       {
         "date": "2026-10-02",
-        "activeUsers": 93
+        "activeUsers": 95
       },
       {
         "date": "2026-10-03",
-        "activeUsers": 6
+        "activeUsers": 165
+      },
+      {
+        "date": "2026-10-04",
+        "activeUsers": 9
       }
     ],
     "sources": [
       {
         "source": "(direct)",
-        "sessions": 760
+        "sessions": 812
       },
       {
         "source": "m.place.naver.com",
-        "sessions": 586
+        "sessions": 602
       },
       {
         "source": "pcmap.place.naver.com",
-        "sessions": 370
+        "sessions": 361
       },
       {
         "source": "m.search.naver.com",
-        "sessions": 294
+        "sessions": 302
       },
       {
         "source": "naver.com",
-        "sessions": 280
+        "sessions": 289
       }
     ],
     "topPages": [
       {
         "path": "/",
-        "views": 3301
-      },
-      {
-        "path": "/dogam",
-        "views": 440
+        "views": 3434
       },
       {
         "path": "/dogam.html",
-        "views": 435
+        "views": 463
+      },
+      {
+        "path": "/dogam",
+        "views": 455
       }
     ],
     "newVsReturning": {
-      "new": 2501,
-      "returning": 285
+      "new": 2618,
+      "returning": 288
     }
   },
   "gsc": {
     "top_queries": [
       {
         "query": "쥬쥬랜드",
-        "clicks": 54,
-        "impressions": 408,
-        "position": 1.9
+        "clicks": 53,
+        "impressions": 395,
+        "position": 1.8
       },
       {
         "query": "주주랜드",
-        "clicks": 12,
-        "impressions": 100,
+        "clicks": 11,
+        "impressions": 95,
         "position": 1.5
       },
       {
         "query": "주주동물원",
-        "clicks": 11,
-        "impressions": 62,
+        "clicks": 9,
+        "impressions": 57,
         "position": 1.3
       },
       {
@@ -196,7 +196,7 @@
       {
         "query": "테마동물원 쥬쥬",
         "clicks": 6,
-        "impressions": 28,
+        "impressions": 27,
         "position": 1.3
       },
       {
@@ -208,7 +208,7 @@
       {
         "query": "고양시 동물원",
         "clicks": 3,
-        "impressions": 24,
+        "impressions": 23,
         "position": 1.3
       },
       {
@@ -233,12 +233,6 @@
   },
   "clarity": {
     "history": [
-      {
-        "date": "2026-09-04",
-        "sessions": 39,
-        "scrollDepth": 65.87,
-        "engagementTime": 2.2
-      },
       {
         "date": "2026-09-05",
         "sessions": 61,
@@ -412,52 +406,58 @@
         "sessions": 102,
         "scrollDepth": 62.28,
         "engagementTime": 0.5
+      },
+      {
+        "date": "2026-10-04",
+        "sessions": 189,
+        "scrollDepth": 59.01,
+        "engagementTime": 0.2
       }
     ],
     "devices": [
       {
         "name": "Mobile",
-        "sessions": 72
+        "sessions": 177
       },
       {
         "name": "PC",
-        "sessions": 29
+        "sessions": 9
       },
       {
         "name": "Tablet",
-        "sessions": 1
+        "sessions": 3
       }
     ],
     "browsers": [
       {
         "name": "MobileSafari",
-        "sessions": 33
+        "sessions": 73
       },
       {
         "name": "ChromeMobile",
-        "sessions": 19
-      },
-      {
-        "name": "Chrome",
-        "sessions": 18
+        "sessions": 43
       },
       {
         "name": "Other",
-        "sessions": 17
+        "sessions": 36
       },
       {
-        "name": "Edge",
-        "sessions": 9
+        "name": "SamsungInternet",
+        "sessions": 21
+      },
+      {
+        "name": "Chrome",
+        "sessions": 7
       }
     ],
     "uxSignals": {
       "rageClick": 0.0,
-      "deadClick": 0.98,
-      "quickback": 9.8,
+      "deadClick": 1.06,
+      "quickback": 4.76,
       "excessiveScroll": 0.0,
       "scriptError": 0.0
     }
   },
   "errors": {},
-  "updated_at": "2026-10-03T04:53:05.619581+09:00"
+  "updated_at": "2026-10-04T03:39:03.934950+09:00"
 }
