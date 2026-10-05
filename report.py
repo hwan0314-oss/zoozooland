@@ -1107,6 +1107,11 @@ def generate_dashboard_json(today, ptd, weather_today, weather_ptd, dc, dp, mc, 
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
+def _has_sales(d):
+    """fetch_sales 결과에 판매 수량/금액이 하나라도 있으면 True (온라인 티켓은 amt=0이라 qty도 확인)"""
+    return any(c["qty"] or c["amt"] for c in d["cats"].values())
+
+
 async def main():
     today = datetime.now(KST).date()
     ms  = today.replace(day=1)
@@ -1118,9 +1123,17 @@ async def main():
 
     sess = do_login()
 
-    print("=== Current year ===")
+    # 휴무일(공휴일 아닌 월요일 등) 판별: 당일·전년 동일요일 실적이 모두 없으면 발송 생략
+    print("=== Daily check ===")
     tn, tv = get_api_token(sess)
     dc = fetch_sales(sess, tn, tv, fmt_d(today), fmt_d(today))
+    tn, tv = get_api_token(sess)
+    dp = fetch_sales(sess, tn, tv, fmt_d(ptd), fmt_d(ptd))
+    if not _has_sales(dc) and not _has_sales(dp):
+        print(f"No sales on {today} and {ptd} (휴무일) → skip sending")
+        return
+
+    print("=== Current year ===")
     tn, tv = get_api_token(sess)
     mc = fetch_sales(sess, tn, tv, fmt_d(ms), fmt_d(today))
     yc = fetch_sales_chunked(sess, fmt_d(ys), fmt_d(today))
@@ -1131,8 +1144,6 @@ async def main():
     yc["shops"] = fetch_shop_sales(sess, fmt_d(ys),    fmt_d(today))
 
     print("=== Previous year ===")
-    tn, tv = get_api_token(sess)
-    dp = fetch_sales(sess, tn, tv, fmt_d(ptd), fmt_d(ptd))
     tn, tv = get_api_token(sess)
     mp = fetch_sales(sess, tn, tv, fmt_d(pms), fmt_d(ptd))
     yp = fetch_sales_chunked(sess, fmt_d(pys), fmt_d(ptd))
