@@ -1,7 +1,10 @@
 name: Daily Report - Zoozooland
 
 on:
-  workflow_dispatch:  # Claude 스케줄러가 매일 19:00 KST에 트리거
+  # 발송 시간은 cron-job.org(console.cron-job.org, "쥬쥬랜드 실적 리포트")에서 관리:
+  # 매일 14:00·18:00 KST에 이 워크플로를 dispatch (GitHub PAT: zoozooland-action)
+  # 휴무일(당일·전년 동일요일 실적 모두 0)은 report.py가 발송 생략
+  workflow_dispatch:
 
 jobs:
   report:
