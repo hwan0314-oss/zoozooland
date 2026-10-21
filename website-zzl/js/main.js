@@ -13,12 +13,20 @@
       const res = await fetch('data/instagram_feed.json', { cache: 'no-cache' });
       if (!res.ok) return;
       const { posts = [] } = await res.json();
+      if (!posts.length) return;
       grid.innerHTML = posts.map(p => `
         <a href="${escapeHtml(p.permalink || '#')}" target="_blank" rel="noopener" class="photo-cell">
           <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.caption || 'ZZL Instagram')}" loading="lazy">
           <span class="photo-log">${escapeHtml((p.caption || '').slice(0, 24))}</span>
         </a>
       `).join('');
+      // 이미지가 깨지면 깨진 칸을 숨기고, 전부 깨지면 섹션의 인스타그램 링크만 남긴다
+      grid.querySelectorAll('img').forEach(img => {
+        img.addEventListener('error', () => {
+          img.closest('.photo-cell')?.remove();
+          if (!grid.querySelector('.photo-cell')) grid.closest('section')?.setAttribute('data-ig-empty', '');
+        }, { once: true });
+      });
     } catch {}
   }
   loadInstagramFeed();

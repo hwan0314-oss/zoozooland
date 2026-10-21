@@ -389,3 +389,6 @@ section {
   .zzl-logo-large  { display: none !important; }
   .zzl-logo-stacked { display: block !important; font-size: clamp(2.5rem, 10vw, 4rem) !important; margin-bottom: 1rem !important; }
 }
+
+/* 인스타 이미지가 모두 깨졌을 때 빈 격자 숨김 */
+[data-ig-empty] #igFeed { display: none; }
