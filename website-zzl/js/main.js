@@ -6,9 +6,19 @@
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+  // 이미지가 깨지면 깨진 칸을 숨기고, 전부 깨지면 섹션의 인스타그램 링크만 남긴다
+  function bindIgErrors(grid) {
+    grid.querySelectorAll('img').forEach(img => {
+      img.addEventListener('error', () => {
+        img.closest('.photo-cell')?.remove();
+        if (!grid.querySelector('.photo-cell')) grid.closest('section')?.setAttribute('data-ig-empty', '');
+      }, { once: true });
+    });
+  }
   async function loadInstagramFeed() {
     const grid = document.getElementById('igFeed');
     if (!grid) return;
+    if (grid.hasAttribute('data-ssg')) { bindIgErrors(grid); return; } // 빌드 시 렌더링됨
     try {
       const res = await fetch('data/instagram_feed.json', { cache: 'no-cache' });
       if (!res.ok) return;
@@ -20,13 +30,7 @@
           <span class="photo-log">${escapeHtml((p.caption || '').slice(0, 24))}</span>
         </a>
       `).join('');
-      // 이미지가 깨지면 깨진 칸을 숨기고, 전부 깨지면 섹션의 인스타그램 링크만 남긴다
-      grid.querySelectorAll('img').forEach(img => {
-        img.addEventListener('error', () => {
-          img.closest('.photo-cell')?.remove();
-          if (!grid.querySelector('.photo-cell')) grid.closest('section')?.setAttribute('data-ig-empty', '');
-        }, { once: true });
-      });
+      bindIgErrors(grid);
     } catch {}
   }
   loadInstagramFeed();
@@ -81,7 +85,10 @@
   const mapModalArea  = document.getElementById('mapModalArea');
   let sc = 1, px = 0, py = 0;
 
-  function openModal()  { if (!guideMapLoaded) return; mapModal.classList.add('open'); mapModal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; sc=1;px=0;py=0;applyT(); }
+  // 모달 이미지는 data-src → 열 때 처음 로드 (페이지 로딩 시 대용량 원본을 받지 않도록)
+  function loadDeferredImg(img) { if (img && !img.src && img.dataset.src) img.src = img.dataset.src; }
+
+  function openModal()  { if (!guideMapLoaded) return; loadDeferredImg(mapModalImg); mapModal.classList.add('open'); mapModal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; sc=1;px=0;py=0;applyT(); }
   function closeModal() { mapModal.classList.remove('open'); mapModal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
   function applyT()     { mapModalImg.style.transform=`translate(${px}px,${py}px) scale(${sc})`; }
 
@@ -131,6 +138,7 @@
 
   function hideLunchboxModal()  { lunchboxModal.classList.remove('open'); lunchboxModal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
   function openLunchboxModal()  {
+    loadDeferredImg(lunchboxModalImg);
     lunchboxModal.classList.add('open'); lunchboxModal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; lsc=1;lpx=0;lpy=0;applyLT();
     history.pushState({ lunchboxModal: true }, '');
   }
@@ -179,13 +187,13 @@
   /* ── 프로그램 로딩 ── */
   async function loadPrograms() {
     const c = document.getElementById('programsList');
-    if (!c) return;
+    if (!c || c.hasAttribute('data-ssg')) return; // 빌드 시 렌더링됨
 
-    const dayLabel = t => `<div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.25);margin-bottom:8px;">${t}</div>`;
+    const dayLabel = t => `<div class="prog-day">${t}</div>`;
     const row = (name, time) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;gap:12px;">
-        <span style="font-size:13px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.88);">${name}</span>
-        <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#D4FF00;font-weight:700;white-space:nowrap;flex-shrink:0;">${time}</span>
+      <div class="prog-row">
+        <span class="prog-name">${escapeHtml(name)}</span>
+        <span class="prog-time">${escapeHtml(time)}</span>
       </div>`;
 
     try {
@@ -199,40 +207,42 @@
         weekday.forEach(p => { html += row(p.name, p.time); });
       }
       if (weekend.length) {
-        if (weekday.length) html += '<div style="height:12px"></div>';
+        if (weekday.length) html += '<div class="prog-gap"></div>';
         html += dayLabel('WEEKEND &amp; HOLIDAY');
         weekend.forEach(p => { html += row(p.name, p.time); });
       }
-      if (!html) html = '<div style="font-size:10px;font-family:\'JetBrains Mono\',monospace;color:rgba(255,255,255,0.2);">NO_PROGRAMS_REGISTERED</div>';
+      if (!html) html = '<div class="prog-empty">NO_PROGRAMS_REGISTERED</div>';
       c.innerHTML = html;
     } catch {
-      c.innerHTML = '<div style="font-size:10px;font-family:\'JetBrains Mono\',monospace;color:rgba(255,255,255,0.2);">SCHEDULE_UNAVAILABLE</div>';
+      c.innerHTML = '<div class="prog-empty">SCHEDULE_UNAVAILABLE</div>';
     }
   }
   loadPrograms();
 
   /* ── info.json (먹이체험 + 이용수칙) 로딩 ── */
   async function loadInfo() {
+    const fl = document.getElementById('feedingList');
+    const cl = document.getElementById('conductList');
+    const flSsg = fl?.hasAttribute('data-ssg'), clSsg = cl?.hasAttribute('data-ssg');
+    if (flSsg && clSsg) return; // 빌드 시 렌더링됨
     try {
       const res = await fetch('data/info.json', { cache: 'no-cache' });
       if (!res.ok) return;
       const { feeding=[], conduct=[] } = await res.json();
 
       // 먹이체험
-      const fl = document.getElementById('feedingList');
-      if (fl && feeding.length) {
+      if (fl && !flSsg && feeding.length) {
         fl.innerHTML = feeding.map(f => `
           <li>
-            <span class="text-white font-semibold" style="font-family:'Noto Sans KR',sans-serif">${f.type}:</span>
-            <span style="font-family:'Noto Sans KR',sans-serif">
-              ${f.feed ? ` ${f.feed} /` : ''} ${f.animals}
+            <span class="font-ko text-white font-semibold">${escapeHtml(f.type)}:</span>
+            <span class="font-ko">
+              ${f.feed ? ` ${escapeHtml(f.feed)} /` : ''} ${escapeHtml(f.animals)}
             </span>
           </li>`).join('');
       }
 
       // 이용수칙 (한영 병기)
-      const cl = document.getElementById('conductList');
-      if (cl && conduct.length) {
+      if (cl && !clSsg && conduct.length) {
         // 3열 배치용 그룹핑
         const cols = [[], [], []];
         conduct.forEach((r, i) => cols[i % 3].push(r));
@@ -240,8 +250,8 @@
           <div class="space-y-4">
             ${col.map(r => `
               <div>
-                <div style="font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;">- ${r.en}</div>
-                <div style="font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;">　${r.ko}</div>
+                <div class="conduct-en">- ${escapeHtml(r.en)}</div>
+                <div class="conduct-ko">　${escapeHtml(r.ko)}</div>
               </div>`).join('')}
           </div>`).join('');
       }
@@ -283,7 +293,7 @@
 
       const slot  = document.getElementById('productSlot');
       const empty = document.getElementById('productEmpty');
-      if (!slot) return;
+      if (!slot || slot.hasAttribute('data-ssg')) return; // 빌드 시 렌더링됨
       empty?.remove();
 
       // 첫 번째 상품만 슬롯에 표시 (나머지는 row로 추가 가능)
@@ -292,11 +302,11 @@
         ? Math.round((1 - p.sale_price / p.original_price) * 100) : 0);
       const imgSrc = p.image || p.og_image || null;
 
+      // slot 자체가 card-frame 이므로 안쪽 내용만 채운다
       slot.innerHTML = `
-        <div class="card-frame bg-black p-6 h-full flex flex-col">
           <div class="aspect-[4/5] bg-[#111] mb-5 overflow-hidden relative">
             ${imgSrc
-              ? `<img src="${imgSrc}" alt="쥬쥬랜드 1인 입장권" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition duration-500">`
+              ? `<img src="${escapeHtml(imgSrc)}" alt="쥬쥬랜드 1인 입장권" loading="lazy" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition duration-500">`
               : `<div class="w-full h-full flex items-center justify-center"><span class="text-4xl">🎟</span></div>`}
           </div>
           <div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE / 입장요금 안내</div>
@@ -309,11 +319,10 @@
                 ${rate ? `<span class="tag-badge text-[9px] px-2 py-0.5">SALE ${rate}%</span>` : ''}
               </div>` : ''}
           </div>
-          <a href="${p.booking_url}" target="_blank" rel="noopener"
+          <a href="${escapeHtml(p.booking_url)}" target="_blank" rel="noopener" id="bookingBtnEmpty"
              class="mt-auto block w-full py-4 border border-[#D4FF00]/40 text-sm font-bold text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">
             네이버 예약하기 →
-          </a>
-        </div>`;
+          </a>`;
 
       // 추가 상품이 있으면 아래에 작은 카드로 표시
       if (products.length > 1) {
@@ -343,7 +352,10 @@
   /* ── 공지 Swiper ── */
   async function loadNotices() {
     const wrapper = document.getElementById('noticesWrapper');
-    const placeholder = document.getElementById('noticePlaceholder');
+    if (wrapper?.hasAttribute('data-ssg')) { // 빌드 시 렌더링됨
+      initSwiper(wrapper.querySelectorAll('.swiper-slide').length > 1);
+      return;
+    }
     try {
       const res = await fetch('data/notices.json', { cache: 'no-cache' });
       if (!res.ok) return;
@@ -353,9 +365,8 @@
       notices.forEach(n => {
         const slide = document.createElement('div');
         slide.className = 'swiper-slide';
-        const inner = n.link
-          ? `<a href="${n.link}" target="_blank" rel="noopener"><img src="${n.image}" alt="${n.alt||'공지'}" class="notice-img"></a>`
-          : `<img src="${n.image}" alt="${n.alt||'공지'}" class="notice-img">`;
+        const img = `<img src="${escapeHtml(n.image)}" alt="${escapeHtml(n.alt||'공지')}" class="notice-img" loading="lazy">`;
+        const inner = n.link ? `<a href="${escapeHtml(n.link)}" target="_blank" rel="noopener">${img}</a>` : img;
         slide.innerHTML = inner;
         wrapper?.appendChild(slide);
       });

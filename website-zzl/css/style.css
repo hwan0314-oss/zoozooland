@@ -49,7 +49,9 @@ body {
 .zzl-logo-large {
   font-weight: 900;
   line-height: 0.82;
-  font-size: clamp(5rem, 18vw, 16rem);
+  /* "ZOOZOOLAND"(약 7.3em)가 좌우 여백(3rem) 안에 들어가도록 뷰포트 너비 기준으로 맞춤 */
+  font-size: min(16rem, calc((100vw - 3rem) / 7.6));
+  white-space: nowrap;
   color: transparent;
   -webkit-text-stroke: 1px rgba(255,255,255,0.18);
   transition: all 0.5s ease;
@@ -73,6 +75,11 @@ body {
   color: var(--zzl-lime);
   -webkit-text-stroke: 0;
 }
+
+.font-ko { font-family: 'Noto Sans KR', sans-serif; }
+
+/* <picture>(빌드 시 WebP 변환)가 레이아웃에 끼지 않도록 — img 스타일이 그대로 적용됨 */
+picture { display: contents; }
 
 /* ── 버튼 ── */
 .btn-zzl {
@@ -220,6 +227,57 @@ section {
   background: #111;
   padding: 2.5rem;
   width: min(calc(100vw - 3rem), 400px);
+}
+
+/* ── 운영 프로그램 / 이용수칙 (build.py · main.js 공통) ── */
+.prog-day {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 8px;
+}
+.prog-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.prog-name {
+  font-size: 13px;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: rgba(255,255,255,0.88);
+}
+.prog-time {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--zzl-lime);
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.prog-gap { height: 12px; }
+.prog-empty {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255,255,255,0.2);
+}
+.conduct-en {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.08em;
+}
+.conduct-ko {
+  font-size: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: rgba(255,255,255,0.55);
+  margin-top: 2px;
 }
 
 /* ── 지도 컨테이너 ── */
