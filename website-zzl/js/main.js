@@ -290,7 +290,9 @@
     try {
       const res = await fetch('data/settings.json', { cache: 'no-cache' });
       if (!res.ok) return;
-      const { group_email, biz_email } = await res.json();
+      const { group_email, biz_email, group_booking_url, visit_booking_url } = await res.json();
+      if (group_booking_url) document.querySelectorAll('[data-group-booking]').forEach(a => { a.href = group_booking_url; });
+      if (visit_booking_url) document.querySelectorAll('[data-visit-booking]').forEach(a => { a.href = visit_booking_url; });
       const gl = document.getElementById('groupEmailLink');
       if (group_email && gl) gl.href = `mailto:${group_email}`;
       const bl = document.getElementById('bizEmailLink');
