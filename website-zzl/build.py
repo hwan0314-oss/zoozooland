@@ -3,28 +3,43 @@
 SSG build script — zoozoo.kr
 JSON 데이터를 index.html에 빌드 타임에 주입해 크롤러에게 정적 텍스트를 제공합니다.
 각 섹션은 <!-- ssg:name --> ... <!-- /ssg:name --> 마커로 표시됩니다.
+
+빌드된 HTML의 <img src="images/...jpg|png"> 는 WebP 반응형 이미지(<picture>)로 바꿉니다.
+(Pillow가 없으면 이 단계만 건너뜁니다.)
 """
 import json, re
 from html import escape as h
 from pathlib import Path
 
-ROOT = Path(__file__).parent          # website-zzl/
-DATA = ROOT.parent / 'website' / 'data'
-SRC  = ROOT / 'index.html'
-OUT  = ROOT.parent / 'deploy' / 'index.html'
+try:
+    from PIL import Image, ImageOps
+except ImportError:
+    Image = None
+
+ROOT   = Path(__file__).parent          # website-zzl/
+DATA   = ROOT.parent / 'website' / 'data'
+IMAGES = ROOT.parent / 'website' / 'images'
+SRC    = ROOT / 'index.html'
+DEPLOY = ROOT.parent / 'deploy'
+OUT    = DEPLOY / 'index.html'
 
 # ── JSON 로드 ──────────────────────────────────────────────────────────
-info     = json.loads((DATA / 'info.json').read_text('utf-8'))
-programs = json.loads((DATA / 'programs.json').read_text('utf-8'))
-prods    = json.loads((DATA / 'products.json').read_text('utf-8'))
-notices  = json.loads((DATA / 'notices.json').read_text('utf-8'))
+def load(name):
+    path = DATA / name
+    return json.loads(path.read_text('utf-8')) if path.exists() else {}
+
+info     = load('info.json')
+programs = load('programs.json')
+prods    = load('products.json')
+notices  = load('notices.json')
+igfeed   = load('instagram_feed.json')
 
 # ── 먹이체험 ──────────────────────────────────────────────────────────
 feeding_items = info.get('feeding', [])
 if feeding_items:
     feeding_html = '\n'.join(
-        '<li><span class="text-white font-semibold" style="font-family:\'Noto Sans KR\',sans-serif">{type}:</span>'
-        ' <span style="font-family:\'Noto Sans KR\',sans-serif">{feed_str}{animals}</span></li>'.format(
+        '<li><span class="font-ko text-white font-semibold">{type}:</span>'
+        ' <span class="font-ko">{feed_str}{animals}</span></li>'.format(
             type=h(f['type']),
             feed_str=(' ' + h(f['feed']) + ' /') if f.get('feed') else '',
             animals=h(f['animals'])
@@ -35,50 +50,33 @@ else:
     feeding_html = '<li>먹이체험 정보를 준비 중입니다.</li>'
 
 # ── 운영 프로그램 ─────────────────────────────────────────────────────
-DAY = ("font-size:10px;font-family:'JetBrains Mono',monospace;"
-       "text-transform:uppercase;letter-spacing:0.1em;"
-       "color:rgba(255,255,255,0.25);margin-bottom:8px;")
-ROW = ("display:flex;justify-content:space-between;align-items:center;"
-       "border-bottom:1px solid rgba(255,255,255,0.05);"
-       "padding-bottom:10px;margin-bottom:10px;gap:12px;")
-NM  = "font-size:13px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.88);"
-TM  = ("font-size:11px;font-family:'JetBrains Mono',monospace;"
-       "color:#D4FF00;font-weight:700;white-space:nowrap;flex-shrink:0;")
+def prog_row(p):
+    return (f'<div class="prog-row"><span class="prog-name">{h(p["name"])}</span>'
+            f'<span class="prog-time">{h(p["time"])}</span></div>')
 
 weekday = programs.get('weekday', [])
 weekend = programs.get('weekend', [])
 prog_parts = []
 if weekday:
-    prog_parts.append(f'<div style="{DAY}">WEEKDAY (TUE-FRI)</div>')
-    for p in weekday:
-        prog_parts.append(
-            f'<div style="{ROW}"><span style="{NM}">{h(p["name"])}</span>'
-            f'<span style="{TM}">{h(p["time"])}</span></div>'
-        )
+    prog_parts.append('<div class="prog-day">WEEKDAY (TUE-FRI)</div>')
+    prog_parts += [prog_row(p) for p in weekday]
 if weekend:
     if weekday:
-        prog_parts.append('<div style="height:12px"></div>')
-    prog_parts.append(f'<div style="{DAY}">WEEKEND &amp; HOLIDAY</div>')
-    for p in weekend:
-        prog_parts.append(
-            f'<div style="{ROW}"><span style="{NM}">{h(p["name"])}</span>'
-            f'<span style="{TM}">{h(p["time"])}</span></div>'
-        )
+        prog_parts.append('<div class="prog-gap"></div>')
+    prog_parts.append('<div class="prog-day">WEEKEND &amp; HOLIDAY</div>')
+    prog_parts += [prog_row(p) for p in weekend]
 programs_html = '\n'.join(prog_parts) if prog_parts else '<div>운영 프로그램 정보를 준비 중입니다.</div>'
 
 # ── 이용수칙 ──────────────────────────────────────────────────────────
 conduct_items = info.get('conduct', [])
 if conduct_items:
-    EN = ("font-size:10px;font-family:'JetBrains Mono',monospace;"
-          "text-transform:uppercase;color:rgba(255,255,255,0.35);letter-spacing:0.08em;")
-    KO = "font-size:12px;font-family:'Noto Sans KR',sans-serif;color:rgba(255,255,255,0.55);margin-top:2px;"
     cols = [[], [], []]
     for i, r in enumerate(conduct_items):
         cols[i % 3].append(r)
     def col_html(col):
         items = ''.join(
-            f'<div><div style="{EN}">- {h(r["en"])}</div>'
-            f'<div style="{KO}">　{h(r["ko"])}</div></div>'
+            f'<div><div class="conduct-en">- {h(r["en"])}</div>'
+            f'<div class="conduct-ko">　{h(r["ko"])}</div></div>'
             for r in col
         )
         return f'<div class="space-y-4">{items}</div>'
@@ -96,7 +94,8 @@ if products:
     img  = p.get('image') or p.get('og_image') or ''
     url  = h(p.get('booking_url', '#'))
     img_block = (
-        f'<img src="{h(img)}" alt="쥬쥬랜드 1인 입장권" class="w-full h-full object-cover '
+        f'<img src="{h(img)}" alt="쥬쥬랜드 1인 입장권" loading="lazy" '
+        f'data-sizes="(min-width: 1024px) 30vw, 100vw" class="w-full h-full object-cover '
         f'mix-blend-luminosity hover:mix-blend-normal transition duration-500">'
         if img else
         '<div class="w-full h-full flex items-center justify-center"><span class="text-4xl">🎟</span></div>'
@@ -145,7 +144,7 @@ notice_list = notices.get('notices', [])
 if notice_list:
     slides = []
     for n in notice_list:
-        img_tag = f'<img src="{h(n["image"])}" alt="{h(n.get("alt", "공지"))}" class="notice-img">'
+        img_tag = f'<img src="{h(n["image"])}" alt="{h(n.get("alt", "공지"))}" class="notice-img" loading="lazy">'
         inner   = (
             f'<a href="{h(n["link"])}" target="_blank" rel="noopener">{img_tag}</a>'
             if n.get('link') else img_tag
@@ -164,11 +163,24 @@ else:
         '</div>'
     )
 
+# ── 인스타그램 피드 ───────────────────────────────────────────────────
+ig_posts = igfeed.get('posts', [])
+instagram_html = '\n'.join(
+    f'<a href="{h(p.get("permalink") or "#")}" target="_blank" rel="noopener" class="photo-cell">'
+    f'<img src="{h(p["image"])}" alt="{h(p.get("caption") or "ZZL Instagram")}" loading="lazy" data-sizes="33vw">'
+    f'<span class="photo-log">{h((p.get("caption") or "")[:24])}</span></a>'
+    for p in ig_posts if p.get('image')
+)
+
 # ── index.html에 적용 ─────────────────────────────────────────────────
 def replace_ssg(content, name, new_content):
     pattern = rf'<!-- ssg:{re.escape(name)} -->.*?<!-- /ssg:{re.escape(name)} -->'
     replacement = f'<!-- ssg:{name} -->\n{new_content}\n<!-- /ssg:{name} -->'
-    return re.sub(pattern, replacement, content, flags=re.DOTALL)
+    return re.sub(pattern, lambda _: replacement, content, flags=re.DOTALL)
+
+def mark_ssg(content, el_id):
+    """JS가 이미 빌드된 콘텐츠를 다시 그리지 않도록 컨테이너에 data-ssg 표시"""
+    return content.replace(f'id="{el_id}"', f'id="{el_id}" data-ssg', 1)
 
 content = SRC.read_text('utf-8')
 content = replace_ssg(content, 'feeding',  feeding_html)
@@ -176,7 +188,70 @@ content = replace_ssg(content, 'programs', programs_html)
 content = replace_ssg(content, 'conduct',  conduct_html)
 content = replace_ssg(content, 'product',  product_html)
 content = replace_ssg(content, 'notices',  notices_html)
+content = replace_ssg(content, 'instagram', instagram_html)
+for el_id, has_data in [('feedingList', feeding_items), ('programsList', prog_parts),
+                        ('conductList', conduct_items), ('productSlot', products),
+                        ('noticesWrapper', notice_list), ('igFeed', instagram_html)]:
+    if has_data:
+        content = mark_ssg(content, el_id)
+
+# ── 이미지 최적화 (WebP 반응형) ──────────────────────────────────────
+WIDTHS = (640, 1280, 1920)
+MAX_W  = 2560
+_variants = {}
+
+def attr(tag, name):
+    m = re.search(rf'(?<![\w-]){name}="([^"]*)"', tag)
+    return m.group(1) if m else None
+
+def make_variants(src):
+    """images/... 원본에서 WebP 변형을 deploy/images 에 만들고 (w, h, srcset) 반환"""
+    if src in _variants:
+        return _variants[src]
+    result = None
+    path = IMAGES / src[len('images/'):]
+    if Image and path.is_file():
+        im = ImageOps.exif_transpose(Image.open(path))
+        if im.mode not in ('RGB', 'RGBA'):
+            im = im.convert('RGBA' if 'transparency' in im.info or im.mode in ('LA', 'P') else 'RGB')
+        w, ht = im.size
+        widths = [x for x in WIDTHS if x < w * 0.85] + [min(w, MAX_W)]
+        srcset = []
+        for vw in widths:
+            rel = f'{src.rsplit(".", 1)[0]}-{vw}.webp'
+            out = DEPLOY / rel
+            out.parent.mkdir(parents=True, exist_ok=True)
+            im.resize((vw, round(ht * vw / w)), Image.LANCZOS).save(out, 'WEBP', quality=80, method=5)
+            srcset.append(f'{h(rel)} {vw}w')
+        # 이미 작은 원본(변형 1개)이 WebP로 더 커지면 원본을 그대로 쓴다
+        if len(widths) == 1 and out.stat().st_size >= path.stat().st_size:
+            out.unlink()
+        else:
+            result = (w, ht, ', '.join(srcset))
+    _variants[src] = result
+    return result
+
+def to_picture(m):
+    tag = m.group(0)
+    src = attr(tag, 'src')
+    if not src or not re.fullmatch(r'images/[^"]+\.(?:jpe?g|png)', src, re.I):
+        return tag
+    sizes = attr(tag, 'data-sizes') or '100vw'
+    tag = re.sub(r'\s+data-sizes="[^"]*"', '', tag)
+    v = make_variants(src)
+    if not v:
+        return tag
+    w, ht, srcset = v
+    if attr(tag, 'width') is None:
+        tag = tag.replace('<img', f'<img width="{w}" height="{ht}"', 1)
+    if attr(tag, 'decoding') is None:
+        tag = tag.replace('<img', '<img decoding="async"', 1)
+    return f'<picture><source type="image/webp" srcset="{srcset}" sizes="{sizes}">{tag}</picture>'
+
+if Image is None:
+    print('Pillow 미설치 — WebP 이미지 최적화를 건너뜁니다 (pip install pillow)')
+content = re.sub(r'<img\b[^>]*>', to_picture, content)
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(content, 'utf-8')
-print(f'SSG complete → {OUT}')
+print(f'SSG complete → {OUT} (WebP: {sum(1 for v in _variants.values() if v)} images)')

@@ -1,0 +1,5 @@
+/* Tailwind 입력 파일 — 빌드 결과는 css/tailwind.css (커밋하지 않음)
+   npx tailwindcss@3.4.17 -c website-zzl/tailwind.config.js -i website-zzl/css/tailwind.src.css -o website-zzl/css/tailwind.css --minify */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
