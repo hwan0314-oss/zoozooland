@@ -70,12 +70,12 @@
   const bookingBar = document.getElementById('bookingBar');
   const heroBooking = document.getElementById('bookingBtnHero');
   if (bookingBar && heroBooking) {
-    const barCta = bookingBar.querySelector('a');
+    const barLinks = bookingBar.querySelectorAll('a');
     new IntersectionObserver(([entry]) => {
       const show = !entry.isIntersecting && entry.boundingClientRect.top < 0;
       bookingBar.classList.toggle('show', show);
       bookingBar.setAttribute('aria-hidden', String(!show));
-      barCta?.setAttribute('tabindex', show ? '0' : '-1');
+      barLinks.forEach(a => a.setAttribute('tabindex', show ? '0' : '-1'));
       document.body.classList.toggle('has-booking-bar', show);
     }).observe(heroBooking);
   }

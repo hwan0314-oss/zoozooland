@@ -205,10 +205,16 @@ picture { display: contents; }
     padding: 12px 18px;
   }
   .booking-bar-cta:active { filter: brightness(0.9); }
-  /* 예약 바가 떠 있으면 가이드맵 버튼을 그 위로 올리고, 푸터가 가려지지 않게 여백 확보 */
-  body.has-booking-bar .floating-map-btn { bottom: 84px; }
-  /* 모바일 첫 화면에서는 히어로 버튼과 겹치므로 예약 바와 함께만 표시 */
-  body:not(.has-booking-bar) .floating-map-btn { opacity: 0; pointer-events: none; }
+  .booking-bar-map {
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px;
+    border: 1px solid rgba(212,255,0,0.4);
+    color: var(--zzl-lime);
+  }
+  /* 모바일은 가이드맵 버튼이 예약 바 안에 있으므로 떠 있는 버튼은 숨김
+     (본문 위에 떠서 입장권 예약 버튼 등을 가리지 않도록) */
+  body .floating-map-btn { display: none; }
   body.has-booking-bar footer { padding-bottom: 7rem; }
 }
 
