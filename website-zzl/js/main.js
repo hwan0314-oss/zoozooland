@@ -291,8 +291,15 @@
       const res = await fetch('data/settings.json', { cache: 'no-cache' });
       if (!res.ok) return;
       const { group_email, biz_email, group_booking_url, visit_booking_url } = await res.json();
-      if (group_booking_url) document.querySelectorAll('[data-group-booking]').forEach(a => { a.href = group_booking_url; });
-      if (visit_booking_url) document.querySelectorAll('[data-visit-booking]').forEach(a => { a.href = visit_booking_url; });
+      // 단체·답사 예약: settings.json 의 기본 주소에 위치별 UTM(utm_campaign = data-cta)을 붙인다.
+      // 예약 앱이 접수 때 UTM을 저장해 '홈페이지에서 온 예약'을 구분한다.
+      const withUtm = (base, cta) => {
+        const u = new URL(base);
+        u.search = new URLSearchParams({ utm_source: 'homepage', utm_medium: 'cta', utm_campaign: cta || 'homepage' });
+        return u.href;
+      };
+      if (group_booking_url) document.querySelectorAll('[data-group-booking]').forEach(a => { a.href = withUtm(group_booking_url, a.dataset.cta); });
+      if (visit_booking_url) document.querySelectorAll('[data-visit-booking]').forEach(a => { a.href = withUtm(visit_booking_url, a.dataset.cta); });
       const gl = document.getElementById('groupEmailLink');
       if (group_email && gl) gl.href = `mailto:${group_email}`;
       const bl = document.getElementById('bizEmailLink');
