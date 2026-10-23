@@ -33,6 +33,10 @@ programs = load('programs.json')
 prods    = load('products.json')
 notices  = load('notices.json')
 igfeed   = load('instagram_feed.json')
+hours    = load('hours.json')
+
+DEFAULT_BOOKING_URL = ('https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko'
+                       '&map-search=1&service-target=map-pc&theme=place')
 
 # ── 먹이체험 ──────────────────────────────────────────────────────────
 feeding_items = info.get('feeding', [])
@@ -58,12 +62,12 @@ weekday = programs.get('weekday', [])
 weekend = programs.get('weekend', [])
 prog_parts = []
 if weekday:
-    prog_parts.append('<div class="prog-day">WEEKDAY (TUE-FRI)</div>')
+    prog_parts.append('<div class="prog-day" data-group="weekday">WEEKDAY (TUE-FRI)</div>')
     prog_parts += [prog_row(p) for p in weekday]
 if weekend:
     if weekday:
         prog_parts.append('<div class="prog-gap"></div>')
-    prog_parts.append('<div class="prog-day">WEEKEND &amp; HOLIDAY</div>')
+    prog_parts.append('<div class="prog-day" data-group="weekend">WEEKEND &amp; HOLIDAY</div>')
     prog_parts += [prog_row(p) for p in weekend]
 programs_html = '\n'.join(prog_parts) if prog_parts else '<div>운영 프로그램 정보를 준비 중입니다.</div>'
 
@@ -117,6 +121,7 @@ if products:
         f'  {orig_block}\n'
         f'</div>\n'
         f'<a href="{url}" target="_blank" rel="noopener" id="bookingBtnEmpty"\n'
+        f'   data-booking data-track="booking_click" data-cta="ticket_card"\n'
         f'   class="mt-auto block w-full py-4 border border-[#D4FF00]/40 text-sm font-bold '
         f'text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">\n'
         f'  네이버 예약하기 →\n'
@@ -138,6 +143,16 @@ else:
         '     target="_blank" rel="noopener">네이버 예약 바로가기 →</a>\n'
         '</div>'
     )
+
+# ── 오늘 운영 상태 기본 문구 (JS가 한국 시간 기준으로 갱신) / 하단 예약 바 가격 ──
+hours_html = (f'운영시간 {h(hours["open"])}–{h(hours["close"])}'
+              + (f' · {h(hours["closed_note"])}' if hours.get('closed_note') else '')
+              if hours.get('open') and hours.get('close') else '운영시간 10:00–18:00')
+if products:
+    barprice_html = f'1인 ₩{sale:,}' + (f' · {rate}% 할인' if rate else '')
+else:
+    barprice_html = '네이버 예약'
+booking_url = (products[0].get('booking_url') if products else None) or DEFAULT_BOOKING_URL
 
 # ── 공지사항 ──────────────────────────────────────────────────────────
 notice_list = notices.get('notices', [])
@@ -173,9 +188,10 @@ instagram_html = '\n'.join(
 )
 
 # ── index.html에 적용 ─────────────────────────────────────────────────
-def replace_ssg(content, name, new_content):
+def replace_ssg(content, name, new_content, inline=False):
     pattern = rf'<!-- ssg:{re.escape(name)} -->.*?<!-- /ssg:{re.escape(name)} -->'
-    replacement = f'<!-- ssg:{name} -->\n{new_content}\n<!-- /ssg:{name} -->'
+    nl = '' if inline else '\n'
+    replacement = f'<!-- ssg:{name} -->{nl}{new_content}{nl}<!-- /ssg:{name} -->'
     return re.sub(pattern, lambda _: replacement, content, flags=re.DOTALL)
 
 def mark_ssg(content, el_id):
@@ -189,6 +205,9 @@ content = replace_ssg(content, 'conduct',  conduct_html)
 content = replace_ssg(content, 'product',  product_html)
 content = replace_ssg(content, 'notices',  notices_html)
 content = replace_ssg(content, 'instagram', instagram_html)
+content = replace_ssg(content, 'hours',    hours_html, inline=True)
+content = replace_ssg(content, 'barprice', barprice_html, inline=True)
+content = content.replace(DEFAULT_BOOKING_URL, booking_url)
 for el_id, has_data in [('feedingList', feeding_items), ('programsList', prog_parts),
                         ('conductList', conduct_items), ('productSlot', products),
                         ('noticesWrapper', notice_list), ('igFeed', instagram_html)]:

@@ -114,6 +114,104 @@ picture { display: contents; }
 }
 .btn-zzl-fill:hover { filter: brightness(1.1); }
 
+/* ── 내비게이션 예약 버튼 ── */
+.nav-cta {
+  background: var(--zzl-lime);
+  color: var(--forest-black);
+  font-weight: 900;
+  padding: 6px 12px;
+  transition: box-shadow 0.2s;
+}
+.nav-cta:hover { box-shadow: 0 0 18px rgba(212,255,0,0.45); }
+
+/* ── 오늘 운영 상태 (today-status.js) ── */
+.today-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(10,11,10,0.6);
+}
+.today-dot {
+  flex-shrink: 0;
+  width: 8px; height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+}
+[data-state="open"] .today-dot {
+  background: var(--zzl-lime);
+  box-shadow: 0 0 0 0 rgba(212,255,0,0.6);
+  animation: today-pulse 2s infinite;
+}
+[data-state="soon"] .today-dot,
+[data-state="closing"] .today-dot { background: #FFB800; }
+[data-state="closed"] .today-dot { background: #FF5A4E; }
+@keyframes today-pulse {
+  70%  { box-shadow: 0 0 0 8px rgba(212,255,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(212,255,0,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-state="open"] .today-dot { animation: none; }
+}
+.today-text {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+[data-state="open"] .today-text { color: var(--zzl-lime); }
+.today-sub {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+  margin-top: 2px;
+}
+
+/* ── 모바일 하단 예약 바 ── */
+.booking-bar { display: none; }
+@media (max-width: 767px) {
+  .booking-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(10,11,10,0.94);
+    border-top: 1px solid rgba(212,255,0,0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transform: translateY(110%);
+    transition: transform 0.3s ease;
+  }
+  .booking-bar.show { transform: translateY(0); }
+  .booking-bar-info { flex: 1; min-width: 0; }
+  .booking-bar-info .today-text {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .booking-bar-price { color: rgba(255,255,255,0.5); margin-top: 2px; }
+  .booking-bar-cta {
+    flex-shrink: 0;
+    background: var(--zzl-lime);
+    color: var(--forest-black);
+    font-weight: 900;
+    font-size: 14px;
+    padding: 12px 18px;
+  }
+  .booking-bar-cta:active { filter: brightness(0.9); }
+  /* 예약 바가 떠 있으면 가이드맵 버튼을 그 위로 올리고, 푸터가 가려지지 않게 여백 확보 */
+  body.has-booking-bar .floating-map-btn { bottom: 84px; }
+  /* 모바일 첫 화면에서는 히어로 버튼과 겹치므로 예약 바와 함께만 표시 */
+  body:not(.has-booking-bar) .floating-map-btn { opacity: 0; pointer-events: none; }
+  body.has-booking-bar footer { padding-bottom: 7rem; }
+}
+
 /* ── 카드 ── */
 .card-frame {
   border: 1px solid var(--muted-gray);
@@ -261,6 +359,8 @@ section {
   flex-shrink: 0;
 }
 .prog-gap { height: 12px; }
+.prog-day.is-today { color: var(--zzl-lime); }
+.prog-day.is-today::after { content: ' · TODAY'; }
 .prog-empty {
   font-size: 10px;
   font-family: 'JetBrains Mono', monospace;
