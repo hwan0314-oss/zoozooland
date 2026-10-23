@@ -54,6 +54,32 @@
     }, { threshold: 0.1 }).observe(guidemapSection);
   }
 
+  /* ── 클릭 추적 (GA4 + Clarity) ──
+     data-track="이벤트명" data-cta="위치" 가 붙은 링크·버튼을 누르면 이벤트 전송.
+     GA4 관리 > 이벤트에서 booking_click 을 '주요 이벤트'로 표시하면 전환으로 집계됩니다. */
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-track]');
+    if (!el) return;
+    const name = el.dataset.track;
+    const cta = el.dataset.cta || '';
+    try { window.gtag?.('event', name, { cta_location: cta, link_url: el.href || '' }); } catch {}
+    try { window.clarity?.('event', cta ? `${name}:${cta}` : name); } catch {}
+  });
+
+  /* ── 모바일 하단 예약 바: 히어로 예약 버튼을 지나 스크롤하면 표시 ── */
+  const bookingBar = document.getElementById('bookingBar');
+  const heroBooking = document.getElementById('bookingBtnHero');
+  if (bookingBar && heroBooking) {
+    const barCta = bookingBar.querySelector('a');
+    new IntersectionObserver(([entry]) => {
+      const show = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+      bookingBar.classList.toggle('show', show);
+      bookingBar.setAttribute('aria-hidden', String(!show));
+      barCta?.setAttribute('tabindex', show ? '0' : '-1');
+      document.body.classList.toggle('has-booking-bar', show);
+    }).observe(heroBooking);
+  }
+
   /* ── 푸터 연도 ── */
   const fy = document.getElementById('footerYear');
   if (fy) fy.textContent = new Date().getFullYear();
@@ -189,7 +215,7 @@
     const c = document.getElementById('programsList');
     if (!c || c.hasAttribute('data-ssg')) return; // 빌드 시 렌더링됨
 
-    const dayLabel = t => `<div class="prog-day">${t}</div>`;
+    const dayLabel = (t, group) => `<div class="prog-day" data-group="${group}">${t}</div>`;
     const row = (name, time) => `
       <div class="prog-row">
         <span class="prog-name">${escapeHtml(name)}</span>
@@ -203,12 +229,12 @@
       let html = '';
 
       if (weekday.length) {
-        html += dayLabel('WEEKDAY (TUE-FRI)');
+        html += dayLabel('WEEKDAY (TUE-FRI)', 'weekday');
         weekday.forEach(p => { html += row(p.name, p.time); });
       }
       if (weekend.length) {
         if (weekday.length) html += '<div class="prog-gap"></div>';
-        html += dayLabel('WEEKEND &amp; HOLIDAY');
+        html += dayLabel('WEEKEND &amp; HOLIDAY', 'weekend');
         weekend.forEach(p => { html += row(p.name, p.time); });
       }
       if (!html) html = '<div class="prog-empty">NO_PROGRAMS_REGISTERED</div>';
@@ -280,13 +306,10 @@
       if (!res.ok) return;
       const { products=[] } = await res.json();
 
-      // 첫 번째 상품의 booking_url로 예약 버튼 전체 업데이트
+      // 첫 번째 상품의 booking_url로 예약 버튼(data-booking) 전체 업데이트
       if (products.length && products[0].booking_url) {
         const url = products[0].booking_url;
-        ['bookingBtnHero', 'bookingBtnEmpty', 'bookingBtnCrm'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.href = url;
-        });
+        document.querySelectorAll('[data-booking]').forEach(el => { el.href = url; });
       }
 
       if (!products.length) return;
@@ -320,6 +343,7 @@
               </div>` : ''}
           </div>
           <a href="${escapeHtml(p.booking_url)}" target="_blank" rel="noopener" id="bookingBtnEmpty"
+             data-booking data-track="booking_click" data-cta="ticket_card"
              class="mt-auto block w-full py-4 border border-[#D4FF00]/40 text-sm font-bold text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">
             네이버 예약하기 →
           </a>`;

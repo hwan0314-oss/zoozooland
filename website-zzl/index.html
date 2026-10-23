@@ -49,8 +49,8 @@
 
   <!-- ZZL CSS + Tailwind (빌드 시 생성: css/tailwind.css — README 참고)
        Tailwind가 style.css보다 뒤에 와야 유틸리티 클래스가 컴포넌트 스타일을 덮어씁니다 -->
-  <link rel="stylesheet" href="css/style.css?v=3">
-  <link rel="stylesheet" href="css/tailwind.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/tailwind.css?v=4">
 
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HF2XRXQE6X"></script>
@@ -76,17 +76,19 @@
 <!-- ═══════════════════════════════════════════
   NAV
 ═══════════════════════════════════════════ -->
-<nav class="fixed w-full z-50 mix-blend-difference px-6 py-4 flex justify-between items-center border-b border-white/10 backdrop-blur-sm" id="nav">
+<nav class="fixed w-full z-50 bg-[#0A0B0A]/80 px-6 py-4 flex justify-between items-center border-b border-white/10 backdrop-blur-sm" id="nav">
   <a href="#hero" class="flex items-center gap-3">
     <span class="text-xl font-black text-white tracking-tighter">ZZL</span>
     <span class="hidden md:inline mono text-gray-500">/ SYS_VER_2026.4</span>
   </a>
-  <div class="flex gap-6 mono text-[10px]">
+  <div class="flex items-center gap-6 mono text-[10px]">
     <a href="#booking" class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">RESERVE</a>
     <a href="#gallery" class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">ZZL-STAGRAM</a>
     <a href="#guidemap" class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">MAP</a>
     <a href="#dogam"   class="text-gray-400 hover:text-[#D4FF00] transition-colors">DOGAM</a>
     <a href="#contact" class="text-gray-400 hover:text-[#D4FF00] transition-colors">ACCESS</a>
+    <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place" target="_blank" rel="noopener"
+       class="nav-cta hidden md:inline-block" data-booking data-track="booking_click" data-cta="nav">예약하기 →</a>
   </div>
 </nav>
 
@@ -121,9 +123,17 @@
       </p>
     </div>
     <div class="flex flex-col gap-3 w-full md:w-auto md:min-w-[240px]">
+      <div class="today-status" data-today-status aria-live="polite">
+        <span class="today-dot" aria-hidden="true"></span>
+        <div>
+          <div class="today-text" data-status-text><!-- ssg:hours -->운영시간 10:00–18:00 · 월요일 정기휴무<!-- /ssg:hours --></div>
+          <div class="today-sub" data-status-sub hidden></div>
+        </div>
+      </div>
       <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place"
-         class="btn-zzl" target="_blank" rel="noopener" id="bookingBtnHero">네이버 예약하기</a>
-      <a href="#guidemap"
+         class="btn-zzl" target="_blank" rel="noopener" id="bookingBtnHero"
+         data-booking data-track="booking_click" data-cta="hero">네이버 예약하기</a>
+      <a href="#guidemap" data-track="guidemap_click" data-cta="hero"
          class="block text-center px-8 py-4 border border-white/30 font-bold text-sm uppercase tracking-widest hover:bg-white hover:text-black transition">
         쯜기는 법 보기 (MAP)
       </a>
@@ -146,7 +156,7 @@
     <div class="flex items-center gap-6">
       <div class="h-[1px] w-24 bg-white/10 hidden md:block"></div>
       <a href="https://www.instagram.com/zoozooland_zzl/" target="_blank" rel="noopener"
-         class="tag-badge">LIVE_FEED →</a>
+         class="tag-badge" data-track="instagram_click" data-cta="gallery">LIVE_FEED →</a>
     </div>
   </div>
 
@@ -188,6 +198,7 @@
         </div>
         <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place"
            target="_blank" rel="noopener" id="bookingBtnEmpty"
+           data-booking data-track="booking_click" data-cta="ticket_card"
            class="mt-auto block w-full py-4 border border-[#D4FF00]/40 text-sm font-bold text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition">
           네이버 예약하기 →
         </a>
@@ -210,10 +221,10 @@
         <div class="mono text-[#D4FF00] mb-6">02_TIMETABLE</div>
         <h4 class="text-xl font-bold mb-4">운영 프로그램</h4>
         <div class="space-y-3" id="programsList"><!-- ssg:programs -->
-<div class="prog-day">WEEKDAY (TUE-FRI)</div>
+<div class="prog-day" data-group="weekday">WEEKDAY (TUE-FRI)</div>
 <div class="prog-row"><span class="prog-name">애니멀스타&amp;로봇공연</span><span class="prog-time">11:30 · 13:30</span></div>
 <div class="prog-gap"></div>
-<div class="prog-day">WEEKEND &amp; HOLIDAY</div>
+<div class="prog-day" data-group="weekend">WEEKEND &amp; HOLIDAY</div>
 <div class="prog-row"><span class="prog-name">애니멀스타&amp;로봇공연</span><span class="prog-time">11:30 · 13:30</span></div>
 <div class="prog-row"><span class="prog-name">앵무새 설명회</span><span class="prog-time">12:30</span></div>
 <div class="prog-row"><span class="prog-name">악어 설명회</span><span class="prog-time">14:30</span></div>
@@ -347,7 +358,8 @@
   <div class="grid md:grid-cols-2">
     <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place"
        class="group p-12 border-b md:border-b-0 md:border-r border-white/10 hover:bg-[#004729] transition duration-500 block"
-       target="_blank" rel="noopener" id="bookingBtnCrm">
+       target="_blank" rel="noopener" id="bookingBtnCrm"
+       data-booking data-track="booking_click" data-cta="crm_naver">
       <div class="mono text-xs mb-4 text-gray-500">PLATFORM: NAVER</div>
       <h3 class="text-2xl md:text-3xl font-black mb-3 group-hover:translate-x-2 transition">
         네이버 예약 시<br>알림동의하고 혜택받기
@@ -409,6 +421,7 @@
       <button id="btnMapZoom"
         class="btn-zzl mono text-[10px] px-4 py-3">FULLSCREEN</button>
       <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" id="dlGuideMap"
+         data-track="guidemap_download" data-cta="guidemap"
          class="btn-zzl-fill mono text-[10px] px-4 py-3">DOWNLOAD PDF</a>
     </div>
   </div>
@@ -479,7 +492,7 @@
 
       <!-- 버튼 -->
       <div class="space-y-3">
-        <a href="dogam.html" class="btn-zzl block text-center">가이드맵 열고 수집하기 →</a>
+        <a href="dogam.html" class="btn-zzl block text-center" data-track="dogam_click" data-cta="dogam">가이드맵 열고 수집하기 →</a>
         <a id="dogamCollBtn" href="dogam.html#dex"
            class="w-full py-4 border border-white/20 flex items-center justify-center font-bold text-sm uppercase tracking-widest hover:bg-white hover:text-black transition">
           <span id="dgCollLabel">도감 보기</span>
@@ -545,7 +558,7 @@
           <div>
             <label class="text-gray-600 block mb-2 text-[10px]">CONTACT</label>
             <p class="text-sm">
-              <a href="tel:031-962-4500" class="hover:text-[#D4FF00] transition">031-962-4500</a><br>
+              <a href="tel:031-962-4500" class="hover:text-[#D4FF00] transition" data-track="call_click" data-cta="access">031-962-4500</a><br>
               zoozoo.kr
             </p>
           </div>
@@ -565,8 +578,10 @@
 
         <div class="flex gap-3">
           <a href="https://map.naver.com/p/entry/place/1008136590" target="_blank" rel="noopener"
+             data-track="map_click" data-cta="naver_map"
              class="flex-1 py-4 bg-[#2DB400] text-center font-black text-xs mono hover:opacity-90 transition">NAVER MAP</a>
           <a href="https://map.kakao.com/link/search/쥬쥬랜드" target="_blank" rel="noopener"
+             data-track="map_click" data-cta="kakao_map"
              class="flex-1 py-4 bg-[#FEE500] text-black text-center font-black text-xs mono hover:opacity-90 transition">KAKAO MAP</a>
         </div>
       </div>
@@ -607,11 +622,11 @@
       </button>
 
       <div class="space-y-3">
-        <a href="tel:031-962-4500"
+        <a href="tel:031-962-4500" data-track="call_click" data-cta="group"
            class="block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition">
           CALL: 031-962-4500
         </a>
-        <a href="mailto:star0666@zoozoo.kr"
+        <a href="mailto:star0666@zoozoo.kr" data-track="inquiry_click" data-cta="group_email"
            class="block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition"
            id="groupEmailLink">
           EMAIL_INQUIRY →
@@ -627,11 +642,11 @@
         광고 · 협찬 · 콜라보 제안을 환영합니다.
       </p>
       <div class="space-y-3">
-        <a href="tel:031-962-4500"
+        <a href="tel:031-962-4500" data-track="call_click" data-cta="partner"
            class="block w-full py-4 border border-white/20 mono text-xs text-center hover:bg-white hover:text-black transition">
           CALL: 031-962-4500
         </a>
-        <a href="mailto:hwan9740@zoozoo.kr?subject=%5BZZL%20PARTNERSHIP%5D%20%EC%A0%9C%ED%9C%B4%20%EB%AC%B8%EC%9D%98"
+        <a data-track="inquiry_click" data-cta="partner_email" href="mailto:hwan9740@zoozoo.kr?subject=%5BZZL%20PARTNERSHIP%5D%20%EC%A0%9C%ED%9C%B4%20%EB%AC%B8%EC%9D%98"
            class="block w-full py-4 border border-[#D4FF00]/40 mono text-xs text-[#D4FF00] text-center hover:bg-[#D4FF00] hover:text-black transition"
            id="bizEmailLink">
           EMAIL_PROPOSAL →
@@ -688,6 +703,16 @@
   </div>
 </footer>
 
+<!-- ── 모바일 하단 예약 바 (히어로 예약 버튼이 화면 밖으로 나가면 표시) ── -->
+<div class="booking-bar" id="bookingBar" aria-hidden="true">
+  <div class="booking-bar-info" data-today-status>
+    <div class="today-text" data-status-text>운영시간 10:00–18:00</div>
+    <div class="booking-bar-price mono"><!-- ssg:barprice -->1인 ₩15,000 · 46% 할인<!-- /ssg:barprice --></div>
+  </div>
+  <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place" target="_blank" rel="noopener" class="booking-bar-cta" tabindex="-1"
+     data-booking data-track="booking_click" data-cta="sticky_bar">네이버 예약 →</a>
+</div>
+
 <!-- ── 플로팅 가이드맵 버튼 ── -->
 <a href="#guidemap" class="floating-map-btn" id="floatBtn" title="ZZL기는 법">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5"
@@ -700,7 +725,8 @@
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.js" defer></script>
-<script src="js/main.js?v=3" defer></script>
+<script src="js/main.js?v=4" defer></script>
+<script src="js/today-status.js?v=1" defer></script>
 
 <!-- 도감 미리보기 스크립트 (IntersectionObserver로 lazy load) -->
 <script>
