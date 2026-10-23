@@ -705,6 +705,15 @@
 
 <!-- ── 모바일 하단 예약 바 (히어로 예약 버튼이 화면 밖으로 나가면 표시) ── -->
 <div class="booking-bar" id="bookingBar" aria-hidden="true">
+  <a href="#guidemap" class="booking-bar-map" tabindex="-1" aria-label="가이드맵 보기"
+     data-track="guidemap_click" data-cta="sticky_bar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+      <line x1="9" y1="3" x2="9" y2="18"/>
+      <line x1="15" y1="6" x2="15" y2="21"/>
+    </svg>
+  </a>
   <div class="booking-bar-info" data-today-status>
     <div class="today-text" data-status-text>운영시간 10:00–18:00</div>
     <div class="booking-bar-price mono"><!-- ssg:barprice -->1인 ₩15,000 · 46% 할인<!-- /ssg:barprice --></div>
