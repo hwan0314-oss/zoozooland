@@ -34,6 +34,8 @@ prods    = load('products.json')
 notices  = load('notices.json')
 igfeed   = load('instagram_feed.json')
 hours    = load('hours.json')
+reviews  = load('reviews.json')
+settings = load('settings.json')
 
 DEFAULT_BOOKING_URL = ('https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko'
                        '&map-search=1&service-target=map-pc&theme=place')
@@ -187,6 +189,50 @@ instagram_html = '\n'.join(
     for p in ig_posts if p.get('image')
 )
 
+# ── 리뷰 (data/reviews.json) ─────────────────────────────────────────
+def review_card(i, r):
+    # 카드 테두리·별 색을 라임/흰색으로 번갈아 표시
+    lime = i % 2 == 0
+    border = 'border-[#D4FF00]' if lime else 'border-white'
+    star = 'text-[#D4FF00]' if lime else 'text-white'
+    meta = 'text-[#D4FF00]' if lime else 'text-gray-400'
+    rating = max(1, min(5, int(r.get('rating', 5))))
+    tags = ' · '.join(h(t) for t in r.get('tags', []))
+    return (
+        f'<div class="review-card border-l-4 {border}">\n'
+        f'  <div class="{star} mb-5 text-sm" aria-label="별점 {rating}점">{"★" * rating}</div>\n'
+        f'  <blockquote class="text-base font-medium leading-relaxed mb-8">"{h(r["text"])}"</blockquote>\n'
+        f'  <div class="flex justify-between items-end gap-3">\n'
+        f'    <div><span class="mono text-[10px] {meta}">{h(r.get("meta", ""))}</span><br>'
+        f'<span class="mono text-[9px] text-gray-500">{tags}</span></div>\n'
+        f'    <span class="mono text-[8px] opacity-40">{h(r.get("date", ""))}</span>\n'
+        f'  </div>\n'
+        f'</div>'
+    )
+
+review_items = [r for r in reviews.get('reviews', []) if r.get('text')]
+reviews_html = '\n'.join(review_card(i, r) for i, r in enumerate(review_items))
+reviews_more_html = (
+    f'<div class="px-6 mt-8"><a href="{h(reviews["more_url"])}" target="_blank" rel="noopener" '
+    f'data-track="reviews_more_click" data-cta="reviews" '
+    f'class="mono text-xs text-gray-400 hover:text-[#D4FF00] transition">네이버 리뷰 더 보기 →</a></div>'
+    if reviews.get('more_url') else ''
+)
+
+# ── 카카오 채널 (settings.json kakao_channel_url 이 있을 때만 표시) ─────────
+kakao_url = settings.get('kakao_channel_url') or ''
+kakao_html = (
+    f'<a href="{h(kakao_url)}" target="_blank" rel="noopener" '
+    f'data-track="kakao_channel_click" data-cta="crm_kakao" '
+    f'class="group p-12 border-t md:border-t-0 md:border-l border-white/10 hover:bg-[#3A1D1D] transition duration-500 block">\n'
+    f'  <div class="mono text-xs mb-4 text-gray-500">PLATFORM: KAKAO</div>\n'
+    f'  <h3 class="text-2xl md:text-3xl font-black mb-3 group-hover:translate-x-2 transition">카카오 채널 추가하고<br>먹이쿠폰 받기</h3>\n'
+    f'  <p class="text-gray-400 text-sm mb-4">채널을 추가하시면<br>먹이쿠폰과 소식을 보내드려요</p>\n'
+    f'  <div class="text-[#FEE500] mono text-xs">KAKAO_CHANNEL &gt;</div>\n'
+    f'</a>'
+    if kakao_url else ''
+)
+
 # ── index.html에 적용 ─────────────────────────────────────────────────
 def replace_ssg(content, name, new_content, inline=False):
     pattern = rf'<!-- ssg:{re.escape(name)} -->.*?<!-- /ssg:{re.escape(name)} -->'
@@ -207,6 +253,12 @@ content = replace_ssg(content, 'notices',  notices_html)
 content = replace_ssg(content, 'instagram', instagram_html)
 content = replace_ssg(content, 'hours',    hours_html, inline=True)
 content = replace_ssg(content, 'barprice', barprice_html, inline=True)
+if reviews_html:
+    content = replace_ssg(content, 'reviews', reviews_html)
+content = replace_ssg(content, 'reviews_more', reviews_more_html, inline=True)
+content = replace_ssg(content, 'kakao', kakao_html)
+if kakao_html:
+    content = content.replace('class="grid" id="crmGrid"', 'class="grid md:grid-cols-2" id="crmGrid"', 1)
 content = content.replace(DEFAULT_BOOKING_URL, booking_url)
 for el_id, has_data in [('feedingList', feeding_items), ('programsList', prog_parts),
                         ('conductList', conduct_items), ('productSlot', products),
