@@ -386,6 +386,42 @@ section {
   margin-top: 2px;
 }
 
+/* ── 자주 묻는 질문 (data/faq.json → build.py) ── */
+.faq-list { border-top: 1px solid rgba(255,255,255,0.1); }
+.faq-item { border-bottom: 1px solid rgba(255,255,255,0.1); }
+.faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 4px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: '+';
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  color: var(--zzl-lime);
+  transition: transform 0.2s;
+}
+.faq-item[open] summary::after { transform: rotate(45deg); }
+.faq-item summary:hover { color: var(--zzl-lime); }
+.faq-a {
+  padding: 0 4px 22px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.65);
+  word-break: keep-all;
+}
+
 /* ── 지도 컨테이너 ── */
 .map-container {
   cursor: crosshair;
