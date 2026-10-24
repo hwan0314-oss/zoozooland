@@ -17,3 +17,6 @@ __pycache__/
 # 사이트 빌드 결과물 (GitHub Actions에서 생성)
 deploy/
 website-zzl/css/tailwind.css
+
+# Claude Code 개인 설정 (로컬 허용 목록·경로·키가 들어갈 수 있음)
+.claude/settings.local.json
