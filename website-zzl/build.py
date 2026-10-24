@@ -36,6 +36,7 @@ igfeed   = load('instagram_feed.json')
 hours    = load('hours.json')
 reviews  = load('reviews.json')
 settings = load('settings.json')
+faq      = load('faq.json')
 
 DEFAULT_BOOKING_URL = ('https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko'
                        '&map-search=1&service-target=map-pc&theme=place')
@@ -233,6 +234,72 @@ kakao_html = (
     if kakao_url else ''
 )
 
+# ── 자주 묻는 질문 (data/faq.json) ───────────────────────────────────
+def fmt_programs(items):
+    return ', '.join(f'{p["name"]} {p["time"]}' for p in items) or '없음'
+
+faq_values = {
+    'open': hours.get('open', ''), 'close': hours.get('close', ''),
+    'closed_note': hours.get('closed_note', ''), 'holiday_note': hours.get('holiday_note', ''),
+    'sale_price': f'{sale:,}' if products else '', 'original_price': f'{orig:,}' if products else '',
+    'programs_weekday': fmt_programs(weekday), 'programs_weekend': fmt_programs(weekend),
+}
+def fill(text):
+    # {key} 자리만 바꾸고 모르는 중괄호는 그대로 둔다
+    return re.sub(r'\{(\w+)\}', lambda m: str(faq_values.get(m.group(1), m.group(0))), text)
+
+faq_items = [{'q': fill(i['q']), 'a': fill(i['a'])} for i in faq.get('items', []) if i.get('q') and i.get('a')]
+faq_html = '\n'.join(
+    f'<details class="faq-item">\n'
+    f'  <summary>{h(i["q"])}</summary>\n'
+    f'  <div class="faq-a">{h(i["a"]).replace(chr(10), "<br>")}</div>\n'
+    f'</details>'
+    for i in faq_items
+)
+
+# ── 구조화 데이터 (JSON-LD: Zoo + FAQPage) ────────────────────────────
+DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+SITE = 'https://zoozoo.kr'
+org = {
+    '@type': ['Zoo', 'TouristAttraction'],
+    '@id': f'{SITE}/#zoo',
+    'name': '쥬쥬랜드',
+    'alternateName': ['ZooZooLand', 'ZZL'],
+    'url': f'{SITE}/',
+    'description': '고양 동물 테마파크 쥬쥬랜드. 알파카·원숭이·파충류 50여 종과 함께하는 가장 힙한 동물원 나들이.',
+    'image': f'{SITE}/images/og-image.jpg',
+    'telephone': '+82-31-962-4500',
+    'address': {
+        '@type': 'PostalAddress',
+        'streetAddress': '원당로458번길 7-42',
+        'addressLocality': '고양시 덕양구',
+        'addressRegion': '경기도',
+        'addressCountry': 'KR',
+    },
+    'hasMap': 'https://map.naver.com/p/entry/place/1008136590',
+    'sameAs': ['https://www.instagram.com/zoozooland_zzl/', 'https://map.naver.com/p/entry/place/1008136590'],
+    'isAccessibleForFree': False,
+    'inLanguage': 'ko',
+}
+if hours.get('open') and hours.get('close'):
+    org['openingHoursSpecification'] = [{
+        '@type': 'OpeningHoursSpecification',
+        'dayOfWeek': [DAYS[d] for d in range(7) if d not in hours.get('closed_weekdays', [])],
+        'opens': hours['open'], 'closes': hours['close'],
+    }]
+graph = [org]
+if faq_items:
+    graph.append({
+        '@type': 'FAQPage',
+        '@id': f'{SITE}/#faq',
+        'mainEntity': [{'@type': 'Question', 'name': i['q'],
+                        'acceptedAnswer': {'@type': 'Answer', 'text': i['a']}} for i in faq_items],
+    })
+jsonld_html = ('<script type="application/ld+json">\n'
+               + json.dumps({'@context': 'https://schema.org', '@graph': graph}, ensure_ascii=False, indent=2)
+               .replace('</', '<\\/')
+               + '\n</script>')
+
 # ── index.html에 적용 ─────────────────────────────────────────────────
 def replace_ssg(content, name, new_content, inline=False):
     pattern = rf'<!-- ssg:{re.escape(name)} -->.*?<!-- /ssg:{re.escape(name)} -->'
@@ -257,6 +324,9 @@ if reviews_html:
     content = replace_ssg(content, 'reviews', reviews_html)
 content = replace_ssg(content, 'reviews_more', reviews_more_html, inline=True)
 content = replace_ssg(content, 'kakao', kakao_html)
+content = replace_ssg(content, 'jsonld', jsonld_html)
+if faq_html:
+    content = replace_ssg(content, 'faq', faq_html)
 if kakao_html:
     content = content.replace('class="grid" id="crmGrid"', 'class="grid md:grid-cols-2" id="crmGrid"', 1)
 content = content.replace(DEFAULT_BOOKING_URL, booking_url)
@@ -325,4 +395,14 @@ content = re.sub(r'<img\b[^>]*>', to_picture, content)
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(content, 'utf-8')
+
+# ── sitemap.xml (빌드 날짜를 lastmod 로) ──────────────────────────────
+from datetime import datetime, timedelta, timezone
+today_kst = datetime.now(timezone(timedelta(hours=9))).date().isoformat()
+(DEPLOY / 'sitemap.xml').write_text(
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    f'  <url>\n    <loc>{SITE}/</loc>\n    <lastmod>{today_kst}</lastmod>\n'
+    '    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n'
+    '</urlset>\n', 'utf-8')
 print(f'SSG complete → {OUT} (WebP: {sum(1 for v in _variants.values() if v)} images)')
