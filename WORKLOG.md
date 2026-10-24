@@ -5,8 +5,9 @@
 ## 2026-10-24
 - 한 일 (10/22~10/24 머지된 PR #1~#11 정리): 성능 정비(Tailwind 빌드·WebP·가로 스크롤 수정), 예약 전환 개선(고정 예약 버튼·오늘 운영 상태·클릭 추적), 단체 예약 페이지 연결, 리뷰·FAQ 데이터 분리, 카카오 채널 숨김, 검색 노출 개선(og 이미지·구조화 데이터·sitemap 자동 갱신), 운영시간 연동·접근성·문구 정리, 구버전 사이트 삭제(PR #6), 인스타 피드 이미지 복구(PR #1), 모바일 가이드맵 버튼 겹침 수정(PR #4)
 - 한 일: 이 문서들(CLAUDE.md, ROADMAP, WORKLOG)을 현재 상태에 맞게 갱신해 main에 반영
-- 진행 중: PR #12 — 관리자 대시보드·실적/마케팅 수집 코드를 ZZL Work·비공개 저장소 `zzl-collectors`로 이관 후 삭제 (18시 실적 리포트 정상 확인 후 머지). 머지 후 과거 Git 기록 정리(`git filter-repo` + 강제 푸시)는 대표님 결정 필요 — 진행하면 모든 커밋 SHA가 바뀜
-- 한 일: VWorld API 키가 들어 있던 `.claude/settings.local.json`을 저장소에서 삭제하고 `.gitignore`에 추가. 과거 기록 정리(`git filter-repo`) 대상에 이 파일을 넣어 달라고 홈페이지 세션에 요청
+- 한 일: PR #12 — 관리자 대시보드·실적/마케팅 수집 코드를 ZZL Work·비공개 저장소 `zzl-collectors`로 이관 후 삭제 (18시 실적 리포트 정상 확인 후 머지)
+- 한 일: VWorld API 키가 들어 있던 `.claude/settings.local.json`을 저장소에서 삭제하고 `.gitignore`에 추가(PR #14)
+- 대기: 과거 Git 기록 정리(`git filter-repo` + 강제 푸시 + Actions 실행 로그 삭제, 대상에 `.claude/settings.local.json` 포함)는 대표님 결정 필요 — 진행하면 모든 커밋 SHA가 바뀜. 나머지 Secrets 10개는 1주일쯤 문제없으면 삭제
 - 다음 할 일: ① VWorld 키 폐기·재발급(vworld.kr 마이페이지 → 인증키 관리, 대표님) ② `group-lunchbox.pdf`(20MB)·`guidemap.png`(1.4MB) 원본 정리 ③ 겨울 시안·인트로 적용 여부 결정
 
 ## 2026-10-21 (밤 3)
