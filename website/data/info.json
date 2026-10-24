@@ -17,8 +17,8 @@
     }
   ],
   "conduct": [
-    { "en": "No kickboards / scooters", "ko": "킥보드 반입 금지" },
-    { "en": "Authorized feed only", "ko": "허가된 먹이만 제공" },
+    { "en": "No outside animal feed", "ko": "외부 먹이 반입 금지 (발견 시 압수)" },
+    { "en": "No kickboards / scooters", "ko": "킥보드 반입 금지 (어린이용 포함)" },
     { "en": "Zero waste policy", "ko": "쓰레기 지정 장소에" },
     { "en": "Restricted smoking areas", "ko": "흡연 구역 외 금지" },
     { "en": "No pets allowed", "ko": "반려동물 출입 불가" },
