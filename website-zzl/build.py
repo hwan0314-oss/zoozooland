@@ -34,6 +34,9 @@ prods    = load('products.json')
 notices  = load('notices.json')
 igfeed   = load('instagram_feed.json')
 hours    = load('hours.json')
+reviews  = load('reviews.json')
+settings = load('settings.json')
+faq      = load('faq.json')
 
 DEFAULT_BOOKING_URL = ('https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko'
                        '&map-search=1&service-target=map-pc&theme=place')
@@ -45,7 +48,7 @@ if feeding_items:
         '<li><span class="font-ko text-white font-semibold">{type}:</span>'
         ' <span class="font-ko">{feed_str}{animals}</span></li>'.format(
             type=h(f['type']),
-            feed_str=(' ' + h(f['feed']) + ' /') if f.get('feed') else '',
+            feed_str=(h(f['feed']) + ' / ') if f.get('feed') else '',
             animals=h(f['animals'])
         )
         for f in feeding_items
@@ -106,7 +109,7 @@ if products:
     )
     orig_block = ''
     if orig and orig > sale:
-        sale_badge = f'<span class="tag-badge text-[9px] px-2 py-0.5">SALE {rate}%</span>' if rate else ''
+        sale_badge = f'<span class="tag-badge text-[10px] px-2 py-0.5">SALE {rate}%</span>' if rate else ''
         orig_block = (
             f'<div class="flex flex-col items-start gap-1">'
             f'<span class="mono text-[11px] text-gray-500 line-through">{orig:,}원</span>'
@@ -114,7 +117,7 @@ if products:
         )
     product_html = (
         f'<div class="aspect-[4/5] bg-[#111] mb-5 overflow-hidden relative">{img_block}</div>\n'
-        f'<div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE / 입장요금 안내</div>\n'
+        f'<div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE · <span class="font-ko">입장 요금</span></div>\n'
         f'<div class="text-sm font-bold text-white mb-3">1인 입장권</div>\n'
         f'<div class="flex items-center gap-3 flex-wrap mb-5">\n'
         f'  <div class="mono text-3xl font-bold text-[#D4FF00]">₩ {sale:,}</div>\n'
@@ -143,6 +146,35 @@ else:
         '     target="_blank" rel="noopener">네이버 예약 바로가기 →</a>\n'
         '</div>'
     )
+
+# ── 오시는 길 운영시간 표 (hours.json) ─────────────────────────────────
+DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+DAY_FULL = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
+
+def open_days_label(closed):
+    # 월요일부터 한 주를 돌며 연속된 운영 요일을 'TUE – SUN' 처럼 묶는다
+    order = [1, 2, 3, 4, 5, 6, 0]
+    if not closed:
+        return 'DAILY'
+    start = order.index(closed[-1]) + 1 if len(closed) == 1 else 0
+    days = [d for d in order[start:] + order[:start] if d not in closed]
+    if len(days) > 1 and [order.index(d) for d in days] == sorted(order.index(d) for d in days):
+        return f'{DAY_ABBR[days[0]]} – {DAY_ABBR[days[-1]]}'
+    return ' · '.join(DAY_ABBR[d] for d in days)
+
+closed_days = sorted(hours.get('closed_weekdays', []))
+hours_table_html = ''
+if hours.get('open') and hours.get('close'):
+    rows = [f'<div class="flex justify-between border-b border-white/5 pb-4">'
+            f'<span class="text-xs">{open_days_label(closed_days)}</span>'
+            f'<span class="text-xs">{h(hours["open"])} – {h(hours["close"])}</span></div>']
+    for d in closed_days:
+        rows.append(f'<div class="flex justify-between text-[#D4FF00]">'
+                    f'<span class="text-xs font-black">{DAY_FULL[d]}</span>'
+                    f'<span class="text-xs font-black">SYSTEM_OFF (CLOSED)</span></div>')
+    if hours.get('holiday_note'):
+        rows.append(f'<div class="font-ko text-gray-500 text-xs pt-1">* {h(hours["holiday_note"])}</div>')
+    hours_table_html = '\n'.join(rows)
 
 # ── 오늘 운영 상태 기본 문구 (JS가 한국 시간 기준으로 갱신) / 하단 예약 바 가격 ──
 hours_html = (f'운영시간 {h(hours["open"])}–{h(hours["close"])}'
@@ -187,6 +219,120 @@ instagram_html = '\n'.join(
     for p in ig_posts if p.get('image')
 )
 
+# ── 리뷰 (data/reviews.json) ─────────────────────────────────────────
+def review_card(i, r):
+    # 카드 테두리·별 색을 라임/흰색으로 번갈아 표시
+    lime = i % 2 == 0
+    border = 'border-[#D4FF00]' if lime else 'border-white'
+    star = 'text-[#D4FF00]' if lime else 'text-white'
+    meta = 'text-[#D4FF00]' if lime else 'text-gray-400'
+    rating = max(1, min(5, int(r.get('rating', 5))))
+    tags = ' · '.join(f'<span class="whitespace-nowrap">{h(t)}</span>' for t in r.get('tags', []))
+    return (
+        f'<div class="review-card border-l-4 {border}">\n'
+        f'  <div class="{star} mb-5 text-sm" aria-label="별점 {rating}점">{"★" * rating}</div>\n'
+        f'  <blockquote class="text-base font-medium leading-relaxed mb-8">"{h(r["text"])}"</blockquote>\n'
+        f'  <div class="flex justify-between items-end gap-3">\n'
+        f'    <div><span class="mono text-[10px] {meta}">{h(r.get("meta", ""))}</span><br>'
+        f'<span class="font-ko text-[11px] text-gray-500">{tags}</span></div>\n'
+        f'    <span class="mono text-[10px] text-gray-500 shrink-0">{h(r.get("date", ""))}</span>\n'
+        f'  </div>\n'
+        f'</div>'
+    )
+
+review_items = [r for r in reviews.get('reviews', []) if r.get('text')]
+reviews_html = '\n'.join(review_card(i, r) for i, r in enumerate(review_items))
+reviews_more_html = (
+    f'<div class="px-6 mt-8"><a href="{h(reviews["more_url"])}" target="_blank" rel="noopener" '
+    f'data-track="reviews_more_click" data-cta="reviews" '
+    f'class="font-ko text-sm text-gray-400 hover:text-[#D4FF00] transition">네이버 리뷰 더 보기 →</a></div>'
+    if reviews.get('more_url') else ''
+)
+
+# ── 카카오 채널 (settings.json kakao_channel_url 이 있을 때만 표시) ─────────
+kakao_url = settings.get('kakao_channel_url') or ''
+kakao_html = (
+    f'<a href="{h(kakao_url)}" target="_blank" rel="noopener" '
+    f'data-track="kakao_channel_click" data-cta="crm_kakao" '
+    f'class="group p-12 border-t md:border-t-0 md:border-l border-white/10 hover:bg-[#3A1D1D] transition duration-500 block">\n'
+    f'  <div class="mono text-xs mb-4 text-gray-500">PLATFORM: KAKAO</div>\n'
+    f'  <h3 class="text-2xl md:text-3xl font-black mb-3 group-hover:translate-x-2 transition">카카오 채널 추가하고<br>먹이쿠폰 받기</h3>\n'
+    f'  <p class="text-gray-400 text-sm mb-4">채널을 추가하시면<br>먹이쿠폰과 소식을 보내드려요</p>\n'
+    f'  <div class="text-[#FEE500] mono text-xs">KAKAO_CHANNEL &gt;</div>\n'
+    f'</a>'
+    if kakao_url else ''
+)
+
+# ── 자주 묻는 질문 (data/faq.json) ───────────────────────────────────
+def fmt_programs(items):
+    return ', '.join(f'{p["name"]} {p["time"]}' for p in items) or '없음'
+
+faq_values = {
+    'open': hours.get('open', ''), 'close': hours.get('close', ''),
+    'closed_note': hours.get('closed_note', ''), 'holiday_note': hours.get('holiday_note', ''),
+    'sale_price': f'{sale:,}' if products else '', 'original_price': f'{orig:,}' if products else '',
+    'programs_weekday': fmt_programs(weekday), 'programs_weekend': fmt_programs(weekend),
+}
+def fill(text):
+    # {key} 자리만 바꾸고 모르는 중괄호는 그대로 둔다
+    return re.sub(r'\{(\w+)\}', lambda m: str(faq_values.get(m.group(1), m.group(0))), text)
+
+def nowrap_phones(text):
+    # 전화번호가 '-'에서 줄바꿈되지 않도록
+    return re.sub(r'\d{2,3}-\d{3,4}-\d{4}', lambda m: f'<span class="whitespace-nowrap">{m.group(0)}</span>', text)
+
+faq_items = [{'q': fill(i['q']), 'a': fill(i['a'])} for i in faq.get('items', []) if i.get('q') and i.get('a')]
+faq_html = '\n'.join(
+    f'<details class="faq-item">\n'
+    f'  <summary>{h(i["q"])}</summary>\n'
+    f'  <div class="faq-a">{nowrap_phones(h(i["a"]).replace(chr(10), "<br>"))}</div>\n'
+    f'</details>'
+    for i in faq_items
+)
+
+# ── 구조화 데이터 (JSON-LD: Zoo + FAQPage) ────────────────────────────
+DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+SITE = 'https://zoozoo.kr'
+org = {
+    '@type': ['Zoo', 'TouristAttraction'],
+    '@id': f'{SITE}/#zoo',
+    'name': '쥬쥬랜드',
+    'alternateName': ['ZooZooLand', 'ZZL'],
+    'url': f'{SITE}/',
+    'description': '고양 동물 테마파크 쥬쥬랜드. 알파카·원숭이·파충류 50여 종과 함께하는 가장 힙한 동물원 나들이.',
+    'image': f'{SITE}/images/og-image.jpg',
+    'telephone': '+82-31-962-4500',
+    'address': {
+        '@type': 'PostalAddress',
+        'streetAddress': '원당로458번길 7-42',
+        'addressLocality': '고양시 덕양구',
+        'addressRegion': '경기도',
+        'addressCountry': 'KR',
+    },
+    'hasMap': 'https://map.naver.com/p/entry/place/1008136590',
+    'sameAs': ['https://www.instagram.com/zoozooland_zzl/', 'https://map.naver.com/p/entry/place/1008136590'],
+    'isAccessibleForFree': False,
+    'inLanguage': 'ko',
+}
+if hours.get('open') and hours.get('close'):
+    org['openingHoursSpecification'] = [{
+        '@type': 'OpeningHoursSpecification',
+        'dayOfWeek': [DAYS[d] for d in range(7) if d not in hours.get('closed_weekdays', [])],
+        'opens': hours['open'], 'closes': hours['close'],
+    }]
+graph = [org]
+if faq_items:
+    graph.append({
+        '@type': 'FAQPage',
+        '@id': f'{SITE}/#faq',
+        'mainEntity': [{'@type': 'Question', 'name': i['q'],
+                        'acceptedAnswer': {'@type': 'Answer', 'text': i['a']}} for i in faq_items],
+    })
+jsonld_html = ('<script type="application/ld+json">\n'
+               + json.dumps({'@context': 'https://schema.org', '@graph': graph}, ensure_ascii=False, indent=2)
+               .replace('</', '<\\/')
+               + '\n</script>')
+
 # ── index.html에 적용 ─────────────────────────────────────────────────
 def replace_ssg(content, name, new_content, inline=False):
     pattern = rf'<!-- ssg:{re.escape(name)} -->.*?<!-- /ssg:{re.escape(name)} -->'
@@ -207,6 +353,17 @@ content = replace_ssg(content, 'notices',  notices_html)
 content = replace_ssg(content, 'instagram', instagram_html)
 content = replace_ssg(content, 'hours',    hours_html, inline=True)
 content = replace_ssg(content, 'barprice', barprice_html, inline=True)
+if reviews_html:
+    content = replace_ssg(content, 'reviews', reviews_html)
+content = replace_ssg(content, 'reviews_more', reviews_more_html, inline=True)
+content = replace_ssg(content, 'kakao', kakao_html)
+content = replace_ssg(content, 'jsonld', jsonld_html)
+if hours_table_html:
+    content = replace_ssg(content, 'hours_table', hours_table_html)
+if faq_html:
+    content = replace_ssg(content, 'faq', faq_html)
+if kakao_html:
+    content = content.replace('class="grid" id="crmGrid"', 'class="grid md:grid-cols-2" id="crmGrid"', 1)
 content = content.replace(DEFAULT_BOOKING_URL, booking_url)
 for el_id, has_data in [('feedingList', feeding_items), ('programsList', prog_parts),
                         ('conductList', conduct_items), ('productSlot', products),
@@ -273,4 +430,14 @@ content = re.sub(r'<img\b[^>]*>', to_picture, content)
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 OUT.write_text(content, 'utf-8')
+
+# ── sitemap.xml (빌드 날짜를 lastmod 로) ──────────────────────────────
+from datetime import datetime, timedelta, timezone
+today_kst = datetime.now(timezone(timedelta(hours=9))).date().isoformat()
+(DEPLOY / 'sitemap.xml').write_text(
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    f'  <url>\n    <loc>{SITE}/</loc>\n    <lastmod>{today_kst}</lastmod>\n'
+    '    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n'
+    '</urlset>\n', 'utf-8')
 print(f'SSG complete → {OUT} (WebP: {sum(1 for v in _variants.values() if v)} images)')

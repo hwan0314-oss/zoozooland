@@ -27,6 +27,9 @@ body {
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   overflow-x: hidden;
   letter-spacing: -0.02em;
+  /* 한국어 단어가 중간에서 잘려 줄바꿈되지 않도록 (긴 URL 등은 필요할 때만 끊음) */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* ── 그리드 라인 배경 ── */
@@ -76,7 +79,7 @@ body {
   -webkit-text-stroke: 0;
 }
 
-.font-ko { font-family: 'Noto Sans KR', sans-serif; }
+.font-ko { font-family: 'Noto Sans KR', sans-serif; letter-spacing: -0.01em; text-transform: none; }
 
 /* <picture>(빌드 시 WebP 변환)가 레이아웃에 끼지 않도록 — img 스타일이 그대로 적용됨 */
 picture { display: contents; }
@@ -384,6 +387,42 @@ section {
   font-family: 'Noto Sans KR', sans-serif;
   color: rgba(255,255,255,0.55);
   margin-top: 2px;
+}
+
+/* ── 자주 묻는 질문 (data/faq.json → build.py) ── */
+.faq-list { border-top: 1px solid rgba(255,255,255,0.1); }
+.faq-item { border-bottom: 1px solid rgba(255,255,255,0.1); }
+.faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 4px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: '+';
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  color: var(--zzl-lime);
+  transition: transform 0.2s;
+}
+.faq-item[open] summary::after { transform: rotate(45deg); }
+.faq-item summary:hover { color: var(--zzl-lime); }
+.faq-a {
+  padding: 0 4px 22px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.65);
+  word-break: keep-all;
 }
 
 /* ── 지도 컨테이너 ── */
