@@ -15,12 +15,11 @@
 | `website-zzl/tailwind.config.js`, `css/tailwind.src.css` | Tailwind 빌드 설정 (배포 시 `css/tailwind.css` 생성) | 배포 결과물에서는 제외 |
 | `website/data/` | 홈페이지가 읽는 데이터 JSON (운영시간·상품·프로그램·공지·리뷰·FAQ·설정·인스타 피드) | 배포됨 (`/data`) |
 | `website/images/` | 홈페이지 이미지 | 배포됨 (`/images`) |
-| `website/admin/`, `website/js/dashboard.js` | 관리자 대시보드 — **ZZL Work로 이관 중, PR #12 머지 후 삭제** | 배포됨 (`/admin`) → 삭제 예정 |
 | `guidemap/` | 안내지도 편집용 로컬 Node 서버 (배포 안 됨) | 없음 |
 | `instagram/`, `reels/` | 인스타그램 피드 수집·게시, 릴스 자동화 | 피드 데이터만 |
-| `report.py`, `validate_data.py`, `dashboard/`, `marketing_analytics_etl.py` | 실적 리포트·마케팅 분석 수집 — **비공개 저장소 `zzl-collectors`로 이관 중, PR #12 머지 후 삭제** | 없음 |
 
 구버전 사이트(`website/index.html`, `website/css/style.css`, `website/js/main.js`)는 2026-10-24에 삭제했습니다(PR #6).
+관리자 대시보드(`website/admin/`, `dashboard.js`)와 실적·마케팅 수집 코드(`report.py`, `marketing_analytics_etl.py`, `dashboard/` 등)는 ZZL Work와 비공개 저장소 `zzl-collectors`로 옮기고 삭제했습니다(PR #12).
 `website-zzl/css/style.css`, `website-zzl/js/main.js`는 현재 사이트 파일이니 혼동하지 마세요.
 
 **홈페이지 작업 범위는 `website-zzl/`, `website/data/`, `website/images/`, `.github/workflows/deploy-website.yml` 입니다.**
@@ -30,7 +29,7 @@
 
 - `main` 브랜치에 `website/**`, `website-zzl/**` 변경이 push되면 GitHub Actions(`deploy-website.yml`)가 GitHub Pages로 자동 배포 → **main에 올리는 순간 실서비스 반영**.
 - 배포 과정:
-  1. `website-zzl/` → `deploy/` 복사, `website/data`·`images` 복사, CNAME `zoozoo.kr` (PR #12 머지 전까지는 `admin`·`dashboard.js`도 복사)
+  1. `website-zzl/` → `deploy/` 복사, `website/data`·`images` 복사, CNAME `zoozoo.kr`
   2. `website-zzl/build.py`: JSON 내용을 `index.html`의 `<!-- ssg:이름 -->` 마커 사이에 정적으로 주입(SEO용), 이미지를 WebP `<picture>`로 변환, 구조화 데이터(JSON-LD)·`sitemap.xml` 생성
   3. Tailwind 빌드 → `deploy/css/tailwind.css` (개발용 CDN은 쓰지 않음)
 - 인스타그램 피드 봇이 `website/data/instagram_feed.json`과 `website/images/instagram/`을 수시로 커밋하므로, 작업 전 항상 `git pull` 할 것.
@@ -50,12 +49,11 @@
 
 ## 4. 로컬 미리보기
 
-배포 워크플로와 같은 순서입니다 (`pip install pillow` 필요, PR #12 머지 후에는 3번째 줄을 뺀다).
+배포 워크플로와 같은 순서입니다 (`pip install pillow` 필요).
 
 ```bash
 rm -rf deploy && mkdir -p deploy/js
 cp -r website-zzl/. deploy/ && cp -r website/data deploy/data && cp -r website/images deploy/images
-cp -r website/admin deploy/admin && cp website/js/dashboard.js deploy/js/
 python3 website-zzl/build.py
 npx --yes tailwindcss@3.4.17 -c website-zzl/tailwind.config.js \
   -i website-zzl/css/tailwind.src.css -o deploy/css/tailwind.css --minify
