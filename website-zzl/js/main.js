@@ -262,7 +262,7 @@
           <li>
             <span class="font-ko text-white font-semibold">${escapeHtml(f.type)}:</span>
             <span class="font-ko">
-              ${f.feed ? ` ${escapeHtml(f.feed)} /` : ''} ${escapeHtml(f.animals)}
+              ${f.feed ? `${escapeHtml(f.feed)} / ` : ''}${escapeHtml(f.animals)}
             </span>
           </li>`).join('');
       }
@@ -338,14 +338,14 @@
               ? `<img src="${escapeHtml(imgSrc)}" alt="쥬쥬랜드 1인 입장권" loading="lazy" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition duration-500">`
               : `<div class="w-full h-full flex items-center justify-center"><span class="text-4xl">🎟</span></div>`}
           </div>
-          <div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE / 입장요금 안내</div>
+          <div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE · <span class="font-ko">입장 요금</span></div>
           <div class="text-sm font-bold text-white mb-3">1인 입장권</div>
           <div class="flex items-center gap-3 flex-wrap mb-5">
             <div class="mono text-3xl font-bold text-[#D4FF00]">₩ ${Number(p.sale_price).toLocaleString()}</div>
             ${p.original_price && p.original_price > p.sale_price ? `
               <div class="flex flex-col items-start gap-1">
                 <span class="mono text-[11px] text-gray-500 line-through">${Number(p.original_price).toLocaleString()}원</span>
-                ${rate ? `<span class="tag-badge text-[9px] px-2 py-0.5">SALE ${rate}%</span>` : ''}
+                ${rate ? `<span class="tag-badge text-[10px] px-2 py-0.5">SALE ${rate}%</span>` : ''}
               </div>` : ''}
           </div>
           <a href="${escapeHtml(p.booking_url)}" target="_blank" rel="noopener" id="bookingBtnEmpty"

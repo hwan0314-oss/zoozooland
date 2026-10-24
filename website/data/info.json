@@ -17,10 +17,10 @@
     }
   ],
   "conduct": [
-    { "en": "No outside animal feed", "ko": "외부 먹이 반입 금지 (발견 시 압수)" },
+    { "en": "No outside animal feed", "ko": "외부 먹이 반입 금지 (보관 후 돌려드려요)" },
     { "en": "No kickboards / scooters", "ko": "킥보드 반입 금지 (어린이용 포함)" },
-    { "en": "Zero waste policy", "ko": "쓰레기 지정 장소에" },
-    { "en": "Restricted smoking areas", "ko": "흡연 구역 외 금지" },
+    { "en": "Zero waste policy", "ko": "쓰레기는 지정된 곳에" },
+    { "en": "Restricted smoking areas", "ko": "흡연은 지정 구역에서만" },
     { "en": "No pets allowed", "ko": "반려동물 출입 불가" },
     { "en": "Safety distance maintenance", "ko": "안전 거리 유지" }
   ]

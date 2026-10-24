@@ -27,6 +27,9 @@ body {
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   overflow-x: hidden;
   letter-spacing: -0.02em;
+  /* 한국어 단어가 중간에서 잘려 줄바꿈되지 않도록 (긴 URL 등은 필요할 때만 끊음) */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* ── 그리드 라인 배경 ── */
@@ -76,7 +79,7 @@ body {
   -webkit-text-stroke: 0;
 }
 
-.font-ko { font-family: 'Noto Sans KR', sans-serif; }
+.font-ko { font-family: 'Noto Sans KR', sans-serif; letter-spacing: -0.01em; text-transform: none; }
 
 /* <picture>(빌드 시 WebP 변환)가 레이아웃에 끼지 않도록 — img 스타일이 그대로 적용됨 */
 picture { display: contents; }

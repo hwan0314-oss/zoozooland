@@ -48,7 +48,7 @@ if feeding_items:
         '<li><span class="font-ko text-white font-semibold">{type}:</span>'
         ' <span class="font-ko">{feed_str}{animals}</span></li>'.format(
             type=h(f['type']),
-            feed_str=(' ' + h(f['feed']) + ' /') if f.get('feed') else '',
+            feed_str=(h(f['feed']) + ' / ') if f.get('feed') else '',
             animals=h(f['animals'])
         )
         for f in feeding_items
@@ -109,7 +109,7 @@ if products:
     )
     orig_block = ''
     if orig and orig > sale:
-        sale_badge = f'<span class="tag-badge text-[9px] px-2 py-0.5">SALE {rate}%</span>' if rate else ''
+        sale_badge = f'<span class="tag-badge text-[10px] px-2 py-0.5">SALE {rate}%</span>' if rate else ''
         orig_block = (
             f'<div class="flex flex-col items-start gap-1">'
             f'<span class="mono text-[11px] text-gray-500 line-through">{orig:,}원</span>'
@@ -117,7 +117,7 @@ if products:
         )
     product_html = (
         f'<div class="aspect-[4/5] bg-[#111] mb-5 overflow-hidden relative">{img_block}</div>\n'
-        f'<div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE / 입장요금 안내</div>\n'
+        f'<div class="mono text-[10px] text-gray-500 mb-1">TICKET PRICE · <span class="font-ko">입장 요금</span></div>\n'
         f'<div class="text-sm font-bold text-white mb-3">1인 입장권</div>\n'
         f'<div class="flex items-center gap-3 flex-wrap mb-5">\n'
         f'  <div class="mono text-3xl font-bold text-[#D4FF00]">₩ {sale:,}</div>\n'
@@ -146,6 +146,35 @@ else:
         '     target="_blank" rel="noopener">네이버 예약 바로가기 →</a>\n'
         '</div>'
     )
+
+# ── 오시는 길 운영시간 표 (hours.json) ─────────────────────────────────
+DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+DAY_FULL = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
+
+def open_days_label(closed):
+    # 월요일부터 한 주를 돌며 연속된 운영 요일을 'TUE – SUN' 처럼 묶는다
+    order = [1, 2, 3, 4, 5, 6, 0]
+    if not closed:
+        return 'DAILY'
+    start = order.index(closed[-1]) + 1 if len(closed) == 1 else 0
+    days = [d for d in order[start:] + order[:start] if d not in closed]
+    if len(days) > 1 and [order.index(d) for d in days] == sorted(order.index(d) for d in days):
+        return f'{DAY_ABBR[days[0]]} – {DAY_ABBR[days[-1]]}'
+    return ' · '.join(DAY_ABBR[d] for d in days)
+
+closed_days = sorted(hours.get('closed_weekdays', []))
+hours_table_html = ''
+if hours.get('open') and hours.get('close'):
+    rows = [f'<div class="flex justify-between border-b border-white/5 pb-4">'
+            f'<span class="text-xs">{open_days_label(closed_days)}</span>'
+            f'<span class="text-xs">{h(hours["open"])} – {h(hours["close"])}</span></div>']
+    for d in closed_days:
+        rows.append(f'<div class="flex justify-between text-[#D4FF00]">'
+                    f'<span class="text-xs font-black">{DAY_FULL[d]}</span>'
+                    f'<span class="text-xs font-black">SYSTEM_OFF (CLOSED)</span></div>')
+    if hours.get('holiday_note'):
+        rows.append(f'<div class="font-ko text-gray-500 text-xs pt-1">* {h(hours["holiday_note"])}</div>')
+    hours_table_html = '\n'.join(rows)
 
 # ── 오늘 운영 상태 기본 문구 (JS가 한국 시간 기준으로 갱신) / 하단 예약 바 가격 ──
 hours_html = (f'운영시간 {h(hours["open"])}–{h(hours["close"])}'
@@ -198,15 +227,15 @@ def review_card(i, r):
     star = 'text-[#D4FF00]' if lime else 'text-white'
     meta = 'text-[#D4FF00]' if lime else 'text-gray-400'
     rating = max(1, min(5, int(r.get('rating', 5))))
-    tags = ' · '.join(h(t) for t in r.get('tags', []))
+    tags = ' · '.join(f'<span class="whitespace-nowrap">{h(t)}</span>' for t in r.get('tags', []))
     return (
         f'<div class="review-card border-l-4 {border}">\n'
         f'  <div class="{star} mb-5 text-sm" aria-label="별점 {rating}점">{"★" * rating}</div>\n'
         f'  <blockquote class="text-base font-medium leading-relaxed mb-8">"{h(r["text"])}"</blockquote>\n'
         f'  <div class="flex justify-between items-end gap-3">\n'
         f'    <div><span class="mono text-[10px] {meta}">{h(r.get("meta", ""))}</span><br>'
-        f'<span class="mono text-[9px] text-gray-500">{tags}</span></div>\n'
-        f'    <span class="mono text-[8px] opacity-40">{h(r.get("date", ""))}</span>\n'
+        f'<span class="font-ko text-[11px] text-gray-500">{tags}</span></div>\n'
+        f'    <span class="mono text-[10px] text-gray-500 shrink-0">{h(r.get("date", ""))}</span>\n'
         f'  </div>\n'
         f'</div>'
     )
@@ -216,7 +245,7 @@ reviews_html = '\n'.join(review_card(i, r) for i, r in enumerate(review_items))
 reviews_more_html = (
     f'<div class="px-6 mt-8"><a href="{h(reviews["more_url"])}" target="_blank" rel="noopener" '
     f'data-track="reviews_more_click" data-cta="reviews" '
-    f'class="mono text-xs text-gray-400 hover:text-[#D4FF00] transition">네이버 리뷰 더 보기 →</a></div>'
+    f'class="font-ko text-sm text-gray-400 hover:text-[#D4FF00] transition">네이버 리뷰 더 보기 →</a></div>'
     if reviews.get('more_url') else ''
 )
 
@@ -248,11 +277,15 @@ def fill(text):
     # {key} 자리만 바꾸고 모르는 중괄호는 그대로 둔다
     return re.sub(r'\{(\w+)\}', lambda m: str(faq_values.get(m.group(1), m.group(0))), text)
 
+def nowrap_phones(text):
+    # 전화번호가 '-'에서 줄바꿈되지 않도록
+    return re.sub(r'\d{2,3}-\d{3,4}-\d{4}', lambda m: f'<span class="whitespace-nowrap">{m.group(0)}</span>', text)
+
 faq_items = [{'q': fill(i['q']), 'a': fill(i['a'])} for i in faq.get('items', []) if i.get('q') and i.get('a')]
 faq_html = '\n'.join(
     f'<details class="faq-item">\n'
     f'  <summary>{h(i["q"])}</summary>\n'
-    f'  <div class="faq-a">{h(i["a"]).replace(chr(10), "<br>")}</div>\n'
+    f'  <div class="faq-a">{nowrap_phones(h(i["a"]).replace(chr(10), "<br>"))}</div>\n'
     f'</details>'
     for i in faq_items
 )
@@ -325,6 +358,8 @@ if reviews_html:
 content = replace_ssg(content, 'reviews_more', reviews_more_html, inline=True)
 content = replace_ssg(content, 'kakao', kakao_html)
 content = replace_ssg(content, 'jsonld', jsonld_html)
+if hours_table_html:
+    content = replace_ssg(content, 'hours_table', hours_table_html)
 if faq_html:
     content = replace_ssg(content, 'faq', faq_html)
 if kakao_html:
