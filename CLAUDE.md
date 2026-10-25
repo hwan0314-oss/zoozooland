@@ -42,6 +42,7 @@
 4. 운영 정보는 HTML에 직접 쓰지 말고 `website/data/*.json`에서 관리.
    - 운영시간·휴무·공휴일·임시휴무: `hours.json` / 요금·예약 URL: `products.json` / 프로그램: `programs.json`
    - 공지: `notices.json` / 리뷰: `reviews.json` / FAQ: `faq.json` / 단체 예약·카카오 채널 주소: `settings.json`
+   - 시즌 효과: `settings.json`의 `season_effect` (`"autumn_leaves"`면 가을 낙엽, `""`면 끔. 코드는 `js/season-leaves.js`)
 5. 디자인 규칙은 `docs/DESIGN.md`를 따른다. 색상은 CSS 변수로만 쓰고 HTML에 hex 값을 직접 쓰지 않는다.
 6. 세션을 끝낼 때 `WORKLOG.md`에 "한 일 / 다음 할 일"을 3~5줄로 추가한다.
 7. 큰 이미지(1MB 이상)·PDF는 그대로 넣지 말고 웹용으로 줄여서 넣는다.
