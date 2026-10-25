@@ -1,6 +1,6 @@
 # zoozoo.kr 고도화 로드맵
 
-작성 2026-10-21 · 갱신 2026-10-24 · 현재 단계: **1단계 마무리 중 (남은 일: VWorld 키 폐기, 대용량 PDF) · 겨울 시즌 디자인 방향 선택 대기**
+작성 2026-10-21 · 갱신 2026-10-24 · 현재 단계: **1단계 마무리 중 (남은 일: 대용량 PDF) · 겨울 시즌 디자인 방향 선택 대기**
 
 ## 현재 상태 진단 (2026-10-21 기준, 2026-10-24 진행 상황 반영)
 
@@ -16,7 +16,7 @@
 |---|---|---|---|---|
 | 1 | 데스크톱에서 히어로의 거대한 "ZOOZOOLAND" 글자가 화면 밖으로 넘쳐 **가로 스크롤 발생** (1440px 화면에서 페이지 폭 1883px) | 첫인상, 모바일 외 전체 | 하 | ✅ 해결 (PR #2) |
 | 2 | Tailwind를 **개발용 CDN**(`cdn.tailwindcss.com`)으로 불러옴 → 매 방문마다 브라우저에서 CSS를 생성, 느리고 공식적으로 운영 사용 비권장 | 로딩 속도, 안정성 | 중 | ✅ 해결 (PR #2, 배포 시 빌드) |
-| 3 | `.claude/settings.local.json`이 public 저장소에 커밋되어 있고 **VWorld API 키가 노출**됨 | 보안 | 하 (키 재발급 + gitignore) | 🔶 일부 (파일 삭제·`.gitignore` 추가. 키 폐기·재발급, 과거 Git 기록 정리 남음) |
+| 3 | `.claude/settings.local.json`이 public 저장소에 커밋되어 있고 **VWorld API 키가 노출**됨 | 보안 | 하 (키 재발급 + gitignore) | ✅ 완료 (파일 삭제·`.gitignore` 추가, 과거 Git 기록 정리. 키 재발급은 대표님 결정으로 생략) |
 | 4 | 배포 이미지에 20MB PDF(`group-lunchbox.pdf`), 1.4MB PNG(`guidemap.png`) 등 대용량 파일 포함 | 데이터 소모, 로딩 | 하 | 🔶 일부 (WebP 변환·모달 열 때만 로드. PDF·PNG 원본은 그대로) |
 | 5 | "MODULE: RESERVATION_PROTOCOL", "SYS_VER" 같은 영문 터미널 문구가 많음 → 주 고객(아이 동반 가족)에게 정보 전달력이 떨어짐 | 이해도, 전환율 | 중 | 🔶 일부 (한국어 문구 정리, 영문 라벨 일부 남음) |
 | 6 | 시즌 개념이 없음 (색·사진·카피가 고정) → 계절 바뀔 때마다 전면 수정 필요 | 운영 부담 | 중 | ⬜ 남음 |
@@ -28,7 +28,7 @@
 ## 단계별 계획
 
 ### 1단계 — 기반 정리 (디자인 변경 전, 1~2세션)
-- [ ] VWorld 키 재발급, `.claude/settings.local.json` 삭제 후 `.gitignore`에 추가 — 파일 삭제·`.gitignore`는 완료, 키 폐기(대표님)와 과거 기록 정리(PR #12 이후 `git filter-repo`) 남음
+- [x] `.claude/settings.local.json` 삭제·`.gitignore` 추가·과거 기록 정리(`git filter-repo`) 완료 — VWorld 키 재발급은 대표님 결정으로 생략
 - [x] 가로 스크롤 버그 수정
 - [x] Tailwind CDN → 빌드된 CSS 파일로 전환 (deploy 워크플로에 Tailwind 빌드 단계 추가)
 - [ ] 이미지 웹 최적화(WebP, 폭 1600px 이하), 20MB PDF는 배포에서 제외하거나 압축 — WebP 변환은 완료, PDF·`guidemap.png` 원본 정리 남음
