@@ -282,13 +282,19 @@ def nowrap_phones(text):
     return re.sub(r'\d{2,3}-\d{3,4}-\d{4}', lambda m: f'<span class="whitespace-nowrap">{m.group(0)}</span>', text)
 
 faq_items = [{'q': fill(i['q']), 'a': fill(i['a'])} for i in faq.get('items', []) if i.get('q') and i.get('a')]
+# 처음 visible개만 보이고 나머지는 '질문 더 보기'로 펼친다 (main.js)
+faq_visible = int(faq.get('visible') or len(faq_items))
 faq_html = '\n'.join(
-    f'<details class="faq-item">\n'
+    f'<details class="faq-item"{" hidden data-faq-extra" if n >= faq_visible else ""}>\n'
     f'  <summary>{h(i["q"])}</summary>\n'
     f'  <div class="faq-a">{nowrap_phones(h(i["a"]).replace(chr(10), "<br>"))}</div>\n'
     f'</details>'
-    for i in faq_items
+    for n, i in enumerate(faq_items)
 )
+if len(faq_items) > faq_visible:
+    faq_html += (f'\n<button type="button" class="faq-more" data-faq-more aria-expanded="false" '
+                 f'data-track="faq_more_click" data-cta="faq">'
+                 f'질문 더 보기 <span class="faq-more-count">+{len(faq_items) - faq_visible}</span></button>')
 
 # ── 구조화 데이터 (JSON-LD: Zoo + FAQPage) ────────────────────────────
 DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']

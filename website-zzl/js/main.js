@@ -66,6 +66,22 @@
     try { window.clarity?.('event', cta ? `${name}:${cta}` : name); } catch {}
   });
 
+  /* ── 자주 묻는 질문: '질문 더 보기'로 나머지 펼치기 / 접기 ── */
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-faq-more]');
+    if (!btn) return;
+    const list = btn.closest('.faq-list');
+    const extras = list.querySelectorAll('[data-faq-extra]');
+    const open = btn.getAttribute('aria-expanded') !== 'true';
+    extras.forEach(el => { el.hidden = !open; if (!open) el.open = false; });
+    btn.setAttribute('aria-expanded', String(open));
+    btn.firstChild.textContent = open ? '접기 ' : '질문 더 보기 ';
+    btn.querySelector('.faq-more-count').textContent = open ? '' : `+${extras.length}`;
+    if (open) extras[0]?.querySelector('summary')?.focus({ preventScroll: true });
+    // 접은 뒤 버튼이 화면 위로 밀려났으면 질문 목록 처음으로 돌아간다
+    else requestAnimationFrame(() => { if (btn.getBoundingClientRect().top < 80) list.scrollIntoView({ block: 'start' }); });
+  });
+
   /* ── 모바일 하단 예약 바: 히어로 예약 버튼을 지나 스크롤하면 표시 ── */
   const bookingBar = document.getElementById('bookingBar');
   const heroBooking = document.getElementById('bookingBtnHero');

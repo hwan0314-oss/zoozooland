@@ -1,5 +1,6 @@
 {
-  "_help": "홈페이지 '자주 묻는 질문' 섹션과 검색엔진용 FAQ 구조화 데이터(FAQPage). items 순서대로 표시. q=질문, a=답변(줄바꿈은 \\n). 답변 안의 {open} {close} {closed_note} {holiday_note} {sale_price} {original_price} {programs_weekday} {programs_weekend} 는 빌드 때 hours.json·products.json·programs.json 값으로 바뀝니다. 고친 뒤 커밋하면 자동 배포됩니다.",
+  "_help": "홈페이지 '자주 묻는 질문' 섹션과 검색엔진용 FAQ 구조화 데이터(FAQPage). items 순서대로 표시하며, 처음 visible개만 보이고 나머지는 「질문 더 보기」를 누르면 펼쳐집니다(검색엔진용 데이터에는 모두 들어감). q=질문, a=답변(줄바꿈은 \\n). 답변 안의 {open} {close} {closed_note} {holiday_note} {sale_price} {original_price} {programs_weekday} {programs_weekend} 는 빌드 때 hours.json·products.json·programs.json 값으로 바뀝니다. 고친 뒤 커밋하면 자동 배포됩니다.",
+  "visible": 5,
   "items": [
     {
       "q": "운영 시간은 어떻게 되나요?",
@@ -8,6 +9,14 @@
     {
       "q": "입장료는 얼마인가요?",
       "a": "1인 입장권은 네이버 예약 시 {sale_price}원이에요(정가 {original_price}원). 홈페이지의 '네이버 예약하기' 버튼에서 예약하실 수 있어요."
+    },
+    {
+      "q": "주차할 수 있나요?",
+      "a": "네, 무료 주차장을 이용하실 수 있어요."
+    },
+    {
+      "q": "음식을 가져가서 먹어도 되나요?",
+      "a": "네, 가져오신 음식은 드실 수 있어요. 단, 아래는 할 수 없어요.\n· 원내에서 배달 음식 주문\n· 취사·조리\n· 가져오신 음식을 식당 테이블에서 드시는 것"
     },
     {
       "q": "집에서 동물 먹이를 가져와서 줘도 되나요?",
@@ -20,14 +29,6 @@
     {
       "q": "공연이나 동물 설명회는 언제 하나요?",
       "a": "평일(화~금): {programs_weekday}\n주말·공휴일: {programs_weekend}"
-    },
-    {
-      "q": "주차할 수 있나요?",
-      "a": "네, 무료 주차장을 이용하실 수 있어요."
-    },
-    {
-      "q": "음식을 가져가서 먹어도 되나요?",
-      "a": "네, 가져오신 음식은 드실 수 있어요. 단, 아래는 할 수 없어요.\n· 원내에서 배달 음식 주문\n· 취사·조리\n· 가져오신 음식을 식당 테이블에서 드시는 것"
     },
     {
       "q": "돗자리를 펴고 쉴 수 있나요?",
