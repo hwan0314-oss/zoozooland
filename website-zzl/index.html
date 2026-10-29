@@ -214,8 +214,8 @@
 
   <!-- ZZL CSS + Tailwind (빌드 시 생성: css/tailwind.css — README 참고)
        Tailwind가 style.css보다 뒤에 와야 유틸리티 클래스가 컴포넌트 스타일을 덮어씁니다 -->
-  <link rel="stylesheet" href="css/style.css?v=4">
-  <link rel="stylesheet" href="css/tailwind.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/tailwind.css?v=5">
 
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HF2XRXQE6X"></script>
@@ -409,6 +409,145 @@
 </section>
 
 <!-- ═══════════════════════════════════════════
+  잡동사니 서랍 — 오기 전 · 와서 · 다녀와서 쓸 만한 것 모음 (도감 포함)
+  「곧 나와요」 카드의 '필요해요'는 GA4 toolbox_want(cta=항목)로 수요를 센다
+═══════════════════════════════════════════ -->
+<section id="toolbox" class="pt-12 pb-24 px-6">
+  <div class="section-label">ZZL-UNIT-03 / ZZL-JAPDONGSANI</div>
+
+  <div class="mb-12">
+    <div class="mono text-[#D4FF00] mb-4">[ ZZL_DRAWER ]</div>
+    <h2 class="text-4xl md:text-5xl font-black leading-tight mb-4">
+      뭐가 필요할지 몰라서<br><span class="text-[#D4FF00]">일단 다 챙겨봤어요</span>
+    </h2>
+    <p class="font-ko text-gray-400 text-sm md:text-base break-keep">오기 전에, 와서, 다녀와서. 쓸 만한 건 이 서랍에 다 넣어 둘게요.</p>
+  </div>
+
+  <!-- 01 오기 전 -->
+  <div class="tb-group">
+    <div class="tb-group-head"><span class="mono">01</span> 오기 전</div>
+    <div class="tb-grid">
+
+      <details class="tb-card tb-tilt-l" id="tbChecklist">
+        <summary data-track="toolbox_click" data-cta="checklist">
+          <span class="tb-icon" aria-hidden="true">🎒</span>
+          <span class="tb-title">나들이 준비물 체크리스트</span>
+          <span class="tb-desc">빠뜨리면 아쉬운 것만 골랐어요</span>
+          <span class="tb-go">체크리스트 펼치기 +</span>
+        </summary>
+        <div class="tb-check">
+          <p class="tb-check-head">챙기면 좋은 것</p>
+          <label><input type="checkbox" data-check="mat"> <b>돗자리</b> <span>빈 곳 어디든 펴고 쉬어도 돼요</span></label>
+          <label><input type="checkbox" data-check="lunch"> <b>집에서 싼 도시락·간식</b> <span>드셔도 돼요 (식당 테이블·배달·취사는 안 돼요)</span></label>
+          <label><input type="checkbox" data-check="wipes"> <b>물티슈</b> <span>먹이주기 하고 손 닦을 때</span></label>
+          <label><input type="checkbox" data-check="stroller"> <b>유모차</b> <span>가지고 들어올 수 있어요 (대여는 없어요)</span></label>
+          <label><input type="checkbox" data-check="battery"> <b>넉넉한 휴대폰 배터리</b> <span>쥬민 도감은 GPS로 움직여요</span></label>
+          <p class="tb-check-head tb-check-no">집에 두고 오세요</p>
+          <ul class="tb-no">
+            <li><b>동물 먹이</b> 보관했다가 나가실 때 돌려드려요</li>
+            <li><b>킥보드</b> 사고 위험이 있어 반입할 수 없어요</li>
+            <li><b>반려동물</b> 함께 들어올 수 없어요</li>
+          </ul>
+          <button type="button" class="tb-share" data-share-checklist data-track="toolbox_click" data-cta="checklist_share">가족에게 보내기</button>
+        </div>
+      </details>
+
+      <a href="#contact" class="tb-card tb-tilt-r" data-track="toolbox_click" data-cta="access">
+        <span class="tb-icon" aria-hidden="true">🚌</span>
+        <span class="tb-title">버스로 오는 길</span>
+        <span class="tb-desc">원당역 69번, 화정역 85·1082번이면 와요. 차로 오시면 주차는 무료예요.</span>
+        <span class="tb-go">지도 보기 →</span>
+      </a>
+
+      <button type="button" class="tb-card tb-tilt-l" data-open-lunchbox data-track="toolbox_click" data-cta="lunchbox">
+        <span class="tb-icon" aria-hidden="true">🍱</span>
+        <span class="tb-title">단체 도시락 메뉴판</span>
+        <span class="tb-desc">10개 이상, 방문 3일 전까지 미리 주문할 수 있어요</span>
+        <span class="tb-go">메뉴판 열기 →</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- 02 와서 -->
+  <div class="tb-group">
+    <div class="tb-group-head"><span class="mono">02</span> 와서</div>
+    <div class="tb-grid tb-grid-2">
+
+      <div class="tb-card tb-wide" id="dogam">
+        <span class="tb-sticker">현장 전용</span>
+        <div class="tb-wide-body">
+          <div class="tb-col">
+            <span class="tb-icon" aria-hidden="true">🐾</span>
+            <span class="tb-title">쥬민 도감 — 54종 모으기</span>
+            <span class="tb-desc">쥬쥬랜드 안 특정 위치에 가면 동물이 나타나요. 퀴즈를 맞혀야 도감에 담을 수 있어요.</span>
+            <div class="tb-actions">
+              <a href="dogam.html" class="btn-zzl text-center" data-track="dogam_click" data-cta="toolbox">가이드맵 열고 수집하기 →</a>
+              <a id="dogamCollBtn" href="dogam.html#dex" class="tb-btn-line" data-track="toolbox_click" data-cta="dogam_dex"><span id="dgCollLabel">도감 보기</span></a>
+            </div>
+          </div>
+          <div>
+            <div id="dgPreviewGrid" class="tb-dex-grid" aria-label="도감 예시">
+              <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+              <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+            </div>
+            <p class="font-ko text-xs text-gray-500 mt-2">* 예시 화면이에요. 내 수집 현황은 현장에서 확인할 수 있어요.</p>
+          </div>
+        </div>
+      </div>
+
+      <a href="#guidemap" class="tb-card tb-tilt-r" data-track="toolbox_click" data-cta="guidemap">
+        <span class="tb-icon" aria-hidden="true">🗺️</span>
+        <span class="tb-title">가이드맵</span>
+        <span class="tb-desc">어디에 어떤 쥬민이 사는지 한 장에 담았어요</span>
+        <span class="tb-go">지도 펼치기 →</span>
+      </a>
+
+      <a href="#booking" class="tb-card tb-tilt-l" data-track="toolbox_click" data-cta="today">
+        <span class="tb-icon" aria-hidden="true">⏰</span>
+        <span class="tb-title">오늘 뭐 볼까?</span>
+        <span class="tb-today" data-today-status>
+          <span data-status-text>오늘 운영 시간 확인 중</span>
+          <span data-status-sub hidden></span>
+        </span>
+        <span class="tb-go">공연·설명회 시간표 →</span>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- 03 다녀와서 (곧 나와요: 필요해요 수로 만들 순서를 정한다) -->
+  <div class="tb-group">
+    <div class="tb-group-head"><span class="mono">03</span> 다녀와서 <span class="tb-soon-tag">곧 나와요</span></div>
+    <div class="tb-grid">
+
+      <div class="tb-card tb-soon tb-tilt-r">
+        <span class="tb-icon" aria-hidden="true">📝</span>
+        <span class="tb-title">체험학습 보고서 5분 완성</span>
+        <span class="tb-desc">사진 고르고 질문 3개에 답하면 A4 보고서와 사진 별지가 나와요. 학교 양식에 옮겨 쓰기도 쉽게요.</span>
+        <button type="button" class="tb-want" data-want="report" data-track="toolbox_want" data-cta="report">필요해요 🙋</button>
+      </div>
+
+      <div class="tb-card tb-soon tb-tilt-l">
+        <span class="tb-icon" aria-hidden="true">✏️</span>
+        <span class="tb-title">그림일기 도안</span>
+        <span class="tb-desc">오늘 만난 쥬민을 그려 넣는 그림일기 한 장, 인쇄해서 바로 쓰게요</span>
+        <button type="button" class="tb-want" data-want="diary" data-track="toolbox_want" data-cta="diary">필요해요 🙋</button>
+      </div>
+
+      <div class="tb-card tb-soon tb-tilt-r">
+        <span class="tb-icon" aria-hidden="true">📸</span>
+        <span class="tb-title">쥬민 인증샷 프레임</span>
+        <span class="tb-desc">찍은 사진에 쥬쥬랜드 프레임을 씌워 기념 카드로 저장하게요</span>
+        <button type="button" class="tb-want" data-want="frame" data-track="toolbox_want" data-cta="frame">필요해요 🙋</button>
+      </div>
+
+    </div>
+    <p class="font-ko text-xs text-gray-500 mt-4">‘필요해요’가 많이 눌린 것부터 만들어요. 더 있었으면 하는 게 있다면 인스타그램 DM으로 알려 주세요.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
   REVIEWS — ZZL-UNIT-04
 ═══════════════════════════════════════════ -->
 <section class="pt-12 pb-24 px-0">
@@ -587,77 +726,6 @@
   <a href="images/group-lunchbox.pdf" download="쥬쥬랜드_단체도시락.pdf" class="map-modal-dl">DOWNLOAD</a>
   <div class="map-modal-hint">PINCH · ZOOM · DBL TAP</div>
 </div>
-
-<!-- ═══════════════════════════════════════════
-  ZZL-DOGAM — ZZL-UNIT-08
-═══════════════════════════════════════════ -->
-<section id="dogam" class="pt-12 pb-24 px-6 bg-black">
-  <div class="section-label">ZZL-UNIT-08 / ZZL-DOGAM</div>
-
-  <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-
-    <!-- 왼쪽: 헤드라인 + 설명 + 버튼 -->
-    <div class="flex flex-col gap-10">
-      <div>
-        <div class="mono text-[#D4FF00] mb-4">[ IN_FIELD_ONLY ]</div>
-        <h2 class="text-4xl md:text-5xl font-black leading-tight mb-8">
-          쥬쥬랜드 안에서,<br>
-          <span class="text-[#D4FF00]">동물을 찾아보세요</span>
-        </h2>
-        <div class="space-y-2 text-sm text-gray-400 leading-relaxed break-keep">
-          <p>쥬쥬랜드에서만 작동하는 동물 수집 게임.</p>
-          <p>특정 위치에 도착하면 동물이 나타나고,</p>
-          <p>퀴즈를 맞혀야 도감에 담을 수 있어요.</p>
-          <p>도전하세요!</p>
-        </div>
-      </div>
-
-      <!-- 버튼 -->
-      <div class="space-y-3">
-        <a href="dogam.html" class="btn-zzl block text-center" data-track="dogam_click" data-cta="dogam">가이드맵 열고 수집하기 →</a>
-        <a id="dogamCollBtn" href="dogam.html#dex"
-           class="w-full py-4 border border-white/20 flex items-center justify-center font-bold text-sm uppercase tracking-widest hover:bg-white hover:text-black transition">
-          <span id="dgCollLabel">도감 보기</span>
-        </a>
-        <p class="font-ko text-xs text-gray-500 text-center">현장 방문 후 도감 앱에서 확인할 수 있어요</p>
-      </div>
-    </div>
-
-    <!-- 오른쪽: 도감 예시 미리보기 -->
-    <div>
-      <div class="mono text-[10px] text-gray-500 mb-3 flex justify-between items-center">
-        <span>ZZL-DOGAM / PREVIEW</span>
-        <span class="text-[#D4FF00]/50">54 SPECIES</span>
-      </div>
-
-      <!-- 도감 그리드: JS가 실제 ZZL 썸네일로 채움 -->
-      <div class="border border-white/10 bg-[#0c0c0c] p-[3px]">
-        <div id="dgPreviewGrid" class="grid grid-cols-4 gap-[2px]">
-          <!-- 로딩 중 플레이스홀더 (16칸) -->
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-          <div class="bg-[#111] p-[5px]"><div class="w-full aspect-square bg-[#181818]"></div></div>
-        </div>
-      </div>
-
-      <p class="font-ko text-xs text-gray-500 mt-3">* 예시 이미지예요. 실제 수집 현황은 현장에서 확인할 수 있어요.</p>
-    </div>
-
-  </div>
-</section>
 
 <!-- ═══════════════════════════════════════════
   FAQ — 자주 묻는 질문 (data/faq.json)
@@ -935,7 +1003,7 @@
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.js" defer></script>
-<script src="js/main.js?v=4" defer></script>
+<script src="js/main.js?v=5" defer></script>
 <script src="js/today-status.js?v=1" defer></script>
 <script src="js/season-leaves.js?v=1" defer></script>
 
