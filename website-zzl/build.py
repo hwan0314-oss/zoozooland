@@ -445,5 +445,7 @@ today_kst = datetime.now(timezone(timedelta(hours=9))).date().isoformat()
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     f'  <url>\n    <loc>{SITE}/</loc>\n    <lastmod>{today_kst}</lastmod>\n'
     '    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n'
+    f'  <url>\n    <loc>{SITE}/drawer.html</loc>\n    <lastmod>{today_kst}</lastmod>\n'
+    '    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n'
     '</urlset>\n', 'utf-8')
 print(f'SSG complete → {OUT} (WebP: {sum(1 for v in _variants.values() if v)} images)')
