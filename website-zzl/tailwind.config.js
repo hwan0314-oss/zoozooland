@@ -4,7 +4,7 @@
 module.exports = {
   content: {
     relative: true,
-    files: ['./index.html', './js/**/*.js', './build.py'],
+    files: ['./index.html', './drawer.html', './js/**/*.js', './build.py'],
   },
   theme: { extend: {} },
   plugins: [],

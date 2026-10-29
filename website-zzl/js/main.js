@@ -82,42 +82,6 @@
     else requestAnimationFrame(() => { if (btn.getBoundingClientRect().top < 80) list.scrollIntoView({ block: 'start' }); });
   });
 
-  /* ── 잡동사니 서랍: 준비물 체크(기기에만 저장) · 가족에게 보내기 · 「필요해요」 ── */
-  const store = {
-    get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
-  };
-  const checks = store.get('zzl.checklist') || {};
-  document.querySelectorAll('[data-check]').forEach(box => {
-    box.checked = !!checks[box.dataset.check];
-    box.addEventListener('change', () => { checks[box.dataset.check] = box.checked; store.set('zzl.checklist', checks); });
-  });
-  document.querySelector('[data-share-checklist]')?.addEventListener('click', async e => {
-    const btn = e.currentTarget;
-    const card = btn.closest('.tb-check');
-    const bring = [...card.querySelectorAll('label')].map(l => `☐ ${l.querySelector('b').textContent} — ${l.querySelector('span').textContent}`);
-    const leave = [...card.querySelectorAll('.tb-no li')].map(li => `✕ ${li.querySelector('b').textContent}`);
-    const text = `쥬쥬랜드 나들이 준비물\n${bring.join('\n')}\n\n두고 올 것\n${leave.join('\n')}`;
-    const url = 'https://zoozoo.kr/#toolbox';
-    try {
-      if (navigator.share) { await navigator.share({ title: '쥬쥬랜드 나들이 준비물', text, url }); return; }
-      await navigator.clipboard.writeText(`${text}\n\n${url}`);
-      btn.textContent = '복사했어요! 카톡에 붙여 넣으세요';
-    } catch {}
-  });
-  const wants = store.get('zzl.wants') || {};
-  document.querySelectorAll('[data-want]').forEach(btn => {
-    const mark = () => { btn.setAttribute('aria-pressed', 'true'); btn.textContent = '고마워요! 많이 눌리면 먼저 만들게요'; };
-    btn.setAttribute('aria-pressed', 'false');
-    if (wants[btn.dataset.want]) { mark(); btn.removeAttribute('data-track'); }
-    btn.addEventListener('click', () => {
-      if (btn.getAttribute('aria-pressed') === 'true') return;
-      wants[btn.dataset.want] = true; store.set('zzl.wants', wants);
-      // 클릭 추적(toolbox_want)이 먼저 보낸 뒤 바꾼다. 한 기기에서 한 번만 센다
-      setTimeout(() => { mark(); btn.removeAttribute('data-track'); }, 0);
-    });
-  });
-
   /* ── 모바일 하단 예약 바: 히어로 예약 버튼을 지나 스크롤하면 표시 ── */
   const bookingBar = document.getElementById('bookingBar');
   const heroBooking = document.getElementById('bookingBtnHero');
@@ -231,8 +195,6 @@
   window.addEventListener('popstate', () => { if (lunchboxModal?.classList.contains('open')) hideLunchboxModal(); });
 
   btnLunchboxPreview?.addEventListener('click', openLunchboxModal);
-  // 잡동사니 서랍의 「단체 도시락 메뉴판」도 같은 창을 연다
-  document.querySelectorAll('[data-open-lunchbox]').forEach(b => b.addEventListener('click', openLunchboxModal));
   lunchboxModalClose?.addEventListener('click', closeLunchboxModal);
   lunchboxModal?.addEventListener('click', e => { if (e.target === lunchboxModal) closeLunchboxModal(); });
   document.addEventListener('keydown', e => { if (e.key==='Escape' && lunchboxModal?.classList.contains('open')) closeLunchboxModal(); });
