@@ -44,6 +44,7 @@
    - 공지: `notices.json` / 리뷰: `reviews.json` / FAQ: `faq.json` / 단체 예약·카카오 채널 주소: `settings.json`
    - 시즌 효과: `settings.json`의 `season_effect` (`"autumn_leaves"`면 가을 낙엽, `""`면 끔. 코드는 `js/season-leaves.js`)
 5. 디자인 규칙은 `docs/DESIGN.md`를 따른다. 색상은 CSS 변수로만 쓰고 HTML에 hex 값을 직접 쓰지 않는다.
+   - 디자인 시안·리디자인은 `.claude/skills/frontend-design` 스킬의 순서(디자인 계획 → 기본값 점검 → 제작 → 화면 확인)로 진행한다. 스킬 내용과 `docs/DESIGN.md`·대표님 지시가 다르면 `DESIGN.md`와 대표님 지시를 따른다.
 6. 세션을 끝낼 때 `WORKLOG.md`에 "한 일 / 다음 할 일"을 3~5줄로 추가한다.
 7. 큰 이미지(1MB 이상)·PDF는 그대로 넣지 말고 웹용으로 줄여서 넣는다.
 8. API 키·토큰·비밀번호는 저장소에 커밋하지 않는다 (이 저장소는 public).
