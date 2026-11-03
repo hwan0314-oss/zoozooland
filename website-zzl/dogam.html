@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover">
-  <title>쥬쥬랜드 동물도감</title>
-  <meta name="description" content="쥬쥬랜드 방문 중 GPS로 동물을 찾아 수집하는 동물도감 게임. 쥬쥬랜드 홈페이지: https://zoozoo.kr">
+  <title>쥬쥬랜드 가이드맵 — 내 위치 · 쥬민 도감</title>
+  <meta name="description" content="쥬쥬랜드 안에서 열면 가이드맵 위에 내 위치가 보이고, 가까이 간 쥬민(동물)을 도감에 모을 수 있어요. 쥬쥬랜드 홈페이지: https://zoozoo.kr">
   <meta name="robots" content="noindex,nofollow">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
@@ -277,7 +277,7 @@ dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
 <body>
 
 <div id="mapDiv"></div>
-<a href="/" class="ov-back">← HOME</a>
+<a href="/#guidemap" class="ov-back">← HOME</a>
 <a href="images/guidemap.pdf" download="ZZL_가이드맵.pdf" class="ov-pdf">MAP PDF</a>
 <button id="dexBtn">도감 0/54</button>
 
@@ -313,7 +313,7 @@ dl.rows{border-top:1px solid rgba(255,255,255,0.07)}
 <div id="dexOverlay" hidden>
   <div class="dex-hd">
     <h2>동물도감</h2>
-    <span class="dex-cnt" id="dexCnt">0 / 62</span>
+    <span class="dex-cnt" id="dexCnt">0 / 54</span>
     <button class="dex-cls" id="dexClsBtn">닫기</button>
   </div>
   <div id="grid"></div>

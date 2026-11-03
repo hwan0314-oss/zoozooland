@@ -443,6 +443,22 @@ section {
 .faq-more-count { font-family: 'JetBrains Mono', monospace; color: var(--zzl-lime); }
 .faq-more-count:empty { display: none; }
 
+/* ── 가이드맵 섹션: 현장용 내 위치(GPS)·도감 화면으로 가는 버튼 ── */
+.live-map-cta {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 16px 18px; border: 1px solid var(--zzl-lime); color: #fff;
+  background: rgba(212,255,0,0.06); transition: background 0.2s;
+}
+.live-map-cta:hover { background: rgba(212,255,0,0.14); }
+.live-map-cta b { font-size: 16px; font-weight: 900; color: var(--zzl-lime); }
+.live-map-cta small { margin-top: 2px; font-size: 13px; color: rgba(255,255,255,0.65); word-break: keep-all; }
+.live-map-dot {
+  flex-shrink: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--zzl-lime);
+  box-shadow: 0 0 0 0 rgba(212,255,0,0.6); animation: live-dot 1.8s ease-out infinite;
+}
+@keyframes live-dot { to { box-shadow: 0 0 0 12px rgba(212,255,0,0); } }
+@media (prefers-reduced-motion: reduce) { .live-map-dot { animation: none; } }
+
 /* ── 지도 컨테이너 ── */
 .map-container {
   cursor: crosshair;
