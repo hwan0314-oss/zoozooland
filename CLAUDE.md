@@ -68,7 +68,7 @@ cd deploy && python3 -m http.server 8765   # http://localhost:8765
 - 운영: 10:00–18:00, 월요일 휴무(공휴일인 월요일은 정상 운영) — 기준은 `website/data/hours.json`
 - 대표전화 031-962-4500 / 제휴 hwan9740@zoozoo.kr
 - 단체: 단체 예약 페이지 `https://booking.zoozoo.kr/group` (`settings.json`의 `group_booking_url`). 단체 이메일 문의는 받지 않음
-- 단체 식사: 2026-11부터 쥬쥬랜드 직영. 문의는 대표전화 031-962-4500 (FAQ·단체 섹션에 안내). 예전 위탁 업체(쥬쥬레스토랑) 번호와 도시락 안내 이미지는 내림
+- 단체 식사: 2026-11부터 쥬쥬랜드 직영. 문의는 대표전화(031-962-4500) 또는 단체 예약 요청사항. 도시락 지참 가능. 금액은 바뀔 수 있어 홈페이지에 적지 않음 (FAQ·단체 섹션에 안내). 예전 위탁 업체(쥬쥬레스토랑) 번호와 도시락 안내 이미지는 내림
 - 예약: 네이버 예약 (URL은 `website/data/products.json`)
 - 분석: GA4 `G-HF2XRXQE6X`, Microsoft Clarity (`data-track` 속성으로 클릭 이벤트 전송)
 - 브랜드 언어: ZZL = "즐", 동물은 "쥬민". 카피는 "ZZL겨볼까?"처럼 ZZL 말장난을 살린다.
