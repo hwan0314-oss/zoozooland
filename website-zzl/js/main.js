@@ -45,6 +45,35 @@
     });
   });
 
+  /* ── 모바일 메뉴 ──
+     버튼으로 열고 닫는다. 항목을 누르거나, 바깥을 누르거나(pointerdown), Esc, 포커스가 메뉴 밖으로 나가면 닫힌다.
+     Esc로 닫으면 포커스를 메뉴 버튼으로 돌려준다. */
+  const menuBtn = document.getElementById('navMenuBtn');
+  const menu = document.getElementById('navMenu');
+  if (menuBtn && menu) {
+    const setMenu = (open, focusBtn = false) => {
+      menu.hidden = !open;
+      menuBtn.setAttribute('aria-expanded', String(open));
+      menuBtn.setAttribute('aria-label', open ? '메뉴 닫기' : '메뉴 열기');
+      menuBtn.classList.toggle('is-open', open);
+      document.body.classList.toggle('menu-open', open); // 열려 있는 동안 떠 있는 작은 버튼(지도·시즌 효과)을 숨긴다
+      if (open) menu.querySelector('a')?.focus({ preventScroll: true });
+      else if (focusBtn) menuBtn.focus();
+    };
+    menuBtn.addEventListener('click', () => setMenu(menu.hidden));
+    menu.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
+    // 바깥 누르기: iOS Safari는 링크·버튼이 아닌 곳을 누르면 document 로 click 을 보내지 않으므로 pointerdown 으로 받는다
+    document.addEventListener('pointerdown', e => {
+      if (!menu.hidden && !menu.contains(e.target) && !menuBtn.contains(e.target)) setMenu(false);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !menu.hidden) setMenu(false, true); });
+    menu.addEventListener('focusout', e => {
+      const to = e.relatedTarget;
+      if (!menu.hidden && to && !menu.contains(to) && to !== menuBtn) setMenu(false);
+    });
+    window.matchMedia('(min-width: 768px)').addEventListener('change', e => { if (e.matches) setMenu(false); });
+  }
+
   /* ── 플로팅 버튼 ── */
   const floatBtn = document.getElementById('floatBtn');
   const guidemapSection = document.getElementById('guidemap');
