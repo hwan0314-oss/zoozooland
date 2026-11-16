@@ -204,13 +204,18 @@
 </script>
 <!-- /ssg:jsonld -->
 
-  <!-- Fonts -->
+  <!-- Fonts — 렌더링을 막지 않게 불러온다(글꼴이 오기 전엔 시스템 글꼴로 먼저 보이고 도착하면 바뀜, display=swap).
+       굵기는 실제로 쓰는 것만: Inter 400·700·900 / JetBrains Mono 500 / Noto Sans KR 500·900.
+       새 굵기(예: 300 가는 글씨)를 쓰게 되면 아래 세 줄의 주소에 함께 추가할 것 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=JetBrains+Mono:wght@300;500&family=Noto+Sans+KR:wght@300;500;900&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&family=Noto+Sans+KR:wght@500;900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&family=Noto+Sans+KR:wght@500;900&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&family=Noto+Sans+KR:wght@500;900&display=swap"></noscript>
 
-  <!-- Swiper -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.css">
+  <!-- Swiper — 공지 슬라이드(페이지 중간 아래) 전용이라 첫 화면을 막지 않게 늦게 적용 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.css"></noscript>
 
   <!-- ZZL CSS + Tailwind (빌드 시 생성: css/tailwind.css — README 참고)
        Tailwind가 style.css보다 뒤에 와야 유틸리티 클래스가 컴포넌트 스타일을 덮어씁니다 -->
