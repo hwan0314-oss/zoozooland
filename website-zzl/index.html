@@ -214,7 +214,7 @@
 
   <!-- ZZL CSS + Tailwind (빌드 시 생성: css/tailwind.css — README 참고)
        Tailwind가 style.css보다 뒤에 와야 유틸리티 클래스가 컴포넌트 스타일을 덮어씁니다 -->
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=6">
   <link rel="stylesheet" href="css/tailwind.css?v=5">
 
   <!-- Google Analytics (GA4) -->
@@ -251,9 +251,29 @@
     <a href="#gallery" class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">ZZL-STAGRAM</a>
     <a href="#guidemap" class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">MAP</a>
     <a href="#faq"     class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">FAQ</a>
-    <a href="#contact" class="text-gray-400 hover:text-[#D4FF00] transition-colors">ACCESS</a>
+    <a href="#contact" class="text-gray-400 hover:text-[#D4FF00] transition-colors hidden md:block">ACCESS</a>
     <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place" target="_blank" rel="noopener"
        class="nav-cta hidden md:inline-block" data-booking data-track="booking_click" data-cta="nav">예약하기 →</a>
+    <!-- 모바일 메뉴 버튼 (767px 이하에서만 보임, js/main.js 「모바일 메뉴」) -->
+    <button type="button" class="nav-menu-btn md:hidden" id="navMenuBtn"
+            aria-expanded="false" aria-controls="navMenu" aria-label="메뉴 열기">
+      <span class="nav-menu-icon" aria-hidden="true"></span>
+      <span class="font-ko" aria-hidden="true">메뉴</span>
+    </button>
+  </div>
+
+  <!-- 모바일 메뉴 패널: 주요 섹션 이동 + 예약 -->
+  <div class="nav-menu md:hidden" id="navMenu" hidden>
+    <ul>
+      <li><a href="#booking" data-track="menu_click" data-cta="mobile_menu_booking">입장권·체험</a></li>
+      <li><a href="#guidemap" data-track="menu_click" data-cta="mobile_menu_guidemap">가이드맵</a></li>
+      <li><a href="#faq" data-track="menu_click" data-cta="mobile_menu_faq">자주 묻는 질문</a></li>
+      <li><a href="#contact" data-track="menu_click" data-cta="mobile_menu_contact">오시는 길</a></li>
+      <li><a href="https://booking.zoozoo.kr/group?utm_source=homepage&amp;utm_medium=cta&amp;utm_campaign=mobile_menu" target="_blank" rel="noopener" data-group-booking
+             data-track="group_booking_click" data-cta="mobile_menu">단체 예약 <small>20명 이상</small></a></li>
+    </ul>
+    <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place" target="_blank" rel="noopener"
+       class="nav-menu-cta" data-booking data-track="booking_click" data-cta="mobile_menu">네이버 예약하기</a>
   </div>
 </nav>
 
@@ -312,33 +332,10 @@
 </section>
 
 <!-- ═══════════════════════════════════════════
-  ZZL-STAGRAM — ZZL-UNIT-02
-═══════════════════════════════════════════ -->
-<section id="gallery" class="pt-12 pb-24 px-6 overflow-hidden">
-  <div class="section-label">ZZL-UNIT-02 / ZZL-STAGRAM</div>
-  <div class="flex justify-between items-baseline mb-12 flex-wrap gap-4">
-    <div>
-      <h2 class="text-4xl md:text-5xl font-black mb-2">
-        <span class="text-[#D4FF00]">ZZL</span>-STAGRAM
-      </h2>
-      <p class="mono text-gray-500">REAL-TIME FIELD LOGS FROM @ZOOZOOLAND_ZZL</p>
-    </div>
-    <div class="flex items-center gap-6">
-      <div class="h-[1px] w-24 bg-white/10 hidden md:block"></div>
-      <a href="https://www.instagram.com/zoozooland_zzl/" target="_blank" rel="noopener"
-         class="tag-badge" data-track="instagram_click" data-cta="gallery">LIVE_FEED →</a>
-    </div>
-  </div>
-
-  <!-- 인스타그램 피드 (Graph API 직접 렌더링) -->
-  <div id="igFeed" class="grid grid-cols-3 gap-2 md:gap-3"><!-- ssg:instagram --><!-- /ssg:instagram --></div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-  RESERVE — ZZL-UNIT-03
+  RESERVE — ZZL-UNIT-02
 ═══════════════════════════════════════════ -->
 <section id="booking" class="pt-12 pb-24 px-6 bg-[#0E0F0E]">
-  <div class="section-label">ZZL-UNIT-03 / ZZL-RESERVE</div>
+  <div class="section-label">ZZL-UNIT-02 / ZZL-RESERVE</div>
   <div class="mb-16">
     <h2 class="text-4xl md:text-5xl font-black mb-4 tracking-tighter italic">
       오늘, ZZL겨볼까?
@@ -405,6 +402,29 @@
       </div>
     </div>
   </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+  ZZL-STAGRAM — ZZL-UNIT-03
+═══════════════════════════════════════════ -->
+<section id="gallery" class="pt-12 pb-24 px-6 overflow-hidden">
+  <div class="section-label">ZZL-UNIT-03 / ZZL-STAGRAM</div>
+  <div class="flex justify-between items-baseline mb-12 flex-wrap gap-4">
+    <div>
+      <h2 class="text-4xl md:text-5xl font-black mb-2">
+        <span class="text-[#D4FF00]">ZZL</span>-STAGRAM
+      </h2>
+      <p class="mono text-gray-500">REAL-TIME FIELD LOGS FROM @ZOOZOOLAND_ZZL</p>
+    </div>
+    <div class="flex items-center gap-6">
+      <div class="h-[1px] w-24 bg-white/10 hidden md:block"></div>
+      <a href="https://www.instagram.com/zoozooland_zzl/" target="_blank" rel="noopener"
+         class="tag-badge" data-track="instagram_click" data-cta="gallery">LIVE_FEED →</a>
+    </div>
+  </div>
+
+  <!-- 인스타그램 피드 (Graph API 직접 렌더링) -->
+  <div id="igFeed" class="grid grid-cols-3 gap-2 md:gap-3"><!-- ssg:instagram --><!-- /ssg:instagram --></div>
 </section>
 
 <!-- ═══════════════════════════════════════════
@@ -849,7 +869,7 @@
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.js" defer></script>
-<script src="js/main.js?v=5" defer></script>
+<script src="js/main.js?v=6" defer></script>
 <script src="js/today-status.js?v=1" defer></script>
 <script src="js/season-leaves.js?v=1" defer></script>
 
