@@ -15,6 +15,13 @@
       }, { once: true });
     });
   }
+  // 대체 텍스트: 캡션이 있으면 캡션, 없으면 '쥬쥬랜드 인스타그램 릴스 · 2026년 10월 3일'처럼 게시물마다 다르게 (build.py 와 같은 규칙)
+  function igAlt(p) {
+    if (p.caption) return p.caption;
+    const kind = /\/reel\//.test(p.permalink || '') ? '릴스' : '게시물';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(p.timestamp || '');
+    return `쥬쥬랜드 인스타그램 ${kind}` + (m ? ` · ${+m[1]}년 ${+m[2]}월 ${+m[3]}일` : '');
+  }
   async function loadInstagramFeed() {
     const grid = document.getElementById('igFeed');
     if (!grid) return;
@@ -26,8 +33,8 @@
       if (!posts.length) return;
       grid.innerHTML = posts.map(p => `
         <a href="${escapeHtml(p.permalink || '#')}" target="_blank" rel="noopener" class="photo-cell">
-          <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.caption || 'ZZL Instagram')}" loading="lazy">
-          <span class="photo-log">${escapeHtml((p.caption || '').slice(0, 24))}</span>
+          <img src="${escapeHtml(p.image)}" alt="${escapeHtml(igAlt(p))}" loading="lazy">
+          <span class="photo-log" aria-hidden="true">${escapeHtml((p.caption || '').slice(0, 24))}</span>
         </a>
       `).join('');
       bindIgErrors(grid);
@@ -363,14 +370,41 @@
       initSwiper(notices.length > 1);
     } catch { initSwiper(false); }
   }
-  function initSwiper(loop) {
-    if (typeof Swiper === 'undefined') return;
-    new Swiper('.notices-swiper', {
-      loop, grabCursor: true, keyboard: { enabled: true },
-      autoplay: loop ? { delay: 4500, disableOnInteraction: false, pauseOnMouseEnter: true } : false,
-      pagination: { el: '.swiper-pagination', clickable: true },
-      navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+  // Swiper(JS·CSS)는 첫 화면에 필요 없으므로, 공지 섹션이 화면에 가까워질 때만 jsDelivr에서 불러온다.
+  // 불러오기 전에도 첫 장만 같은 높이로 보이도록 기본 배치는 style.css 「Swiper 공지」에 있다.
+  const SWIPER_URL = 'https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min';
+  let swiperLib;
+  function loadSwiperLib() {
+    const load = (tag, attrs) => new Promise((resolve, reject) => {
+      const el = Object.assign(document.createElement(tag), attrs, { onload: resolve, onerror: reject });
+      document.head.appendChild(el);
     });
+    if (!swiperLib) swiperLib = Promise.all([
+      load('link', { rel: 'stylesheet', href: `${SWIPER_URL}.css` }),
+      load('script', { src: `${SWIPER_URL}.js` }),
+    ]);
+    return swiperLib;
+  }
+  function initSwiper(loop) {
+    const el = document.querySelector('.notices-swiper');
+    if (!el || el.dataset.swiper) return;
+    el.dataset.swiper = 'pending';
+    const start = () => loadSwiperLib().then(() => {
+      el.dataset.swiper = 'ready';
+      new Swiper(el, {
+        loop, grabCursor: true, keyboard: { enabled: true },
+        autoplay: loop ? { delay: 4500, disableOnInteraction: false, pauseOnMouseEnter: true } : false,
+        pagination: { el: '.swiper-pagination', clickable: true },
+        navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+      });
+    }).catch(() => {});
+    if (!('IntersectionObserver' in window)) return start();
+    const io = new IntersectionObserver(entries => {
+      if (!entries.some(e => e.isIntersecting)) return;
+      io.disconnect();
+      start();
+    }, { rootMargin: '800px 0px' });
+    io.observe(el);
   }
   loadNotices().then(() => {
     if (document.getElementById('noticePlaceholder')) initSwiper(false);
@@ -407,7 +441,8 @@
       track.style.transition = animated
         ? `transform ${ANIM_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`
         : 'none';
-      track.style.transform = `translateX(-${idx * cardW()}px)`;
+      // 첫 카드(0)는 폭을 잴 필요가 없다 — 페이지를 읽는 도중 offsetWidth 를 읽으면 화면 전체 배치를 강제로 다시 계산해 느려진다
+      track.style.transform = idx ? `translateX(-${idx * cardW()}px)` : 'translateX(0px)';
       updateDots(((idx % TOTAL) + TOTAL) % TOTAL);
     }
 

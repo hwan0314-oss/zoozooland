@@ -7,6 +7,10 @@
   --zzl-lime:     #D4FF00;
   --muted-gray:   #333333;
   --border-color: rgba(255,255,255,0.1);
+  /* 작은 회색 글자 — 가장 밝은 카드 배경(#181818)에서도 명암비 4.5:1 이상 (WCAG AA)
+     Tailwind text-gray-500 / text-gray-600 도 이 값을 쓴다 (tailwind.config.js) */
+  --text-dim:     #8A9099;
+  --text-faint:   #7C828D;
 }
 
 *, *::before, *::after {
@@ -253,8 +257,7 @@ section {
   top: 20px;
   right: 20px;
   writing-mode: vertical-rl;
-  color: var(--muted-gray);
-  opacity: 0.5;
+  color: var(--text-faint);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.6rem;
   text-transform: uppercase;
@@ -342,7 +345,7 @@ section {
   font-family: 'JetBrains Mono', monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(255,255,255,0.25);
+  color: var(--text-faint);
   margin-bottom: 8px;
 }
 .prog-row {
@@ -379,7 +382,7 @@ section {
   font-size: 10px;
   font-family: 'JetBrains Mono', monospace;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
+  color: var(--text-faint);
   letter-spacing: 0.08em;
 }
 .conduct-ko {
@@ -560,7 +563,14 @@ section {
   .map-modal-hint { bottom: 24px; left: 20px; }
 }
 
-/* ── Swiper 공지 커스텀 ── */
+/* ── Swiper 공지 커스텀 ──
+   Swiper CSS·JS는 공지 섹션에 가까워질 때 main.js 가 불러온다. 그 전에도 첫 장만 같은 높이로 보이도록
+   Swiper와 같은 기본 배치를 미리 둔다 (불러온 뒤 높이가 바뀌어 화면이 밀리지 않게). */
+.notices-swiper { position: relative; overflow: hidden; }
+.notices-swiper .swiper-wrapper { display: flex; }
+.notices-swiper .swiper-slide { flex-shrink: 0; width: 100%; }
+.notices-swiper:not([data-swiper="ready"]) .swiper-button-prev,
+.notices-swiper:not([data-swiper="ready"]) .swiper-button-next { display: none; }
 .notices-swiper { padding-bottom: 48px !important; }
 .notices-swiper .swiper-slide {
   border: 1px solid rgba(255,255,255,0.08);

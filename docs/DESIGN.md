@@ -14,6 +14,8 @@
 | `--forest-black` | `#0A0B0A` | 배경 |
 | `--zzl-lime` | `#D4FF00` | 강조, CTA |
 | `--muted-gray` | `#333333` | 보조 |
+| `--text-dim` | `#8A9099` | 작은 회색 글자 (Tailwind `text-gray-500`이 이 값). 어두운 카드 배경 위 명암비 4.5:1 이상 |
+| `--text-faint` | `#7C828D` | 더 흐린 라벨 (`text-gray-600`, 세로 섹션 라벨, WEEKDAY·영문 이용수칙). `#181818` 위에서도 4.5:1 이상. 작은 글자는 장식용 영문 라벨이라도 이보다 어둡게 쓰지 않는다 (WCAG AA) |
 | 카드 배경 | `#181818`, `#0E0F0E` | 섹션/카드 |
 | 폰트 | Inter, Noto Sans KR, JetBrains Mono | 본문, 한글, 라벨 |
 | 배경 | 40px 격자선 | 전체 |

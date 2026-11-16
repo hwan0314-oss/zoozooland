@@ -211,12 +211,23 @@ else:
     )
 
 # ── 인스타그램 피드 ───────────────────────────────────────────────────
-ig_posts = igfeed.get('posts', [])
+ig_posts = [p for p in igfeed.get('posts', []) if p.get('image')]
+# 3열 격자 한 칸의 실제 폭(섹션 좌우 여백 24px×2 + 칸 사이 8px×2, md 이상 12px×2)
+IG_SIZES = '(min-width: 768px) calc((100vw - 72px) / 3), calc((100vw - 64px) / 3)'
+
+def ig_alt(p):
+    # 캡션이 없으면 '쥬쥬랜드 인스타그램 릴스 · 2026년 10월 3일'처럼 게시물마다 다르게 (main.js igAlt 와 같은 규칙)
+    if p.get('caption'):
+        return p['caption']
+    kind = '릴스' if '/reel/' in (p.get('permalink') or '') else '게시물'
+    m = re.match(r'(\d{4})-(\d{2})-(\d{2})', p.get('timestamp') or '')
+    return f'쥬쥬랜드 인스타그램 {kind}' + (f' · {int(m[1])}년 {int(m[2])}월 {int(m[3])}일' if m else '')
+
 instagram_html = '\n'.join(
     f'<a href="{h(p.get("permalink") or "#")}" target="_blank" rel="noopener" class="photo-cell">'
-    f'<img src="{h(p["image"])}" alt="{h(p.get("caption") or "ZZL Instagram")}" loading="lazy" data-sizes="33vw">'
-    f'<span class="photo-log">{h((p.get("caption") or "")[:24])}</span></a>'
-    for p in ig_posts if p.get('image')
+    f'<img src="{h(p["image"])}" alt="{h(ig_alt(p))}" loading="lazy" data-sizes="{IG_SIZES}">'
+    f'<span class="photo-log" aria-hidden="true">{h((p.get("caption") or "")[:24])}</span></a>'
+    for p in ig_posts
 )
 
 # ── 리뷰 (data/reviews.json) ─────────────────────────────────────────
@@ -378,7 +389,9 @@ for el_id, has_data in [('feedingList', feeding_items), ('programsList', prog_pa
         content = mark_ssg(content, el_id)
 
 # ── 이미지 최적화 (WebP 반응형) ──────────────────────────────────────
-WIDTHS = (640, 1280, 1920)
+# 240·320·480은 인스타그램 썸네일(모바일 한 칸 약 110px)처럼 작게 보이는 이미지용.
+# 브라우저가 srcset·sizes를 보고 화면에 맞는 가장 작은 파일을 고른다.
+WIDTHS = (240, 320, 480, 640, 1280, 1920)
 MAX_W  = 2560
 _variants = {}
 
