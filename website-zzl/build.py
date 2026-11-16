@@ -378,7 +378,7 @@ for el_id, has_data in [('feedingList', feeding_items), ('programsList', prog_pa
         content = mark_ssg(content, el_id)
 
 # ── 이미지 최적화 (WebP 반응형) ──────────────────────────────────────
-WIDTHS = (640, 1280, 1920)
+WIDTHS = (320, 480, 640, 1280, 1920)  # 320·480: 인스타 썸네일(화면 폭 1/3)처럼 작게 보이는 이미지용
 MAX_W  = 2560
 _variants = {}
 
