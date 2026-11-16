@@ -214,7 +214,7 @@
 
   <!-- ZZL CSS + Tailwind (빌드 시 생성: css/tailwind.css — README 참고)
        Tailwind가 style.css보다 뒤에 와야 유틸리티 클래스가 컴포넌트 스타일을 덮어씁니다 -->
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=6">
   <link rel="stylesheet" href="css/tailwind.css?v=5">
 
   <!-- Google Analytics (GA4) -->
@@ -260,34 +260,27 @@
 <!-- ═══════════════════════════════════════════
   HERO — ZZL-UNIT-01
 ═══════════════════════════════════════════ -->
-<section id="hero" class="min-h-screen flex flex-col justify-center px-6 pt-20 pb-16">
-  <div class="section-label">ZZL-UNIT-01 / IDENTITY</div>
-
-  <!-- 모바일: 3줄 세로 -->
-  <div class="zzl-logo-stacked mb-10 md:hidden">
-    <span>Z</span>OO<br>
-    <span>Z</span>OO<br>
-    <span>L</span>AND
+<section id="hero" class="hero-char-sec">
+  <!-- 겨울 캐릭터: 라임 패딩 입은 프레리독. 영상은 아래 스크립트가 화면 폭에 맞춰 고르고,
+       움직임 줄이기 설정이면 첫 장면 이미지만 보여 준다. 시즌이 바뀌면 images/hero/ 파일만 바꾼다. -->
+  <div class="hero-char" aria-hidden="true">
+    <video class="hero-video" muted loop playsinline preload="none"></video>
+    <script>
+    (function () {
+      var v = document.querySelector('.hero-video'), m = matchMedia('(max-width: 767px)').matches;
+      v.poster = m ? 'images/hero/prairie-m.webp' : 'images/hero/prairie.webp';
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      v.src = m ? 'images/hero/prairie-m.mp4' : 'images/hero/prairie.mp4';
+      var p = v.play(); if (p && p.catch) p.catch(function () {});
+    })();
+    </script>
   </div>
-
-  <!-- 데스크톱: 1줄 가로 -->
-  <div class="zzl-logo-large mb-10 hidden md:block">
-    <span>Z</span>OO<span>Z</span>OO<span>L</span>AND
-  </div>
-
-  <div class="max-w-5xl w-full flex flex-col md:flex-row justify-between items-end gap-12">
-    <div class="flex-1">
-      <div class="mono text-[#D4FF00] mb-4">[ IDENTITY_CORE ]</div>
-      <h1 class="text-4xl md:text-6xl lg:text-7xl font-black leading-none mb-6">
-        쥬쥬랜드를<br>
-        가장 힙하게,<br>
-        <span class="text-[#D4FF00]">쯜기다(ZZL)</span>
-      </h1>
-      <p class="text-gray-400 max-w-sm text-sm leading-relaxed break-keep">
-        동물과 교감하고 자연을 느끼며, 일상에서 벗어나 나만의 방식으로 쯜겨 보세요. 쥬쥬랜드에서의 하루가 특별한 추억이 됩니다.
-      </p>
+  <div class="hero-char-body">
+    <div class="hero-head">
+      <p class="hero-whisper">누가 왔나… 아, 너구나.</p>
+      <h1 class="hero-title">겨울에도<br>가장 힙하게,<br><span class="hero-accent">쯜기다(ZZL)</span></h1>
     </div>
-    <div class="flex flex-col gap-3 w-full md:w-auto md:min-w-[240px]">
+    <div class="hero-cta">
       <div class="today-status" data-today-status aria-live="polite">
         <span class="today-dot" aria-hidden="true"></span>
         <div>
@@ -298,15 +291,11 @@
       <a href="https://m.booking.naver.com/booking/5/bizes/480021?area=bmp&lang=ko&map-search=1&service-target=map-pc&theme=place"
          class="btn-zzl" target="_blank" rel="noopener" id="bookingBtnHero"
          data-booking data-track="booking_click" data-cta="hero">네이버 예약하기</a>
-      <a href="#guidemap" data-track="guidemap_click" data-cta="hero"
-         class="block text-center px-8 py-4 border border-white/30 font-bold text-sm uppercase tracking-widest hover:bg-white hover:text-black transition">
-        쯜기는 법 보기 (MAP)
-      </a>
-      <a href="https://booking.zoozoo.kr/group?utm_source=homepage&amp;utm_medium=cta&amp;utm_campaign=hero" target="_blank" rel="noopener" data-group-booking
-         data-track="group_booking_click" data-cta="hero"
-         class="text-center text-xs text-gray-400 hover:text-[#D4FF00] transition">
-        20명 이상 단체라면 <span class="underline underline-offset-4">단체 예약 →</span>
-      </a>
+      <div class="hero-sub-links">
+        <a href="#guidemap" data-track="guidemap_click" data-cta="hero">쯜기는 법 보기 (MAP)</a>
+        <a href="https://booking.zoozoo.kr/group?utm_source=homepage&amp;utm_medium=cta&amp;utm_campaign=hero" target="_blank" rel="noopener" data-group-booking
+           data-track="group_booking_click" data-cta="hero">20명 이상 단체 예약</a>
+      </div>
     </div>
   </div>
 </section>
@@ -851,7 +840,7 @@
 <script src="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.js" defer></script>
 <script src="js/main.js?v=5" defer></script>
 <script src="js/today-status.js?v=1" defer></script>
-<script src="js/season-leaves.js?v=1" defer></script>
+<script src="js/season-leaves.js?v=2" defer></script>
 
 <!-- 카카오맵 (오시는 길 섹션에 가까워지면 SDK 로드) -->
 <script>

@@ -48,35 +48,98 @@ body {
   letter-spacing: 0.1em;
 }
 
-/* ── ZZL 로고 (데스크톱: 가로 한줄) ── */
-.zzl-logo-large {
-  font-weight: 900;
-  line-height: 0.82;
-  /* "ZOOZOOLAND"(약 7.3em)가 좌우 여백(3rem) 안에 들어가도록 뷰포트 너비 기준으로 맞춤 */
-  font-size: min(16rem, calc((100vw - 3rem) / 7.6));
-  white-space: nowrap;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(255,255,255,0.18);
-  transition: all 0.5s ease;
-  user-select: none;
+/* ── 히어로: 시즌 캐릭터 영상 (2026 겨울: 라임 패딩 프레리독) ──
+   PC: 캐릭터가 오른쪽 70%를 채우고 글은 왼쪽.
+   모바일: 캐릭터는 오른쪽 위, 제목은 그 왼쪽 아래, 운영 상태·예약 버튼은 첫 화면 안. */
+.hero-char-sec {
+  min-height: 100svh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 96px 24px 56px;
 }
-.zzl-logo-large span {
+.hero-char {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 70%;
+  z-index: 0;
+}
+.hero-video {
+  width: 100%; height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: 100% 30%;
+  /* 왼쪽·아래 가장자리를 녹여 배경 격자와 이어지게 */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 38%), linear-gradient(0deg, transparent 0%, #000 22%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 38%), linear-gradient(0deg, transparent 0%, #000 22%);
+  mask-composite: intersect;
+}
+.hero-char-body {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 640px;
+  margin-left: max(0px, calc((100vw - 1280px) / 2));
+}
+.hero-whisper {
+  font-family: 'JetBrains Mono', 'Noto Sans KR', monospace;
+  font-size: 13px;
   color: var(--zzl-lime);
-  -webkit-text-stroke: 0;
+  margin-bottom: 14px;
 }
+.hero-title {
+  font-size: clamp(2.25rem, 4.6vw, 3.75rem);
+  font-weight: 900;
+  line-height: 1.02;
+  margin-bottom: 20px;
+}
+.hero-accent { color: var(--zzl-lime); }
+.hero-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 340px;
+}
+.hero-sub-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #aaa;
+}
+.hero-sub-links a { text-decoration: underline; text-underline-offset: 4px; }
+.hero-sub-links a:hover { color: var(--zzl-lime); }
 
-/* ── ZZL 로고 (모바일: 3줄) ── */
-.zzl-logo-stacked {
-  font-weight: 900;
-  line-height: 0.88;
-  font-size: clamp(4.5rem, 22vw, 6rem);
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(255,255,255,0.18);
-  user-select: none;
-}
-.zzl-logo-stacked span {
-  color: var(--zzl-lime);
-  -webkit-text-stroke: 0;
+@media (max-width: 767px) {
+  .hero-char-sec {
+    display: block;
+    min-height: 0;
+    padding: 68px 20px 32px;
+  }
+  .hero-char {
+    top: 68px; bottom: auto;
+    width: 64%;
+    height: clamp(360px, 50svh, 460px);
+  }
+  .hero-video {
+    object-position: 60% 0;
+    /* 내비게이션 바로 아래 윗변도 녹인다 */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%), linear-gradient(0deg, transparent 0%, #000 25%), linear-gradient(180deg, transparent 0%, #000 14%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 30%), linear-gradient(0deg, transparent 0%, #000 25%), linear-gradient(180deg, transparent 0%, #000 14%);
+  }
+  /* 제목 칸 높이 = 캐릭터 높이 → 제목이 캐릭터 왼쪽 아래에 붙는다 */
+  .hero-head {
+    min-height: clamp(360px, 50svh, 460px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding-bottom: 20px;
+    max-width: 58%;
+  }
+  .hero-whisper { font-size: 12px; margin-bottom: 8px; }
+  .hero-title { font-size: 28px; margin-bottom: 0; text-shadow: 0 2px 12px rgba(10,11,10,0.8); }
+  .hero-cta { max-width: none; }
 }
 
 .font-ko { font-family: 'Noto Sans KR', sans-serif; letter-spacing: -0.01em; text-transform: none; }
@@ -619,18 +682,10 @@ section {
   .grid-lines { background-size: 30px 30px; }
 }
 
-/* ── 모바일 가로 방향 (짧은 화면) ──
-   갤럭시S 등 고해상도 폰이 가로일 때 CSS 너비 ~780px으로 md 브레이크포인트를
-   넘어 데스크톱 레이아웃이 되지만, 화면이 짧아 레이아웃이 깨짐. 세로형 로고 강제 사용. */
-@media (orientation: landscape) and (max-height: 520px) {
-  .zzl-logo-large  { display: none !important; }
-  .zzl-logo-stacked { display: block !important; font-size: clamp(2.5rem, 10vw, 4rem) !important; margin-bottom: 1rem !important; }
-}
-
 /* 인스타 이미지가 모두 깨졌을 때 빈 격자 숨김 */
 [data-ig-empty] #igFeed { display: none; }
 
-/* ── 시즌 효과: 가을 낙엽 (js/season-leaves.js) ──
+/* ── 시즌 효과: 가을 낙엽·겨울 눈 (js/season-leaves.js) ──
    본문 위·내비게이션(z-50)과 예약 바(90)·떠 있는 버튼(100) 아래에 깔린다. 클릭은 통과. */
 .season-leaves {
   position: fixed; inset: 0;
@@ -653,6 +708,7 @@ section {
 }
 .season-leaves-toggle svg { width: 20px; height: 20px; }
 .season-leaves-toggle:hover { background: rgba(10,11,10,0.95); }
+.season-leaves-toggle.is-snow { color: #E6F2FF; border-color: rgba(230,242,255,0.45); }
 .season-leaves-toggle.is-off { color: rgba(255,255,255,0.45); border-color: rgba(255,255,255,0.2); }
 .season-leaves-toggle.is-off::after {
   content: ""; position: absolute; width: 26px; height: 1.5px; background: currentColor; transform: rotate(-45deg);
