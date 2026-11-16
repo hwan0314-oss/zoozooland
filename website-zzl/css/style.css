@@ -172,6 +172,11 @@ picture { display: contents; }
   border-bottom: 1px solid rgba(212,255,0,0.35);
 }
 .nav-menu[hidden] { display: none; }
+/* 하단 예약 바가 떠 있으면(가로 모드 등 짧은 화면) 메뉴가 바에 가리지 않도록 그만큼 높이를 줄인다 */
+body.has-booking-bar .nav-menu { max-height: calc(100vh - 64px - 72px - env(safe-area-inset-bottom, 0px)); }
+/* 메뉴가 열려 있으면 떠 있는 지도 버튼·시즌 효과 끄기 버튼이 메뉴 위에 겹치지 않게 숨긴다(가로 모드 등) */
+body.menu-open .floating-map-btn,
+body.menu-open .season-leaves-toggle { display: none !important; }
 .nav-menu ul { list-style: none; }
 .nav-menu li a {
   display: flex;
