@@ -213,9 +213,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&family=Noto+Sans+KR:wght@500;900&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&family=Noto+Sans+KR:wght@500;900&display=swap"></noscript>
 
-  <!-- Swiper — 공지 슬라이드(페이지 중간 아래) 전용이라 첫 화면을 막지 않게 늦게 적용 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.css"></noscript>
+  <!-- Swiper(공지 슬라이더) CSS·JS는 공지 섹션에 가까워지면 js/main.js 가 불러온다 -->
 
   <!-- ZZL CSS + Tailwind (빌드 시 생성: css/tailwind.css — README 참고)
        Tailwind가 style.css보다 뒤에 와야 유틸리티 클래스가 컴포넌트 스타일을 덮어씁니다 -->
@@ -282,6 +280,7 @@
   </div>
 </nav>
 
+<main id="main">
 <!-- ═══════════════════════════════════════════
   HERO — ZZL-UNIT-01
 ═══════════════════════════════════════════ -->
@@ -375,7 +374,7 @@
     <div class="lg:col-span-2 grid md:grid-cols-2 gap-4">
       <div class="p-8 border border-white/5 bg-[#151615]">
         <div class="mono text-[#D4FF00] mb-6">01_EXPERIENCE</div>
-        <h4 class="text-xl font-bold mb-4">먹이체험 프로그램</h4>
+        <h3 class="text-xl font-bold mb-4">먹이체험 프로그램</h3>
         <ul class="text-sm text-gray-400 space-y-4" id="feedingList"><!-- ssg:feeding -->
 <li><span class="font-ko text-white font-semibold">채소 먹이:</span> <span class="font-ko">당근 · 청경채 · 치커리 · 양배추 · 사료 / 양 · 라마 · 알파카 · 꽃사슴 · 유산양 · 보어염소 · 무플론 · 당나귀 · 토끼 (사료만)</span></li>
 <li><span class="font-ko text-white font-semibold">잉어먹이 (호수):</span> <span class="font-ko">잉어 · 거북 · 오리</span></li>
@@ -385,7 +384,7 @@
 
       <div class="p-8 border border-white/5 bg-[#151615]">
         <div class="mono text-[#D4FF00] mb-6">02_TIMETABLE</div>
-        <h4 class="text-xl font-bold mb-4">운영 프로그램</h4>
+        <h3 class="text-xl font-bold mb-4">운영 프로그램</h3>
         <div class="space-y-3" id="programsList"><!-- ssg:programs -->
 <div class="prog-day" data-group="weekday">WEEKDAY (TUE-FRI)</div>
 <div class="prog-row"><span class="prog-name">애니멀스타&amp;로봇공연</span><span class="prog-time">11:30 · 13:30</span></div>
@@ -725,7 +724,7 @@
         <div class="flex gap-3">
           <a href="https://map.naver.com/p/entry/place/1008136590" target="_blank" rel="noopener"
              data-track="map_click" data-cta="naver_map"
-             class="flex-1 py-4 bg-[#2DB400] text-center font-black text-xs mono hover:opacity-90 transition">NAVER MAP</a>
+             class="flex-1 py-4 bg-[#2DB400] text-black text-center font-black text-xs mono hover:opacity-90 transition">NAVER MAP</a>
           <a href="https://map.kakao.com/link/search/쥬쥬랜드" target="_blank" rel="noopener"
              data-track="map_click" data-cta="kakao_map"
              class="flex-1 py-4 bg-[#FEE500] text-black text-center font-black text-xs mono hover:opacity-90 transition">KAKAO MAP</a>
@@ -796,6 +795,7 @@
     </div>
   </div>
 </section>
+</main>
 
 <!-- ═══════════════════════════════════════════
   FOOTER
@@ -873,8 +873,7 @@
 </a>
 
 <!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@11.1.15/swiper-bundle.min.js" defer></script>
-<script src="js/main.js?v=6" defer></script>
+<script src="js/main.js?v=7" defer></script>
 <script src="js/today-status.js?v=1" defer></script>
 <script src="js/season-leaves.js?v=1" defer></script>
 

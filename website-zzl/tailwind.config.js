@@ -6,6 +6,13 @@ module.exports = {
     relative: true,
     files: ['./index.html', './js/**/*.js', './build.py'],
   },
-  theme: { extend: {} },
+  theme: {
+    extend: {
+      colors: {
+        // 작은 회색 글자 명암비(WCAG AA 4.5:1) — 값은 css/style.css 의 :root 변수
+        gray: { 500: 'var(--text-dim)', 600: 'var(--text-faint)' },
+      },
+    },
+  },
   plugins: [],
 };

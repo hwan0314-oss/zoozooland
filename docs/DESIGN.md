@@ -14,6 +14,8 @@
 | `--forest-black` | `#0A0B0A` | 배경 |
 | `--zzl-lime` | `#D4FF00` | 강조, CTA |
 | `--muted-gray` | `#333333` | 보조 |
+| `--text-dim` | `#8A9099` | 작은 회색 글자 (Tailwind `text-gray-500`이 이 값). 어두운 카드 배경 위 명암비 4.5:1 이상 |
+| `--text-faint` | `#7C828D` | 더 흐린 라벨 (`text-gray-600`, 세로 섹션 라벨, WEEKDAY·영문 이용수칙). `#181818` 위에서도 4.5:1 이상. 작은 글자는 장식용 영문 라벨이라도 이보다 어둡게 쓰지 않는다 (WCAG AA) |
 | 카드 배경 | `#181818`, `#0E0F0E` | 섹션/카드 |
 | 폰트 | Inter, Noto Sans KR, JetBrains Mono | 본문, 한글, 라벨 |
 | 배경 | 40px 격자선 | 전체 |
@@ -41,7 +43,7 @@
 
 ## 이미지 규칙
 - 웹용 WebP, 긴 변 1600px 이하, 1장 300KB 이하 목표.
-- `build.py`가 `index.html`의 `images/*.jpg|png`를 폭 320·480·640·1280·1920 WebP로 자동 변환한다(원본보다 큰 폭은 만들지 않음). 작게 보이는 이미지는 `data-sizes`(예: 인스타 `33vw`)로 표시 폭을 알려 줘야 작은 파일이 선택된다.
+- `build.py`가 `index.html`의 `images/*.jpg|png`를 폭 240·320·480·640·1280·1920 WebP로 자동 변환한다(원본보다 큰 폭은 만들지 않음). 작게 보이는 이미지는 `data-sizes`로 실제 표시 폭을 알려 줘야 작은 파일이 선택된다(예: 인스타 썸네일 `calc((100vw - 64px) / 3)` → 모바일은 240px).
 
 ## 글꼴 불러오기 규칙 (성능)
 - Google Fonts는 렌더링을 막지 않게 불러온다(`preload` + `media="print" onload`, `display=swap`). 첫 방문에서 잠깐 시스템 글꼴로 보였다가 바뀔 수 있다.
