@@ -1,6 +1,6 @@
-/* ── 시즌 효과: 가을 낙엽 ───────────────────────────────────────────────
-   data/settings.json 의 "season_effect" 가 "autumn_leaves" 일 때만 켜진다.
-   시즌이 끝나면 그 값을 "" 로 바꿔 커밋하면 꺼진다 (코드 수정 불필요).
+/* ── 시즌 효과: 가을 낙엽 / 겨울 눈 ─────────────────────────────────────
+   data/settings.json 의 "season_effect" 로 고른다.
+     "autumn_leaves" → 가을 낙엽, "winter_snow" → 겨울 눈, "" → 끔 (코드 수정 불필요).
 
    - 단풍잎·은행잎·참나무잎을 미리 그려 둔 스프라이트로 날린다 (프레임마다 도형을 다시 그리지 않음)
    - 본문 위에 떠 있지만 클릭은 그대로 통과한다 (pointer-events: none)
@@ -18,10 +18,15 @@
 
   fetch('data/settings.json', { cache: 'no-cache' })
     .then((r) => (r.ok ? r.json() : {}))
-    .then((s) => { if (s && s.season_effect === 'autumn_leaves') start(); })
+    .then((s) => {
+      if (!s) return;
+      if (s.season_effect === 'autumn_leaves') start('leaves');
+      else if (s.season_effect === 'winter_snow') start('snow');
+    })
     .catch(() => {});
 
-  function start() {
+  function start(mode) {
+    const SNOW = mode === 'snow';
     /* ── 잎 모양 (단위 좌표: 중심 0,0 / 크기 약 1) ── */
     const SHAPES = {
       maple(ctx) {
@@ -72,7 +77,40 @@
       const c = (v) => Math.max(0, Math.min(255, Math.round(v * k)));
       return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`;
     }
-    const sprites = PALETTE.map(([shape, color]) => {
+    /* 눈: 부드러운 눈송이(흐린 점) 여러 개 + 가끔 눈 결정 */
+    function snowSprites() {
+      const dot = document.createElement('canvas');
+      dot.width = dot.height = SPRITE;
+      const d = dot.getContext('2d');
+      const rg = d.createRadialGradient(SPRITE / 2, SPRITE / 2, 0, SPRITE / 2, SPRITE / 2, SPRITE / 2);
+      rg.addColorStop(0, 'rgba(255,255,255,1)');
+      rg.addColorStop(0.45, 'rgba(255,255,255,0.85)');
+      rg.addColorStop(1, 'rgba(255,255,255,0)');
+      d.fillStyle = rg;
+      d.fillRect(0, 0, SPRITE, SPRITE);
+
+      const crystal = document.createElement('canvas');
+      crystal.width = crystal.height = SPRITE;
+      const g = crystal.getContext('2d');
+      g.translate(SPRITE / 2, SPRITE / 2);
+      g.strokeStyle = 'rgba(236,246,255,0.95)';
+      g.lineCap = 'round';
+      g.lineWidth = SPRITE * 0.05;
+      for (let i = 0; i < 6; i++) {
+        g.save();
+        g.rotate((Math.PI / 3) * i);
+        g.beginPath();
+        g.moveTo(0, 0); g.lineTo(0, -SPRITE * 0.44);
+        g.moveTo(0, -SPRITE * 0.24); g.lineTo(SPRITE * 0.1, -SPRITE * 0.34);
+        g.moveTo(0, -SPRITE * 0.24); g.lineTo(-SPRITE * 0.1, -SPRITE * 0.34);
+        g.stroke();
+        g.restore();
+      }
+      return { dot, crystal };
+    }
+    const SNOW_SPRITES = SNOW ? snowSprites() : null;
+
+    const sprites = SNOW ? [] : PALETTE.map(([shape, color]) => {
       const cv = document.createElement('canvas');
       cv.width = cv.height = SPRITE;
       const g = cv.getContext('2d');
@@ -115,6 +153,10 @@
     btn.type = 'button';
     btn.className = 'season-leaves-toggle';
     btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.6 3.8 3.9-1.2-1.1 3.9 3.8 1.6-3.3 2.4 2.2 3.4-4 .3L13.5 20H12v2h-1v-2H9.5l-.9-3.8-4 .2 2.2-3.4-3.3-2.4 3.8-1.6-1.1-3.9 3.9 1.2z" fill="currentColor"/></svg><span class="sr-only"></span>';
+    if (SNOW) {
+      btn.classList.add('is-snow');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M12 5.5l-2-2M12 5.5l2-2M12 18.5l-2 2M12 18.5l2 2"/></svg><span class="sr-only"></span>';
+    }
     const btnLabel = btn.querySelector('.sr-only');
     document.body.appendChild(btn);
 
@@ -123,7 +165,29 @@
     let scrollKick = 0, lastScroll = window.scrollY;
 
     const rand = (a, b) => a + Math.random() * (b - a);
+    function makeFlake(anywhere) {
+      const small = W < 768;
+      const isCrystal = Math.random() < 0.12;
+      const size = isCrystal ? rand(10, small ? 14 : 18) : rand(small ? 3 : 4, small ? 8 : 10);
+      return {
+        x: rand(-40, W + 40),
+        y: anywhere ? rand(-H * 0.1, H) : rand(-60, -10),
+        size,
+        vy: 18 + size * rand(2.2, 3.4),  /* 큰 송이가 조금 더 빨리 */
+        vx: rand(-6, 6),
+        sway: rand(8, 26),
+        swaySpeed: rand(0.4, 1.1),
+        phase: rand(0, Math.PI * 2),
+        rot: rand(0, Math.PI * 2),
+        rotSpeed: isCrystal ? rand(-0.6, 0.6) : 0,
+        flipSpeed: 0,
+        sprite: isCrystal ? SNOW_SPRITES.crystal : SNOW_SPRITES.dot,
+        alpha: isCrystal ? rand(0.6, 0.9) : rand(0.45, 0.95),
+        push: 0, pushX: 0, pushY: 0,
+      };
+    }
     function makeLeaf(anywhere) {
+      if (SNOW) return makeFlake(anywhere);
       const small = W < 768;
       return {
         x: rand(-40, W + 40),
@@ -144,6 +208,7 @@
     }
     function targetCount() {
       /* 화면 넓이에 비례해 흐드러지게, 다만 너무 빽빽하지 않게 */
+      if (SNOW) return Math.round(Math.min(140, Math.max(40, (W * H) / 11000)));
       return Math.round(Math.min(95, Math.max(30, (W * H) / 15000)));
     }
     function resize() {
@@ -200,7 +265,7 @@
           if (w > 30) L.x = rand(-80, W * 0.6); else if (w < -30) L.x = rand(W * 0.4, W + 80);
         }
 
-        const flip = Math.cos(t * L.flipSpeed + L.phase);
+        const flip = SNOW ? 1 : Math.cos(t * L.flipSpeed + L.phase);
         ctx.globalAlpha = L.alpha * (0.75 + 0.25 * Math.abs(flip));
         ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         ctx.translate(L.x, L.y);
@@ -223,7 +288,8 @@
       if (clear) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.hidden = true; }
     }
     function setOff(off) {
-      const label = off ? '낙엽 효과 켜기' : '낙엽 효과 끄기';
+      const name = SNOW ? '눈' : '낙엽';
+      const label = off ? `${name} 효과 켜기` : `${name} 효과 끄기`;
       btnLabel.textContent = label;
       btn.title = label;
       btn.classList.toggle('is-off', off);
